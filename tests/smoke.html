@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>crumple smoke test</title>
+<style>body{margin:0;background:#16130f;color:#ebe5d6;font:14px monospace}.row{display:flex;flex-wrap:wrap;gap:24px;padding:40px}</style></head>
+<body><div class="row" id="row"></div>
+<script src="../dist/crumple.min.js"></script>
+<script>
+  Crumple.config.assets = '../assets/';
+  Crumple.Scene.init({ motion: 'full' });
+  const types = Object.keys(Crumple.TYPES);
+  types.forEach((t, i) => {
+    const b = document.createElement('button');
+    b.dataset.type = t;
+    document.getElementById('row').appendChild(b);
+    Crumple.Scene.attach(b, { id: 'smoke-' + t, type: t, seed: 11 + i, states: t === 'notebook' ? ['coffee', 'water'] : t === 'memo' ? ['burnt'] : t === 'receipt' ? ['prints', 'aged'] : [], hiddenInk: t === 'typed' ? 'look closer' : '', back: t === 'polaroid' ? 'on the back' : '', burnAfterReading: t === 'sticky' });
+  });
+  window.__ready = true;
+</script></body></html>

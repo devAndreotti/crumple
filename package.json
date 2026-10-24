@@ -1,0 +1,56 @@
+{
+  "name": "@devandreotti/crumple",
+  "version": "1.0.0",
+  "description": "Crumpled paper you can open: a dependency-free WebGL2 library that flies a crumpled note to the center of the screen and unfolds it into a readable sheet.",
+  "keywords": [
+    "paper",
+    "crumple",
+    "crumpled-paper",
+    "webgl",
+    "webgl2",
+    "animation",
+    "unfold",
+    "letter",
+    "note",
+    "3d"
+  ],
+  "homepage": "https://devandreotti.github.io/crumple/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/devAndreotti/crumple.git"
+  },
+  "bugs": "https://github.com/devAndreotti/crumple/issues",
+  "license": "MIT",
+  "author": "devAndreotti",
+  "type": "module",
+  "main": "dist/crumple.esm.js",
+  "module": "dist/crumple.esm.js",
+  "browser": "dist/crumple.min.js",
+  "types": "crumple.d.ts",
+  "exports": {
+    ".": {
+      "types": "./crumple.d.ts",
+      "import": "./dist/crumple.esm.js",
+      "default": "./dist/crumple.min.js"
+    },
+    "./assets/*": "./assets/*"
+  },
+  "files": [
+    "dist",
+    "assets",
+    "crumple.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "assets": "python3 tools/make-assets.py",
+    "serve": "python3 -m http.server 8080 --directory docs",
+    "prerender": "node tools/prerender.cjs docs/papers.json docs/snaps",
+    "test": "node tests/smoke.cjs && node tests/flow.cjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.2"
+  }
+}

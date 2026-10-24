@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crumple: basic example</title>
+  <style>
+    body { margin: 0; min-height: 100vh; background: #16130f; color: #ebe5d6; font: 18px/1.6 Georgia, serif; }
+    main { max-width: 640px; margin: 0 auto; padding: 12vh 24px; position: relative; }
+    #note { position: absolute; right: 8%; top: 14vh; transform: rotate(-12deg); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Someone left a note</h1>
+    <p>It is lying in the corner of this page. Click the crumpled paper to open it, drag it to unfold it slowly, press F to flip it and Escape to close.</p>
+    <button id="note"></button>
+  </main>
+
+  <script src="../dist/crumple.min.js"></script>
+  <script>
+    Crumple.config.assets = '../assets/';
+    Crumple.Scene.init();
+    Crumple.Scene.attach(document.getElementById('note'), {
+      id: 'example-note',
+      type: 'notebook',
+      states: ['coffee'],
+      text: '# tuesday\n\nbought ~~milk~~{oat milk}, fixed the lamp,\nwatered the plants.\n\n[[the rest is a secret]]',
+      back: 'p.s. the key is under the mat',
+      hiddenInk: 'look closer',
+    });
+    document.addEventListener('crumple:open', (e) => console.log('opened', e.detail));
+  </script>
+</body>
+</html>

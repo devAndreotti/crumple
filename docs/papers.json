@@ -1,0 +1,37 @@
+[
+  {"id":"hero-typed","type":"typed","shape":"ball","seed":3,"text":"# To whoever finds this\n\nI folded every thought I could not say out loud, then left it on the table.\n\nRead it slowly.\n\n— A."},
+  {"id":"hero-receipt","type":"receipt","shape":"roll","seed":21,"states":["prints"],"text":"# CORNER STORE\n# OPEN ALL NIGHT\n--------------------\nTEA ........... 2.40\nLEMONS (3) .... 1.50\nHONEY ......... 4.25\n--------------------\nTOTAL ......... 8.15\n\n# THANK YOU"},
+  {"id":"hero-sticky","type":"sticky","shape":"half","seed":8,"text":"do not forget\nto water\nthe plants\n\n— me"},
+  {"id":"hero-newspaper","type":"newspaper","shape":"twist","seed":14,"states":["aged"],"text":"# SNOW ARRIVES EARLY\nThe first flakes fell over the market square before breakfast, and by noon the bakers had sold out of everything warm.\n\nThe weather office promises a clear week after that."},
+  {"id":"hero-notebook","type":"notebook","shape":"flat","seed":30,"states":["coffee"],"text":"sunday, early\n\nbought the good bread.\nthe bird came back to the window.\n\nwrite to the cousins."},
+
+  {"id":"type-typed","type":"typed","seed":5,"text":"Dear reader,\n\nthis sheet was typed on a machine that sticks on every third letter. Forgive the spacing."},
+  {"id":"type-notebook","type":"notebook","seed":6,"text":"monday night\n\ncould not sleep again.\nmade a list of things to fix tomorrow.\n\ndo not read the rest."},
+  {"id":"type-form","type":"form","seed":7,"text":"# CONTINUOUS FORM - LOG\nUNIT: 04\nSTATUS: AWAITING SIGNATURE\n\nREADING 01 ..... 0412\nREADING 02 ..... 0413\nREADING 03 ..... ERROR"},
+  {"id":"type-receipt","type":"receipt","seed":9,"text":"# GREENGROCER\n--------------------\nAPPLES .......... 3.20\nPEARS ........... 2.80\nLEMONS .......... 1.10\n--------------------\nTOTAL ........... 7.10\n\n# THANK YOU"},
+  {"id":"type-ticket","type":"ticket","seed":10,"text":"# THE GRAND THEATRE\nEVENING PERFORMANCE\nROW C - SEAT 12\n\nadmit one"},
+  {"id":"type-memo","type":"memo","seed":11,"text":"# INTERNAL MEMO\nTO: [[the whole team]]\nFROM: the front desk\nRE: the plant by the window\n\nPlease water it on Fridays. [[Nobody remembers who started this.]]\n\nFurther notes next week."},
+  {"id":"type-newspaper","type":"newspaper","seed":12,"text":"# FOG STAYS FOR A THIRD DAY\nResidents woke to the same thick fog that has covered the harbor since Monday. Ferries kept to their schedule, guided only by the lighthouse.\n\nThe weather office expects clear skies by the weekend."},
+  {"id":"type-sticky","type":"sticky","seed":13,"text":"remember:\nbuy stamps\nand the good pencils"},
+  {"id":"type-polaroid","type":"polaroid","seed":15,"text":"summer, last day"},
+  {"id":"type-envelope","type":"envelope","seed":16,"text":"Dear friend,\n\nI kept this letter in a drawer for a whole year before sending it.\n\nRead it, then let it go.\n\n— yours"},
+
+  {"id":"shape-ball","type":"typed","shape":"ball","seed":41,"text":"Same sheet, different folds.\n\nA shape is only how the paper was kept."},
+  {"id":"shape-flat","type":"typed","shape":"flat","seed":42,"text":"Same sheet, different folds.\n\nA shape is only how the paper was kept."},
+  {"id":"shape-quarters","type":"typed","shape":"quarters","seed":43,"text":"Same sheet, different folds.\n\nA shape is only how the paper was kept."},
+  {"id":"shape-half","type":"typed","shape":"half","seed":44,"text":"Same sheet, different folds.\n\nA shape is only how the paper was kept."},
+  {"id":"shape-thirds","type":"typed","shape":"thirds","seed":45,"text":"Same sheet, different folds.\n\nA shape is only how the paper was kept."},
+  {"id":"shape-roll","type":"typed","shape":"roll","seed":46,"text":"Same sheet, different folds.\n\nA shape is only how the paper was kept."},
+  {"id":"shape-twist","type":"typed","shape":"twist","seed":47,"text":"Same sheet, different folds.\n\nA shape is only how the paper was kept."},
+
+  {"id":"state-torn","type":"typed","states":["torn"],"seed":51,"text":"Dear reader,\n\nthe edges of this page have been through a lot. So have I.\n\n— A."},
+  {"id":"state-burnt","type":"typed","states":["burnt"],"seed":52,"text":"This letter survived the fire.\n\nMostly."},
+  {"id":"state-coffee","type":"typed","states":["coffee"],"seed":53,"text":"The coffee was on the table before the letter was.\n\nI still wrote it anyway."},
+  {"id":"state-water","type":"typed","states":["water"],"seed":54,"text":"It rained on the window all night.\nSome of the ink ran away.\n\nThe rest is true."},
+  {"id":"state-prints","type":"typed","states":["prints"],"seed":55,"text":"Sorry about the fingerprints.\nI was reading it on the stairs."},
+  {"id":"state-aged","type":"typed","states":["aged"],"seed":56,"back":"Written in autumn, in pencil.","text":"Written long ago, and kept well.\n\nTurn it over for the date."},
+  {"id":"state-scribbled","type":"typed","states":["scribbled"],"seed":57,"text":"I will ~~never~~{always} forget how the lake looked in the morning.\n\n— A."},
+  {"id":"state-burn-after","type":"typed","seed":58,"burnAfterReading":true,"text":"This note burns after reading.\n\nGo on, read it once."},
+  {"id":"state-hidden-ink","type":"typed","seed":59,"hiddenInk":"the real message is written under the light, very small","text":"Nothing to see here.\n\nKeep reading."},
+  {"id":"state-envelope","type":"envelope","seed":60,"text":"Dear friend,\n\nthis envelope has been sealed since the autumn. Open it when you have a quiet hour.\n\n— yours"}
+]

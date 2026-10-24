@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crumple: crumpled paper you can open</title>
+  <meta name="description" content="Crumple is a dependency-free WebGL2 library. A crumpled note flies to the center of the screen and unfolds into a readable sheet.">
+  <meta name="theme-color" content="#16130f">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Crumple">
+  <meta property="og:url" content="https://devandreotti.github.io/crumple/">
+  <meta property="og:title" content="Crumple: crumpled paper you can open">
+  <meta property="og:description" content="Crumple is a dependency-free WebGL2 library. A crumpled note flies to the center of the screen and unfolds into a readable sheet.">
+  <meta property="og:image" content="https://devandreotti.github.io/crumple/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://devandreotti.github.io/crumple/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&family=Special+Elite&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top" aria-label="Crumple">
+        <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M16 2.5 22.5 6l5.5 3.5 1.2 6.4-3.6 5.1 1.4 6.2-6.2 3.2-4.6 2.4-5.9-2.5-5.2-4.2L3.4 16.5 6.5 10.6 9.3 5.2z" fill="#ebe5d6" stroke="#f5c266" stroke-width="1.2" stroke-linejoin="round"/><path d="M9.5 12.5 16 9.6l5.4 3.1M11 19.5l5-2.6 5.5 2.8" fill="none" stroke="#8a7656" stroke-width="1" stroke-linecap="round"/></svg>
+        <span>Crumple</span>
+      </a>
+      <nav class="nav" aria-label="Main navigation" data-i18n-aria="nav.label">
+        <a href="#types" data-i18n="nav.types">Types</a>
+        <a href="#playground" data-i18n="nav.playground">Playground</a>
+        <a href="#install" data-i18n="nav.docs">Docs</a>
+      </nav>
+      <div class="tools">
+        <button type="button" class="chip" id="sound-toggle" aria-pressed="false">
+          <span class="chip-dot" aria-hidden="true"></span><span id="sound-label" data-i18n="sound.off">Sound off</span>
+        </button>
+        <div class="lang" role="group" aria-label="Language" data-i18n-aria="lang.label">
+          <button type="button" data-lang="en" aria-pressed="true">EN</button>
+          <button type="button" data-lang="pt" aria-pressed="false">PT</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Hero -->
+    <section class="hero" id="top">
+      <div class="hero-copy">
+        <h1 data-i18n="hero.title">Crumple</h1>
+        <p class="tagline" data-i18n="hero.tagline">Crumpled paper you can open.</p>
+        <p class="lede" data-i18n="hero.lede">A dependency-free WebGL2 library: a crumpled note flies to the center of the screen and unfolds into a readable sheet, creases, ink and all.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="#types" data-i18n="hero.try">Try it</a>
+          <a class="btn" href="https://github.com/devAndreotti/crumple" target="_blank" rel="noopener" data-i18n="hero.github">GitHub</a>
+        </div>
+      </div>
+      <div class="hero-papers">
+        <button type="button" class="paper-btn hero-paper hp-1" data-paper="hero-typed" data-name="type.typed.name"></button>
+        <button type="button" class="paper-btn hero-paper hp-2" data-paper="hero-receipt" data-name="type.receipt.name"></button>
+        <button type="button" class="paper-btn hero-paper hp-3" data-paper="hero-sticky" data-name="type.sticky.name"></button>
+        <button type="button" class="paper-btn hero-paper hp-4" data-paper="hero-newspaper" data-name="type.newspaper.name"></button>
+        <button type="button" class="paper-btn hero-paper hp-5" data-paper="hero-notebook" data-name="type.notebook.name"></button>
+        <p class="hero-hint" aria-hidden="true"><span data-i18n="hero.hint">click a paper</span></p>
+      </div>
+    </section>
+
+    <!-- Paper types -->
+    <section class="section" id="types" aria-labelledby="types-title">
+      <header class="sec-head">
+        <h2 id="types-title" data-i18n="types.title">Paper types</h2>
+        <p data-i18n="types.lede">Ten kinds of paper, one for each type. Click any of them.</p>
+      </header>
+      <div class="grid grid-types" data-gallery="types"></div>
+    </section>
+
+    <!-- Shapes -->
+    <section class="section" id="shapes" aria-labelledby="shapes-title">
+      <header class="sec-head">
+        <h2 id="shapes-title" data-i18n="shapes.title">Shapes</h2>
+        <p data-i18n="shapes.lede">The same typed sheet, folded or crumpled seven ways.</p>
+      </header>
+      <div class="grid grid-small" data-gallery="shapes"></div>
+    </section>
+
+    <!-- States -->
+    <section class="section" id="states" aria-labelledby="states-title">
+      <header class="sec-head">
+        <h2 id="states-title" data-i18n="states.title">States</h2>
+        <p data-i18n="states.lede">Wear, stains and secrets.</p>
+      </header>
+      <div class="grid grid-small" data-gallery="states"></div>
+      <p class="note" data-i18n="states.hint">Move the light over the hidden ink to read it (mouse on a desktop). Burn after reading is gone for good once you close it.</p>
+    </section>
+
+    <!-- Playground -->
+    <section class="section" id="playground" aria-labelledby="play-title">
+      <header class="sec-head">
+        <h2 id="play-title" data-i18n="play.title">Playground</h2>
+        <p data-i18n="play.lede">Build a paper, then crumple, unfold, flip, tear or burn it. The JSON box shows exactly what you are using.</p>
+      </header>
+
+      <div class="stage-wrap">
+        <canvas id="stage" role="img" aria-label="Live crumpled paper"></canvas>
+        <p class="nogl" id="nogl" hidden data-i18n="play.webgl">This browser has no WebGL2.</p>
+      </div>
+
+      <div class="play-bar" role="toolbar" aria-label="Paper actions">
+        <button type="button" class="btn btn-small" data-act="crumple" data-i18n="play.crumple">Crumple</button>
+        <button type="button" class="btn btn-small" data-act="uncrumple" data-i18n="play.unfold">Unfold</button>
+        <button type="button" class="btn btn-small" data-act="flip" data-i18n="play.flip">Flip</button>
+        <button type="button" class="btn btn-small" data-act="tear" data-i18n="play.tearStub">Tear stub</button>
+        <button type="button" class="btn btn-small" data-act="burn" data-i18n="play.burnNow">Burn</button>
+        <button type="button" class="btn btn-small" data-act="restore" data-i18n="play.restore">Restore</button>
+        <label class="range">
+          <span data-i18n="play.progress">Progress</span>
+          <input type="range" id="progress" min="0" max="1" step="0.01" value="1">
+        </label>
+        <button type="button" class="btn btn-small" id="png" data-i18n="play.png">Download PNG</button>
+      </div>
+
+      <div class="controls">
+        <label class="field">
+          <span data-i18n="play.type">Type</span>
+          <select id="ctl-type"></select>
+        </label>
+        <label class="field">
+          <span data-i18n="play.shape">Shape</span>
+          <select id="ctl-shape"></select>
+        </label>
+        <label class="field">
+          <span data-i18n="play.open">Open mode</span>
+          <select id="ctl-open">
+            <option value="auto" data-i18n="play.openAuto">auto (unfolds by itself)</option>
+            <option value="drag" data-i18n="play.openDrag">drag (reader opens it)</option>
+          </select>
+        </label>
+        <div class="field field-seed">
+          <label for="ctl-seed" data-i18n="play.seed">Seed</label>
+          <div class="seed-row">
+            <input type="number" id="ctl-seed" min="1" max="99999" step="1" value="7">
+            <button type="button" class="btn btn-small" id="ctl-random" data-i18n="play.random">random</button>
+          </div>
+        </div>
+        <fieldset class="field field-wide states-field">
+          <legend data-i18n="play.states">States</legend>
+          <div class="checks" id="ctl-states"></div>
+        </fieldset>
+        <label class="field field-wide">
+          <span data-i18n="play.text">Front text</span>
+          <textarea id="ctl-text" rows="6" spellcheck="false"></textarea>
+        </label>
+        <label class="field field-wide">
+          <span data-i18n="play.back">Back text</span>
+          <textarea id="ctl-back" rows="2" spellcheck="false"></textarea>
+        </label>
+        <label class="field field-wide">
+          <span data-i18n="play.hiddenInk">Hidden ink</span>
+          <input type="text" id="ctl-hidden" spellcheck="false">
+        </label>
+        <label class="check field-wide">
+          <input type="checkbox" id="ctl-burn">
+          <span data-i18n="play.burn">Burn after reading (applies to triggers, kept in the JSON)</span>
+        </label>
+      </div>
+
+      <div class="code json-box">
+        <div class="code-head">
+          <span data-i18n="play.json">Config (JSON)</span>
+          <button type="button" class="copy" data-copy-target="json-out" data-i18n="copy">Copy</button>
+        </div>
+        <pre><code id="json-out"></code></pre>
+      </div>
+    </section>
+
+    <!-- Install and usage -->
+    <section class="section" id="install" aria-labelledby="install-title">
+      <header class="sec-head">
+        <h2 id="install-title" data-i18n="install.title">Install and usage</h2>
+        <p data-i18n="install.lede">Pick the way you load it. All of them need Crumple.config.assets pointing at the assets folder.</p>
+      </header>
+
+      <div class="docs-grid">
+        <article class="doc">
+          <h3 data-i18n="install.a">Script tag (CDN)</h3>
+          <p class="doc-note" data-i18n="install.a.note">Set the assets folder before the first paper is built. The CDN serves the textures and the demo photos.</p>
+          <div class="code">
+            <div class="code-head"><span>HTML</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
+            <pre><code>&lt;script src="https://cdn.jsdelivr.net/gh/devAndreotti/crumple@main/dist/crumple.min.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  Crumple.config.assets = 'https://cdn.jsdelivr.net/gh/devAndreotti/crumple@main/assets/';
+&lt;/script&gt;</code></pre>
+          </div>
+        </article>
+
+        <article class="doc">
+          <h3 data-i18n="install.b">npm (ES modules)</h3>
+          <p class="doc-note" data-i18n="install.b.note">Install from GitHub, then import what you need. Scene attaches to buttons, Stage draws into your own canvas.</p>
+          <div class="code">
+            <div class="code-head"><span>shell</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
+            <pre><code>npm install github:devAndreotti/crumple</code></pre>
+          </div>
+          <div class="code">
+            <div class="code-head"><span>JavaScript</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
+            <pre><code>import { Scene, config } from '@devandreotti/crumple';
+
+// serve the package's assets/ folder and point config.assets at it
+config.assets = '/assets/';
+Scene.init({ motion: 'auto' });</code></pre>
+          </div>
+        </article>
+
+        <article class="doc">
+          <h3 data-i18n="install.c">Minimal HTML</h3>
+          <div class="code">
+            <div class="code-head"><span>HTML</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
+            <pre><code>&lt;button id="note"&gt;Open the note&lt;/button&gt;
+
+&lt;script src="https://cdn.jsdelivr.net/gh/devAndreotti/crumple@main/dist/crumple.min.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  Crumple.Scene.init();
+  Crumple.Scene.attach(document.getElementById('note'), {
+    id: 'welcome',
+    type: 'typed',
+    text: '# Hello\n\nThis note was folded for you.'
+  });
+&lt;/script&gt;</code></pre>
+          </div>
+        </article>
+
+        <article class="doc">
+          <h3 data-i18n="install.d">Stage example</h3>
+          <div class="code">
+            <div class="code-head"><span>HTML</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
+            <pre><code>&lt;canvas id="sheet" style="width: 100%; height: 480px"&gt;&lt;/canvas&gt;
+&lt;button id="flip"&gt;Flip&lt;/button&gt;
+
+&lt;script src="https://cdn.jsdelivr.net/gh/devAndreotti/crumple@main/dist/crumple.min.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  (async () =&gt; {
+    const stage = Crumple.Stage(document.getElementById('sheet'), { fit: 0.8 });
+    if (!stage) return; // no WebGL2
+    await stage.set({ type: 'notebook', seed: 12, text: '# A note on a canvas\n\nNo flight, just a sheet.' }, { progress: 0 });
+    stage.uncrumple();
+    document.getElementById('flip').onclick = () =&gt; stage.flip();
+  })();
+&lt;/script&gt;</code></pre>
+          </div>
+        </article>
+
+        <article class="doc">
+          <h3 data-i18n="install.e">Events</h3>
+          <p class="doc-note" data-i18n="install.e.note">Events bubble from the trigger, so one listener on document catches all of them.</p>
+          <div class="code">
+            <div class="code-head"><span>JavaScript</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
+            <pre><code>document.addEventListener('crumple:open', (e) =&gt; {
+  console.log('opened', e.detail.id);
+});
+
+document.addEventListener('crumple:burn', (e) =&gt; {
+  console.log('burned', e.detail.id);
+});</code></pre>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- API reference -->
+    <section class="section" id="api" aria-labelledby="api-title">
+      <header class="sec-head">
+        <h2 id="api-title" data-i18n="api.title">API reference</h2>
+        <p data-i18n="api.lede">Compact reference. The full typings are in crumple.d.ts.</p>
+      </header>
+
+      <div class="api">
+        <h3 data-i18n="api.config.title">Paper config</h3>
+        <p class="api-note" data-i18n="api.config.cfg">Config object passed to attach, Stage.set, or normalize.</p>
+        <table>
+          <thead><tr><th data-i18n="api.col.name">Name</th><th data-i18n="api.col.desc">Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td data-i18n="api.cfg.id">Unique id, used for storage keys and events. Defaults to the type.</td></tr>
+            <tr><td><code>type</code></td><td data-i18n="api.cfg.type">One of the ten paper types.</td></tr>
+            <tr><td><code>shape</code></td><td data-i18n="api.cfg.shape">Closed shape. Envelopes always use their own shape.</td></tr>
+            <tr><td><code>states</code></td><td data-i18n="api.cfg.states">Array of states: torn, burnt, coffee, water, prints, aged, scribbled.</td></tr>
+            <tr><td><code>text</code></td><td data-i18n="api.cfg.text">Front text, with the markup described below.</td></tr>
+            <tr><td><code>back</code></td><td data-i18n="api.cfg.back">Back text, shown when the paper is flipped.</td></tr>
+            <tr><td><code>seed</code></td><td data-i18n="api.cfg.seed">Integer. The same seed always gives the same crumple.</td></tr>
+            <tr><td><code>open</code></td><td data-i18n="api.cfg.open">'auto' unfolds by itself; 'drag' waits for the reader to drag or pinch it open.</td></tr>
+            <tr><td><code>hiddenInk</code></td><td data-i18n="api.cfg.hiddenInk">Indented writing, visible only under grazing light (the flashlight).</td></tr>
+            <tr><td><code>burnAfterReading</code></td><td data-i18n="api.cfg.burnAfterReading">On close the paper burns for good. Remembered per browser in localStorage.</td></tr>
+            <tr><td><code>image</code></td><td data-i18n="api.cfg.image">Photo URL for the polaroid type (same origin or CORS-enabled).</td></tr>
+            <tr><td><code>address</code></td><td data-i18n="api.cfg.address">Address written on the envelope.</td></tr>
+            <tr><td><code>letter</code></td><td data-i18n="api.cfg.letter">Type of the letter inside an envelope.</td></tr>
+          </tbody>
+        </table>
+
+        <h3 data-i18n="api.scene.title">Scene (triggers)</h3>
+        <p class="api-note" data-i18n="api.scene.desc">Papers that sit on the page as buttons and fly to the center when clicked.</p>
+        <table>
+          <thead><tr><th data-i18n="api.col.name">Name</th><th data-i18n="api.col.desc">Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Scene.init(options)</code></td><td data-i18n="api.scene.init">Call once. Options: labels, remember, motion (auto, full or reduced), flashlight (default true), maxBuilt (papers kept on the GPU, default 3).</td></tr>
+            <tr><td><code>Scene.attach(el, config, opts)</code></td><td data-i18n="api.scene.attach">Turns a button into a crumpled-paper trigger. Options: snapshot and snapshotOpened (still images).</td></tr>
+            <tr><td><code>Scene.open(entry)</code></td><td data-i18n="api.scene.open">Opens an attached entry programmatically. Resolves when the paper is built.</td></tr>
+            <tr><td><code>Scene.close()</code></td><td data-i18n="api.scene.close">Closes the open paper (the same as Escape or a click outside).</td></tr>
+            <tr><td><code>Scene.flip() / tear()</code></td><td data-i18n="api.scene.flipTear">Flips the open paper, or tears its stub.</td></tr>
+            <tr><td><code>Scene.reset()</code></td><td data-i18n="api.scene.reset">Forgets which papers were opened (with remember on).</td></tr>
+            <tr><td><code>entries · isOpen · reducedMotion</code></td><td data-i18n="api.scene.props">entries (list), isOpen (boolean), reducedMotion (boolean).</td></tr>
+          </tbody>
+        </table>
+
+        <h3 data-i18n="api.stage.title">Stage (inline canvas)</h3>
+        <p class="api-note" data-i18n="api.stage.desc">A paper rendered in place in your own canvas, with no flight.</p>
+        <table>
+          <thead><tr><th data-i18n="api.col.name">Name</th><th data-i18n="api.col.desc">Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Stage(canvas, opts)</code></td><td data-i18n="api.stage.new">Crumple.Stage(canvas, { fit, flashlight, drag }). fit is the share of the canvas height the open sheet takes (default 0.8).</td></tr>
+            <tr><td><code>set(config, { progress })</code></td><td data-i18n="api.stage.set">Builds a paper from a config and shows it. Resolves with the paper (or null if a newer call replaced it).</td></tr>
+            <tr><td><code>crumple · uncrumple · toggle</code></td><td data-i18n="api.stage.actions">crumple(), uncrumple(), toggle(), flip(), tear(), restoreStub(), burn(), restore().</td></tr>
+            <tr><td><code>setProgress(v)</code></td><td data-i18n="api.stage.progress">setProgress(0..1): 0 is closed, 1 is fully open.</td></tr>
+            <tr><td><code>png() · snapshot()</code></td><td data-i18n="api.stage.out">png() returns a data URL of the current frame. snapshot(opened, format, size) returns a still image.</td></tr>
+          </tbody>
+        </table>
+
+        <h3 data-i18n="api.sound.title">Sound</h3>
+        <p class="api-note" data-i18n="api.sound.desc">Paper noises, synthesized with Web Audio. Off by default.</p>
+        <table>
+          <thead><tr><th data-i18n="api.col.name">Name</th><th data-i18n="api.col.desc">Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Sound.set(bool)</code></td><td data-i18n="api.sound.set">Turns sounds on or off. Stored in localStorage.</td></tr>
+            <tr><td><code>Sound.enabled</code></td><td data-i18n="api.sound.enabled">Current state (read-only).</td></tr>
+            <tr><td><code>Sound.useSamples(urls)</code></td><td data-i18n="api.sound.samples">Optional recordings, used instead of the synthesized sounds when they load.</td></tr>
+            <tr><td><code>Sound.play(name)</code></td><td data-i18n="api.sound.play">Plays one of: crumple, uncrumple, flip, tear, seal, fire, grain.</td></tr>
+          </tbody>
+        </table>
+
+        <h3 data-i18n="api.events.title">Events</h3>
+        <p class="api-note" data-i18n="api.events.desc">CustomEvents dispatched from the trigger button. Each carries detail.id.</p>
+        <table>
+          <thead><tr><th data-i18n="api.col.name">Name</th><th data-i18n="api.col.desc">Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>crumple:open</code></td><td data-i18n="api.events.open">Opened. detail: { id, openings, fallback }.</td></tr>
+            <tr><td><code>crumple:close</code></td><td data-i18n="api.events.close">Closed. detail: { id }.</td></tr>
+            <tr><td><code>crumple:flip</code></td><td data-i18n="api.events.flip">Flipped. detail: { id, back }.</td></tr>
+            <tr><td><code>crumple:tear</code></td><td data-i18n="api.events.tear">Stub torn. detail: { id }.</td></tr>
+            <tr><td><code>crumple:burn</code></td><td data-i18n="api.events.burn">Burned after reading. detail: { id }.</td></tr>
+          </tbody>
+        </table>
+
+        <h3 data-i18n="api.markup.title">Text markup</h3>
+        <p class="api-note" data-i18n="api.markup.desc">Plain text with three small extras.</p>
+        <table>
+          <thead><tr><th data-i18n="api.col.name">Name</th><th data-i18n="api.col.desc">Description</th></tr></thead>
+          <tbody>
+            <tr><td><code># title</code></td><td data-i18n="api.markup.heading">A line that starts with "# " is a heading.</td></tr>
+            <tr><td><code>~~word~~{fix}</code></td><td data-i18n="api.markup.strike">A struck-out word with a handwritten correction.</td></tr>
+            <tr><td><code>[[text]]</code></td><td data-i18n="api.markup.redact">A redaction bar that fades a little more on every opening.</td></tr>
+          </tbody>
+        </table>
+
+        <h3 data-i18n="api.config.global">Crumple.config</h3>
+        <table>
+          <thead><tr><th data-i18n="api.col.name">Name</th><th data-i18n="api.col.desc">Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>assets</code></td><td data-i18n="api.config.assets">Base URL of the assets folder (textures and demo photos).</td></tr>
+            <tr><td><code>storagePrefix</code></td><td data-i18n="api.config.storage">Prefix for localStorage keys (sound, opening counts, burnt papers).</td></tr>
+            <tr><td><code>googleFonts</code></td><td data-i18n="api.config.fonts">Load the paper fonts from Google Fonts on demand (set false if the page already ships them).</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <p data-i18n="footer.license">MIT License · Made by devAndreotti</p>
+      <p><a href="https://github.com/devAndreotti/crumple" target="_blank" rel="noopener" data-i18n="footer.repo">Repository on GitHub</a></p>
+    </div>
+  </footer>
+
+  <script src="lib/crumple.min.js"></script>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

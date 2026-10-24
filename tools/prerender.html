@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><link rel="icon" href="data:,"><title>crumple prerender</title></head>
+<body style="margin:0;background:#000">
+<canvas id="c" width="256" height="256" style="width:256px;height:256px"></canvas>
+<script src="../dist/crumple.min.js"></script>
+<script>
+  // used by tools/prerender.cjs: builds each config and returns its closed and opened still images
+  Crumple.config.assets = '../assets/';
+  window.__render = async (configs, size) => {
+    const R = Crumple.Renderer(document.getElementById('c'));
+    const out = [];
+    for (const cfg of configs) {
+      const P = await R.build(cfg);
+      out.push({ id: P.cfg.id, closed: R.snapshot(P, false, 'image/webp', size), opened: R.snapshot(P, true, 'image/webp', size) });
+      R.release(P);
+    }
+    return out;
+  };
+  window.__ready = true;
+</script></body></html>

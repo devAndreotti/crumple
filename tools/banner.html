@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><link rel="icon" href="data:,"><title>crumple banner</title>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0}
+  body{width:var(--w);height:var(--h);overflow:hidden;background:radial-gradient(120% 140% at 70% 40%,#2a231b 0%,#16130f 55%,#0d0b09 100%);color:#ebe5d6;font-family:'Courier Prime',monospace;position:relative}
+  body::after{content:"";position:absolute;inset:0;background:radial-gradient(80% 90% at 50% 50%,transparent 60%,rgba(0,0,0,.45));pointer-events:none}
+  .txt{position:absolute;left:var(--tx);top:50%;transform:translateY(-50%);z-index:2}
+  h1{font-family:'Special Elite',monospace;font-weight:400;font-size:var(--h1);margin:0;letter-spacing:.02em;line-height:1}
+  p{margin:.5em 0 0;font-size:var(--p);color:#d8cfbd}
+  .tag{margin-top:1.1em;font-size:calc(var(--p) * .62);letter-spacing:.22em;color:#f5c266;text-transform:uppercase}
+  canvas{position:absolute;z-index:1}
+</style></head>
+<body>
+<div class="txt"><h1>Crumple</h1><p>Crumpled paper you can open.</p><div class="tag">WebGL2 · zero dependencies · ~30 KB gzip</div></div>
+<script src="../dist/crumple.min.js"></script>
+<script>
+  // ?w=1600&h=560 (banner) or ?w=1200&h=630 (social preview)
+  const q = new URLSearchParams(location.search), W = +(q.get('w') || 1600), H = +(q.get('h') || 560);
+  const k = H / 560;
+  Object.entries({ '--w': W + 'px', '--h': H + 'px', '--tx': Math.round(W * 0.06) + 'px', '--h1': Math.round(118 * k) + 'px', '--p': Math.round(30 * k) + 'px' }).forEach(([a, b]) => document.body.style.setProperty(a, b));
+  Crumple.config.assets = '../assets/';
+  const text = 'To whoever finds this:\n\nI folded every thought I could not say out loud and left it here.\n\nRead it slowly.\n\n— A.';
+  // ball → half open → open sheet, along an arc
+  const papers = [
+    { p: 0, x: 0.47, y: 0.62, s: 0.36, cfg: { id: 'b1', type: 'typed', shape: 'ball', seed: 7, text } },
+    { p: 0.62, x: 0.58, y: 0.36, s: 0.62, cfg: { id: 'b2', type: 'typed', shape: 'ball', seed: 7, text } },
+    { p: 1, x: 0.79, y: 0.5, s: 1.02, cfg: { id: 'b3', type: 'typed', shape: 'ball', seed: 7, text, states: ['coffee'] } },
+  ];
+  window.__done = Promise.all(papers.map(async (o) => {
+    const c = document.createElement('canvas');
+    const size = Math.round(H * o.s);
+    c.style.width = c.style.height = size + 'px';
+    c.style.left = Math.round(W * o.x - size / 2) + 'px'; c.style.top = Math.round(H * o.y - size / 2) + 'px';
+    document.body.appendChild(c);
+    const st = Crumple.Stage(c, { fit: 0.86, flashlight: false, drag: false });
+    await st.set(o.cfg, { progress: o.p });
+    await new Promise((r) => setTimeout(r, 400));
+    st.png();
+  })).then(() => true);
+</script></body></html>
