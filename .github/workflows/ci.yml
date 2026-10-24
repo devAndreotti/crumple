@@ -1,0 +1,35 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # committed builds must match the source (dist/ and docs/lib/ are checked in)
+      - name: committed builds are up to date
+        run: git diff --exit-code -- dist docs/lib
+      - run: npm run test:node
+      - name: browser tests
+        run: |
+          CHROME=$(command -v google-chrome)
+          echo "using $CHROME"
+          CHROME="$CHROME" npm run test:browser
