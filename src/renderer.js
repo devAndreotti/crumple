@@ -328,6 +328,9 @@ export function Renderer(canvas, options = {}) {
     gl.uniform2f(sp.u.uHS, hs[0], hs[1]);
     gl.uniform1f(sp.u.uR, rr); gl.uniform1f(sp.u.uSoft, soft); gl.uniform1f(sp.u.uA, (0.62 - 0.2 * st.lift) * (st.alpha ?? 1));
     gl.uniformMatrix4fv(sp.u.uProj, false, proj);
+    // the open sheet's shadow follows its holes and burnt parts (a crumpled one is too small to tell)
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, P.tFx); gl.uniform1i(sp.u.uFx, 0);
+    gl.uniform1f(sp.u.uOpen, clamp((st.p - 0.85) / 0.15)); gl.uniform1f(sp.u.uFront, st.front ?? -1); gl.uniform1f(sp.u.uFlip, (st.f || 0) > 0.5 ? 1 : 0);
     gl.bindVertexArray(quad);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }

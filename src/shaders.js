@@ -237,12 +237,24 @@ out vec2 vL;
 void main(){ vL = aQ * (uHS + vec2(uSoft * 3.0)); gl_Position = uProj * vec4(uC + vec3(vL, 0.0), 1.0); }`;
 export const SFS = `#version 300 es
 precision highp float;
-in vec2 vL; uniform vec2 uHS; uniform float uR, uSoft, uA;
+in vec2 vL; uniform vec2 uHS; uniform float uR, uSoft, uA, uOpen, uFront, uFlip; uniform sampler2D uFx;
 out vec4 frag;
+// paper present at a point of the open sheet: cut-outs, tears and whatever the burn front has eaten cast no shadow
+float paperAt(vec2 uv){
+  vec4 fx = texture(uFx, clamp(uv, 0.0, 1.0));
+  return uFront > -0.5 ? min(fx.r, smoothstep(uFront - 0.004, uFront + 0.012, fx.a * 1.4)) : fx.r;
+}
 void main(){
   vec2 q = abs(vL) - uHS + vec2(uR);
   float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - uR;
-  frag = vec4(0.0, 0.0, 0.0, uA * (1.0 - smoothstep(-uSoft, uSoft * 2.5, d)));
+  float pres = 1.0;
+  if (uOpen > 0.0) {
+    vec2 uv = vL / (2.0 * uHS) + 0.5, o = vec2(uSoft) / (2.0 * uHS);
+    if (uFlip > 0.5) uv.x = 1.0 - uv.x;
+    float p = paperAt(uv) * 2.0 + paperAt(uv + vec2(o.x, 0.0)) + paperAt(uv - vec2(o.x, 0.0)) + paperAt(uv + vec2(0.0, o.y)) + paperAt(uv - vec2(0.0, o.y));
+    pres = mix(1.0, p / 6.0, uOpen);
+  }
+  frag = vec4(0.0, 0.0, 0.0, uA * pres * (1.0 - smoothstep(-uSoft, uSoft * 2.5, d)));
 }`;
 // particles (dust, sparks, ashes): soft round points, size in world units
 export const PVS = `#version 300 es
