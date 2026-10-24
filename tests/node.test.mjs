@@ -53,7 +53,8 @@ test('normalize(): unknown type falls back to typed and unknown states are dropp
 });
 
 test('normalize(): seed, open and envelope handling', () => {
-  assert.equal(normalize({ seed: 0 }).seed, 7);
+  assert.equal(normalize({ seed: 0 }).seed, 0);
+  assert.equal(normalize({}).seed, 7);
   assert.equal(normalize({ seed: 'x' }).seed, 7);
   assert.equal(normalize({ seed: 3.9 }).seed, 3);
   assert.equal(normalize({ open: 'drag' }).open, 'drag');
