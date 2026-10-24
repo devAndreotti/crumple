@@ -41,7 +41,7 @@ test('package self-reference: exports map resolves for import, require and packa
 
 test('normalize(): defaults for an empty config', () => {
   const c = normalize();
-  assert.deepEqual(c, { id: 'typed', type: 'typed', shape: 'ball', states: [], text: TEXTS.typed, back: '', seed: 7, open: 'auto', hiddenInk: '', burnAfterReading: false, image: '', address: ADDRESS, letter: 'typed' });
+  assert.deepEqual(c, { id: 'typed', type: 'typed', shape: 'ball', states: [], text: TEXTS.typed, back: '', seed: 7, open: 'auto', hiddenInk: '', burnAfterReading: false, image: '', burn: 'corner', address: ADDRESS, letter: 'typed', stamp: 'RECEIVED' });
 });
 
 test('normalize(): unknown type falls back to typed and unknown states are dropped', () => {
@@ -50,6 +50,10 @@ test('normalize(): unknown type falls back to typed and unknown states are dropp
   assert.equal(normalize({ type: 'memo' }).text, TEXTS.memo);
   assert.deepEqual(normalize({ states: ['burnt', 'bogus', 'torn', 'toString'] }).states, ['burnt', 'torn']);
   assert.deepEqual(normalize({ states: 'burnt' }).states, []);
+  assert.equal(normalize({ burn: 'spots' }).burn, 'spots');
+  assert.equal(normalize({ burn: 'toString' }).burn, 'corner');
+  assert.equal(normalize({ stamp: '  void ' }).stamp, 'void');
+  assert.equal(normalize({ stamp: '   ' }).stamp, 'RECEIVED');
 });
 
 test('normalize(): seed, open and envelope handling', () => {
