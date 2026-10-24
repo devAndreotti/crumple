@@ -1,0 +1,70 @@
+name: Bug report
+description: Something does not work as the README or the demo shows.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please use the security advisory form for vulnerabilities, not this form.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect to see instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The smallest page or steps that show the problem. A link to a page that reproduces it is the best.
+      placeholder: |
+        1. Attach a paper with type 'notebook' and states ['burnt']
+        2. Click the trigger
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Crumple version
+      description: The version from package.json, or the commit if you use the repository.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: api
+    attributes:
+      label: Which API?
+      options:
+        - Scene
+        - Stage
+        - Sound
+        - Renderer
+        - Node, SSR or CommonJS import
+        - Build or tests
+        - Demo site
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and system
+      description: For example, Chrome 130 on Windows 11, or Firefox 135 on Ubuntu.
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: Console messages
+      description: Errors or warnings from the browser console, if any.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched the existing issues.
+          required: true
+        - label: I could not reproduce it with the latest release.
+          required: false

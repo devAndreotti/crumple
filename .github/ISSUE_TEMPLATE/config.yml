@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Live demo
+    url: https://devandreotti.github.io/crumple/
+    about: Try the types, shapes and states in the browser before you open an issue.
+  - name: Security vulnerability
+    url: https://github.com/devAndreotti/crumple/security/advisories/new
+    about: Report security problems privately. Do not open a public issue for them.
