@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>crumple robust test</title>
+<style>body{margin:0;background:#16130f;color:#ebe5d6;font:14px monospace}.row{display:flex;flex-wrap:wrap;gap:24px;padding:40px}input{margin:0 40px}</style></head>
+<body><div class="row" id="row"></div><input id="field" aria-label="field">
+<script>
+  // ?nogl: no WebGL2 at all, so readers get the CSS sheet (stubbed before the library loads)
+  if (location.search.includes('nogl')) {
+    const g = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (t, ...a) { return t === 'webgl2' ? null : g.call(this, t, ...a); };
+  }
+  // window.__fail2d makes every 2D canvas fail, so a paper build rejects (the 2D canvas draws the print)
+  window.__fail2d = false;
+  const g2 = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function (t, ...a) { if (t === '2d' && window.__fail2d) throw new Error('forced 2d failure'); return g2.call(this, t, ...a); };
+  window.waitFor = (fn, ms = 120000) => new Promise((res, rej) => {
+    const t0 = Date.now();
+    const tick = () => { let v = false; try { v = fn(); } catch (e) { v = false; } if (v) res(v); else if (Date.now() - t0 > ms) rej(new Error('timeout: ' + fn.toString().slice(0, 120))); else setTimeout(tick, 50); };
+    tick();
+  });
+</script>
+<script src="../dist/crumple.min.js"></script>
+<script>
+  Crumple.config.assets = '../assets/';
+  Crumple.config.googleFonts = false;
+  Crumple.Scene.init({ motion: 'full' });
+  const row = document.getElementById('row');
+  window.addTrigger = (id, type, extra = {}) => {
+    const b = document.createElement('button');
+    b.id = id;
+    row.appendChild(b);
+    Crumple.Scene.attach(b, { id, type, seed: 21, ...extra });
+    return b;
+  };
+  addTrigger('robust-typed', 'typed');
+  addTrigger('robust-note', 'notebook', { states: ['coffee'], seed: 5, text: '# tuesday\nbought ~~milk~~{oat milk}, fixed the lamp.\n[[the rest is a secret]]', back: 'p.s. the key is under the mat' });
+  window.__ready = true;
+</script></body></html>
