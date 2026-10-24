@@ -457,7 +457,8 @@ function jagged(a, b, r, depth, rough) {
   return pts;
 }
 
-export async function drawEffects(cfg, T) {
+// kind: null (no burn field), 'burn' (a burn with cfg.burn's form, sparks on its front) or 'singed' (browned rim only)
+export async function drawEffects(cfg, T, kind = null) {
   const MW = Math.round(T.w * PPU / 2), MH = Math.round(T.h * PPU / 2);
   const pres = makeCanvas(MW, MH, true), pc = pres.getContext('2d');
   pc.fillStyle = '#fff'; pc.fillRect(0, 0, MW, MH);
@@ -494,21 +495,23 @@ export async function drawEffects(cfg, T) {
     fc.beginPath(); pts.forEach((p, i) => (i ? fc.lineTo(p[0], p[1]) : fc.moveTo(p[0], p[1]))); fc.stroke();
   }
   const pd = pc.getImageData(0, 0, MW, MH).data, fd = fc.getImageData(0, 0, MW, MH).data;
-  const burns = cfg.states.includes('burnt') || cfg.burnAfterReading;
-  const b = burns ? await Jobs.run('burn', [{ seed: cfg.seed }, MW, MH]) : null;
+  const b = kind ? await Jobs.run('burn', [{ seed: cfg.seed, form: kind === 'singed' ? 'singed' : cfg.burn }, MW, MH]) : null;
   const out = pc.createImageData(MW, MH), o = out.data;
   const pts = [];
+  let lo = Infinity;
   for (let j = 0; j < MH; j++) for (let i = 0; i < MW; i++) {
     const k = (j * MW + i) * 4;
     o[k] = pd[k]; o[k + 1] = 0; o[k + 2] = fd[k];
     if (b) {
       const v = b[j * MW + i];
       o[k + 3] = Math.round(clamp(v / 1.4) * 255);
-      // spark points (u, v with v bottom-up, and the burn distance)
-      if (i % 3 === 0 && j % 3 === 0 && pd[k] > 128) pts.push((i + 0.5) / MW, 1 - (j + 0.5) / MH, v);
+      lo = Math.min(lo, v);
+      // spark points (u, v with v bottom-up, and the burn distance); a singed rim has no embers
+      if (kind === 'burn' && i % 3 === 0 && j % 3 === 0 && pd[k] > 128) pts.push((i + 0.5) / MW, 1 - (j + 0.5) / MH, v);
     } else o[k + 3] = 255;
   }
   const c = makeCanvas(MW, MH);
   c.getContext('2d').putImageData(out, 0, 0);
-  return { canvas: c, burnPts: b ? new Float32Array(pts) : null };
+  // lo: the lowest burn value that the alpha can hold (never below 0): a singed front sits just under it
+  return { canvas: c, burnPts: kind === 'burn' ? new Float32Array(pts) : null, lo: b ? Math.max(0, lo) : 0 };
 }

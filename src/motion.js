@@ -1,6 +1,6 @@
 // Animation pieces shared by the Scene (fly to center) and the Stage (inline preview): tweens, the envelope
 // composition, screen boxes, particle emitters, drag/pinch to unfold and the flashlight.
-import { clamp, smooth, lerp, linear, easeOut, easeUnfold } from './util.js';
+import { clamp, smooth, lerp, linear, easeIO, easeOut, easeUnfold } from './util.js';
 import { Sound } from './sound.js';
 
 // time-based tweens on numeric fields of an animation state A
@@ -53,11 +53,13 @@ export function compose(P, A, b) {
   }
   const C = P.letter, p = A.p;
   const fa = smooth(clamp(p / 0.24)), fl = smooth(clamp((p - 0.14) / 0.36)), fd = smooth(clamp((p - 0.44) / 0.32)), fu = clamp((p - 0.58) / 0.42);
-  const env = { ...b, p: fa, f: 0, tear: 0, cy: b.cy - fd * b.vhU * 0.8, rot: [b.rot[0], b.rot[1], b.rot[2] + fd * 0.45], front: frontOf(P) };
-  // the letter uses the envelope's transform plus a local offset: inside the pocket (behind the body), rising through the mouth
-  const ly = -0.08 + fl * 0.5;
+  // the envelope turns with the flip too (f is the same for both: the letter turns in the pocket with it)
+  const env = { ...b, p: fa, f: A.f, tear: 0, cy: b.cy - fd * b.vhU * 0.8, rot: [b.rot[0], b.rot[1], b.rot[2] + fd * 0.45], front: frontOf(P) };
+  // the letter uses the envelope's transform plus a local offset: inside the pocket (behind the body), rising through the mouth.
+  // drawPaper turns the offset with the flip, so it is counter-turned by the same yaw: the pocket stays behind the body on both sides
+  const ly = -0.08 + fl * 0.5, oz = -0.035 * (1 - fd), yaw = Math.PI * easeIO(clamp(A.f));
   const end = [0, 0, -0.02];
-  const letter = { ...b, cx: lerp(env.cx, 0, fd), cy: lerp(env.cy, 0, fd), sc: lerp(env.sc, b.scLetter, fd), rot: env.rot.map((a, i) => lerp(a, end[i] + (b.adjust ? b.adjust[i] : 0), fd)), local: [0, ly * (1 - fd), -0.035 * (1 - fd)], p: easeUnfold(fu), f: A.f, tear: 0, front: frontOf(C, A.burnOpen || 0), destroy: A.destroy !== undefined, alpha };
+  const letter = { ...b, cx: lerp(env.cx, 0, fd), cy: lerp(env.cy, 0, fd), sc: lerp(env.sc, b.scLetter, fd), rot: env.rot.map((a, i) => lerp(a, end[i] + (b.adjust ? b.adjust[i] : 0), fd)), local: [-Math.sin(yaw) * oz, ly * (1 - fd), Math.cos(yaw) * oz], p: easeUnfold(fu), f: A.f, tear: 0, front: frontOf(C, A.burnOpen || 0), destroy: A.destroy !== undefined, alpha };
   // the closed letter inside the closed envelope is not drawn at all
   const items = fd >= 0.999 ? [{ P: C, st: letter }] : p < 0.01 ? [{ P, st: env }] : [{ P, st: env }, { P: C, st: letter }];
   return { items, shadow: fd < 0.5 ? { P, st: env } : { P: C, st: letter }, active: fd < 0.5 ? { P, st: env } : { P: C, st: letter } };

@@ -14,7 +14,7 @@ export function Stage(canvas, options = {}) {
   let R;
   try { R = Renderer(canvas); } catch (e) { R = null; }
   if (!R) return null;
-  let P = null, raf = 0, version = 0;
+  let P = null, raf = 0, version = 0, busyBurn = null;
   const parts = Particles();
   const A = { p: 1, f: 0, tear: 0, tw: [], dragging: false, lampPos: null, lampGoal: null, lamp: 0, lampOn: 0, burnOpen: 0 };
   function resize() {
@@ -45,7 +45,8 @@ export function Stage(canvas, options = {}) {
     parts.step(dt);
     R.draw(scene.items, scene.shadow, parts);
     A.pPrev = A.p;
-    if (busy || A.dragging || lamp || parts.n > 0 || scene.active.st.front > -0.5) raf = requestAnimationFrame(loop);
+    // a singed rim is static: only a burning paper (its front moves) keeps the loop running
+    if (busy || A.dragging || lamp || parts.n > 0 || (scene.active.st.front > -0.5 && scene.active.P.burnPts)) raf = requestAnimationFrame(loop);
   }
   const kick = () => { if (!raf) { A.resume = true; raf = requestAnimationFrame(loop); } };
   function box() {
@@ -78,19 +79,30 @@ export function Stage(canvas, options = {}) {
       const next = await R.build(cfg);
       if (v !== version) { R.release(next); return null; }
       if (P) R.release(P);
-      P = next; A.tear = 0; P.torn = false; delete A.destroy;
+      P = next; A.tear = 0; A.f = 0; P.torn = false; delete A.destroy;
       if (progress !== undefined) { A.tw = []; A.p = clamp(progress); }
       parts.clear();
       kick();
       return P;
     },
-    crumple() { if (!P) return; Sound.play('crumple', 0.9); A.f = 0; tween(A, 'p', 0, isEnv() ? 1.9 : 0.9, isEnv() ? easeSoft : easeCrumple(P)); kick(); },
+    crumple() { if (!P) return; Sound.play('crumple', 0.9); tween(A, 'p', 0, isEnv() ? 1.9 : 0.9, isEnv() ? easeSoft : easeCrumple(P)); kick(); },
     uncrumple() { if (!P) return; Sound.play(isEnv() ? 'seal' : 'uncrumple', 1.5); tween(A, 'p', 1, isEnv() ? T_UNFOLD * 1.85 : T_UNFOLD, isEnv() ? easeSoft : easeOpen(P)); kick(); },
     toggle() { if (A.p > 0.5) api.crumple(); else api.uncrumple(); },
-    flip() { if (!P || A.p < 0.9) return; Sound.play('flip'); tween(A, 'f', A.f < 0.5 ? 1 : 0, 0.8, linear); kick(); },
+    // any time, except once the paper burns away; the side it shows is kept through crumple and unfold
+    flip() { if (!P || A.destroy !== undefined) return; Sound.play('flip'); tween(A, 'f', A.f < 0.5 ? 1 : 0, 0.8, linear); kick(); },
     tear() { if (!P || P.stubX === null || A.tear > 0 || A.p < 0.95) return; Sound.play('tear'); tween(A, 'tear', 1, 1.0, linear, 0, () => { P.torn = true; }); kick(); },
     restoreStub() { if (!P) return; A.tear = 0; P.torn = false; kick(); },
-    burn() { if (!P || A.destroy !== undefined) return; Sound.play('fire', 2.6); const Q = P.letter || P; A.destroy = Math.max(Q.front0 > -0.5 ? Q.front0 + Q.burned : -0.06, -0.06); tween(A, 'destroy', 1.6, 2.6, linear); kick(); },
+    // resolves once the paper has its burn field (built on demand for any paper); a second call meanwhile does nothing,
+    // and a paper replaced by set() meanwhile is not burnt
+    async burn() {
+      const Q0 = P;
+      if (!Q0 || A.destroy !== undefined || busyBurn === Q0) return;
+      busyBurn = Q0;
+      try { await R.ensureBurn(Q0); } finally { if (busyBurn === Q0) busyBurn = null; }
+      if (P !== Q0 || A.destroy !== undefined) return;
+      const Q = Q0.letter || Q0;
+      Sound.play('fire', 2.6); A.destroy = Math.max(Q.front0 > -0.5 ? Q.front0 + Q.burned : -0.06, -0.06); tween(A, 'destroy', 1.6, 2.6, linear); kick();
+    },
     restore() { delete A.destroy; parts.clear(); kick(); },
     setProgress(v) { A.tw = []; A.p = clamp(v); kick(); },
     // PNG of the current frame (draws and reads at once, no preserved buffer needed)
