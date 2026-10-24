@@ -2,7 +2,9 @@
 
 export type PaperType = 'typed' | 'notebook' | 'form' | 'receipt' | 'ticket' | 'memo' | 'newspaper' | 'sticky' | 'polaroid' | 'envelope';
 export type PaperShape = 'ball' | 'flat' | 'quarters' | 'half' | 'thirds' | 'roll' | 'twist';
-export type PaperState = 'torn' | 'burnt' | 'coffee' | 'water' | 'prints' | 'aged' | 'scribbled';
+export type PaperState = 'torn' | 'burnt' | 'coffee' | 'water' | 'prints' | 'aged' | 'scribbled' | 'singed';
+/** Where a burn starts: from one corner (default), along one whole side, a hole burnt from inside, or a few embers. */
+export type BurnForm = 'corner' | 'edge' | 'center' | 'spots';
 
 export interface PaperConfig {
   /** Unique id (used for storage keys and events). Defaults to the type. */
@@ -22,6 +24,8 @@ export interface PaperConfig {
   hiddenInk?: string;
   /** On close the paper burns away for good (remembered in localStorage). */
   burnAfterReading?: boolean;
+  /** Form of the burn for 'burnt', burnAfterReading and Stage.burn(). Invalid values fall back to 'corner'. */
+  burn?: BurnForm;
   /** Photo URL for the polaroid type (same origin or CORS-enabled). */
   image?: string;
   /** Address written on the envelope. */
@@ -53,6 +57,8 @@ export interface Paper { cfg: Required<PaperConfig>; bytes: number; [key: string
 export interface RendererApi {
   gl: WebGL2RenderingContext;
   build(config: PaperConfig): Promise<Paper>;
+  /** Adds a burn field to a paper that has none (Stage.burn does this itself). */
+  ensureBurn(paper: Paper): Promise<void>;
   release(paper: Paper): void;
   /** Still image of a closed paper (or a loosely crumpled one with opened = true) as a data URL. */
   snapshot(paper: Paper, opened?: boolean, format?: string, size?: number): string;
@@ -131,7 +137,8 @@ export interface StageApi {
   flip(): void;
   tear(): void;
   restoreStub(): void;
-  burn(): void;
+  /** Burns the paper from its burn form. Builds the burn field first if the paper has none; resolves once the burn has started (a second call while pending does nothing). */
+  burn(): Promise<void>;
   restore(): void;
   /** 0 = closed, 1 = fully open. */
   setProgress(value: number): void;

@@ -189,14 +189,15 @@ export const Scene = /* @__PURE__ */ (() => {
     if (!A) return;
     const lamp = approachLamp(A, dt);
     A.lampMoving = lamp;
-    if (A.P.front0 > -0.5 && A.phase === 'open' && A.destroy === undefined) A.burnOpen = Math.min(0.08, (A.burnOpen || 0) + dt * 0.004);
+    if (A.P.burnPts && A.P.front0 > -0.5 && A.phase === 'open' && A.destroy === undefined) A.burnOpen = Math.min(0.08, (A.burnOpen || 0) + dt * 0.004);
     const { b, scene } = current(now);
     A.boxCache = screenBox(scene.active.P, scene.active.st, b.ppu, b.vw, b.vh);
     emit(parts, A, scene, dt);
     parts.step(dt);
     R.draw(scene.items, scene.shadow, parts);
     A.pPrev = A.p;
-    const burning = scene.active.st.front > -0.5;
+    // a singed rim is static: it does not keep the loop running
+    const burning = scene.active.st.front > -0.5 && !!scene.active.P.burnPts;
     // ashes also end by time: independent of the frame rate
     if (A.ashes && (parts.n === 0 || now > A.ashesEnd)) { finish(); return; }
     if (busy || A.dragging || lamp || parts.n > 0 || burning || A.ashes) raf = requestAnimationFrame(loop);
@@ -327,8 +328,9 @@ export const Scene = /* @__PURE__ */ (() => {
     updateTrigger(ent);
   }
 
+  // any time but while closing or burning away (the flip turns the whole model, so it works at any opening)
   function flip() {
-    if (!A || A.phase !== 'open' || A.p < 0.9) return;
+    if (!A || A.phase === 'closing' || A.destroy !== undefined) return;
     Sound.play('flip');
     tween(A, 'f', A.f < 0.5 ? 1 : 0, 0.8, linear);
     emitEvent(A.ent.btn, 'flip', { id: A.P.cfg.id, back: A.f < 0.5 });
@@ -588,6 +590,7 @@ export const Scene = /* @__PURE__ */ (() => {
     async frame(i, tf, p, f = 0, tearV = 0, destroy) {
       const ent = entries[i];
       await build(ent);
+      if (destroy !== undefined) await R.ensureBurn(ent.P);
       cancelAnimationFrame(raf); raf = 0;
       resize();
       A = { P: ent.P, ent, from: ent.btn.getBoundingClientRect(), tf, p, f, tear: tearV, tw: [], phase: 'open', burnOpen: 0 };

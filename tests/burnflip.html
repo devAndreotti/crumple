@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>crumple burn and flip test</title>
+<style>body{margin:0;background:#16130f;color:#ebe5d6;font:14px monospace}#stage{display:block;width:520px;height:600px;margin:20px}.t{width:96px;height:96px;margin:20px;padding:0;border:0;background:none}</style></head>
+<body><canvas id="stage"></canvas><button class="t" id="trig" aria-label="open note"></button>
+<script src="../dist/crumple.min.js"></script>
+<script>
+  Crumple.config.assets = '../assets/';
+  Crumple.Scene.init({ motion: 'full', flashlight: false });
+  window.__stage = Crumple.Stage(document.getElementById('stage'), { drag: false, flashlight: false });
+  window.__entry = Crumple.Scene.attach(document.getElementById('trig'), { id: 'bf-typed', type: 'typed', seed: 21 });
+  window.__ready = true;
+</script></body></html>
