@@ -2,7 +2,7 @@
 import { rng, noise2 } from './util.js';
 import { creaseField, burnField } from './fields.js';
 
-export const Jobs = (() => {
+export const Jobs = /* @__PURE__ */ (() => {
   let w, n = 0;
   const pending = new Map();
   function create() {

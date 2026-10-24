@@ -23,16 +23,23 @@
   "license": "MIT",
   "author": "devAndreotti",
   "type": "module",
-  "main": "dist/crumple.esm.js",
+  "main": "dist/crumple.cjs",
   "module": "dist/crumple.esm.js",
-  "browser": "dist/crumple.min.js",
+  "unpkg": "dist/crumple.min.js",
+  "jsdelivr": "dist/crumple.min.js",
   "types": "crumple.d.ts",
   "exports": {
     ".": {
-      "types": "./crumple.d.ts",
-      "import": "./dist/crumple.esm.js",
-      "default": "./dist/crumple.min.js"
+      "import": {
+        "types": "./crumple.d.ts",
+        "default": "./dist/crumple.esm.js"
+      },
+      "require": {
+        "types": "./dist/crumple.d.cts",
+        "default": "./dist/crumple.cjs"
+      }
     },
+    "./package.json": "./package.json",
     "./assets/*": "./assets/*"
   },
   "files": [
@@ -43,14 +50,20 @@
     "LICENSE"
   ],
   "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "node tools/build.mjs",
     "assets": "python3 tools/make-assets.py",
     "serve": "python3 -m http.server 8080 --directory docs",
     "prerender": "node tools/prerender.cjs docs/papers.json docs/snaps",
-    "test": "node tests/smoke.cjs && node tests/flow.cjs"
+    "test": "npm run test:node && npm run test:browser",
+    "test:node": "node --test tests/node.test.mjs",
+    "test:browser": "node tests/smoke.cjs && node tests/flow.cjs"
   },
   "devDependencies": {
-    "esbuild": "0.24.2"
+    "esbuild": "0.24.2",
+    "puppeteer-core": "25.16.0"
   }
 }

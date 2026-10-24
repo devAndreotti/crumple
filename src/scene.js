@@ -16,7 +16,7 @@ const DEFAULT_LABELS = {
   back: 'Back:',
 };
 
-export const Scene = (() => {
+export const Scene = /* @__PURE__ */ (() => {
   let opts = { labels: DEFAULT_LABELS, remember: false, motion: 'auto', flashlight: true, maxBuilt: 3 };
   let reduce = false;
   let R, tried = false, cv, backdrop, bar, bFlip, bTear, bClose, hint, srEl, fallback;
@@ -363,7 +363,8 @@ export const Scene = (() => {
       io.observe(ent.btn);
     } else idle(() => build(ent).then(() => updateTrigger(ent)));
   }
-  const idle = window.requestIdleCallback ? (fn) => requestIdleCallback(fn, { timeout: 700 }) : (fn) => setTimeout(fn, 60);
+  // looked up on each call: a module that is only imported (in Node, SSR) never touches window
+  const idle = (fn) => (globalThis.requestIdleCallback ? requestIdleCallback(fn, { timeout: 700 }) : setTimeout(fn, 60));
   // at most a few papers built at once (least recently used first out): older ones free their textures, the still image stays
   const built = [];
   function build(ent) {
