@@ -34,9 +34,16 @@ function shapeParams(shape, T) {
   return { shape: 0, k0, squash: 1, roll: 0, A0: T.card ? 0.07 : 0.12, Ares: 0.0045, ext: [2 * (R + 0.06), 2 * (R + 0.06)] };
 }
 
-export function Renderer(canvas) {
+// which burn field a paper needs: a burn (burnt or burn after reading) or the singed rim; null for none
+const burnKind = (cfg) => (cfg.states.includes('burnt') || cfg.burnAfterReading ? 'burn' : cfg.states.includes('singed') ? 'singed' : null);
+// where the front starts for a burnt paper, per burn form: [base, random spread] in sheet diagonals (see fields.js)
+const BURN_FRONT = { corner: [0.3, 0.06], edge: [0.035, 0.01], center: [0.09, 0.03], spots: [0.035, 0.01] };
+
+// options: { onRestore } runs after the browser gives back a lost context (the caller rebuilds its papers then)
+export function Renderer(canvas, options = {}) {
   const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: true });
   if (!gl) return null;
+  let pp, sp, qp, quad, qb, pVao, pBuf, lost = false, dead = false;
   const program = (vs, fs) => {
     const sh = (t, c) => { const s = gl.createShader(t); gl.shaderSource(s, c); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
     const p = gl.createProgram();
@@ -46,20 +53,29 @@ export function Renderer(canvas) {
     for (let i = 0; i < n; i++) { const a = gl.getActiveUniform(p, i); u[a.name] = gl.getUniformLocation(p, a.name); }
     return { p, u };
   };
-  const pp = program(VS, FS), sp = program(SVS, SFS), qp = program(PVS, PFS);
-  const quad = gl.createVertexArray();
-  gl.bindVertexArray(quad);
-  const qb = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, qb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-  const ql = gl.getAttribLocation(sp.p, 'aQ');
-  gl.enableVertexAttribArray(ql); gl.vertexAttribPointer(ql, 2, gl.FLOAT, false, 0, 0);
-  gl.bindVertexArray(null);
-  const pVao = gl.createVertexArray(), pBuf = gl.createBuffer();
-  gl.bindVertexArray(pVao);
-  gl.bindBuffer(gl.ARRAY_BUFFER, pBuf);
-  gl.bufferData(gl.ARRAY_BUFFER, 420 * 32, gl.DYNAMIC_DRAW); // fixed size: each frame only rewrites the part in use
-  [['aP', 3, 0], ['aC', 4, 12], ['aS', 1, 28]].forEach(([name, n, off]) => { const l = gl.getAttribLocation(qp.p, name); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, n, gl.FLOAT, false, 32, off); });
-  gl.bindVertexArray(null);
+  // the programs and the shared buffers: made now, and again after a context restore
+  function setup() {
+    pp = program(VS, FS); sp = program(SVS, SFS); qp = program(PVS, PFS);
+    quad = gl.createVertexArray();
+    gl.bindVertexArray(quad);
+    qb = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, qb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const ql = gl.getAttribLocation(sp.p, 'aQ');
+    gl.enableVertexAttribArray(ql); gl.vertexAttribPointer(ql, 2, gl.FLOAT, false, 0, 0);
+    gl.bindVertexArray(null);
+    pVao = gl.createVertexArray(); pBuf = gl.createBuffer();
+    gl.bindVertexArray(pVao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, pBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, 420 * 32, gl.DYNAMIC_DRAW); // fixed size: each frame only rewrites the part in use
+    [['aP', 3, 0], ['aC', 4, 12], ['aS', 1, 28]].forEach(([name, n, off]) => { const l = gl.getAttribLocation(qp.p, name); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, n, gl.FLOAT, false, 32, off); });
+    gl.bindVertexArray(null);
+  }
+  setup();
+  // a lost context stops all drawing; once the browser restores it, the GPU objects are made again
+  const onLost = (e) => { e.preventDefault(); lost = true; };
+  const onRestored = () => { lost = false; setup(); tEmpty = null; tFull = null; tGrain = null; grainReady = null; snapFB = null; if (options.onRestore) options.onRestore(); };
+  canvas.addEventListener('webglcontextlost', onLost);
+  canvas.addEventListener('webglcontextrestored', onRestored);
 
   // grid mesh with exact extra columns and rows (folds at x = 0, y = 0, thirds, flap and stub) so folds stay straight
   function mesh(x0, x1, hh, nx, ny, extraX, extraY) {
@@ -123,7 +139,7 @@ export function Renderer(canvas) {
     if (tGrain) return tGrain;
     tGrain = tex1([240, 240, 240, 255]);
     grainReady = loadTexture('grain').then((img) => {
-      if (!img) return;
+      if (!img || dead) return;
       gl.bindTexture(gl.TEXTURE_2D, tGrain);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
       gl.generateMipmap(gl.TEXTURE_2D);
@@ -140,7 +156,7 @@ export function Renderer(canvas) {
     const T = TYPES[cfg.type];
     grain();
     // the letter lives inside the envelope: same text, back, states and hidden ink; folded in thirds. Built alongside the envelope
-    const letterP = cfg.type === 'envelope' ? build({ id: cfg.id + '-letter', type: cfg.letter, shape: 'thirds', text: cfg.text, back: cfg.back, states: cfg.states.filter((e) => e !== 'torn'), seed: cfg.seed + 1, hiddenInk: cfg.hiddenInk }) : null;
+    const letterP = cfg.type === 'envelope' ? build({ id: cfg.id + '-letter', type: cfg.letter, shape: 'thirds', text: cfg.text, back: cfg.back, states: cfg.states.filter((e) => e !== 'torn'), seed: cfg.seed + 1, hiddenInk: cfg.hiddenInk, burn: cfg.burn, burnAfterReading: cfg.burnAfterReading, stamp: cfg.stamp }) : null;
     await ensureFonts([T.font, 'Caveat', 'Courier Prime', 'Special Elite']);
     const hw = T.w / 2, hh = T.h / 2;
     const F = shapeParams(cfg.shape, T);
@@ -158,13 +174,14 @@ export function Renderer(canvas) {
       meshes.push(mesh(stubX, hw, hh, nx - nMain, ny, exX, exY));
     } else meshes.push(mesh(-hw, hw, hh, nx, ny, exX, exY));
     // an empty back and a paper without cut-outs use the shared 1x1 textures (saves ~6 MB of texture per paper)
-    const backEmpty = !(cfg.back || cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'newspaper' || ['coffee', 'water', 'prints', 'aged'].some((e) => cfg.states.includes(e)));
-    const noEffects = !(cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.states.includes('torn') || cfg.states.includes('burnt') || cfg.burnAfterReading);
+    const backEmpty = !(cfg.back || cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'newspaper' || ['coffee', 'water', 'prints', 'aged', 'wine', 'ink', 'foxing', 'faded'].some((e) => cfg.states.includes(e)));
+    const kind = burnKind(cfg);
+    const noEffects = !(cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.states.includes('torn') || kind);
     const [creases, printF, printB, fx] = await Promise.all([
       Jobs.run('creases', [{ seed: cfg.seed, shape: cfg.shape, w: T.w, h: T.h, card: !!T.card, foldY }, W, H]),
       drawPrint(cfg, T, 'front', openings),
       backEmpty ? null : drawPrint(cfg, T, 'back', openings),
-      noEffects ? null : drawEffects(cfg, T),
+      noEffects ? null : drawEffects(cfg, T, kind),
     ]);
     const ink = hiddenInkField(cfg, W, H);
     const rg = new Float32Array(W * H * 2);
@@ -177,13 +194,16 @@ export function Renderer(canvas) {
       tPB: backEmpty ? empty() : texture(printB, { mip: true }),
       tFx: noEffects ? full() : texture(fx.canvas, {}),
       burnPts: noEffects ? null : fx.burnPts,
+      // which burn field the effects hold: 'burn' (sparks, can burn away), 'singed' (rim only) or 'none' (ensureBurn adds one)
+      fxBurn: kind || 'none',
       backEmpty,
       // estimated texture memory (front and back with mipmaps, effects, creases in RG16F)
       bytes: Math.round(printF.width * printF.height * 4 * 1.33 * (backEmpty ? 1 : 2) + (noEffects ? 0 : fx.canvas.width * fx.canvas.height * 4) + W * H * 4),
       // folded and elongated papers stay almost facing the camera; crumpled ones may spin freely
       pose: F.shape >= 3 ? [-0.22 + r() * 0.18, -0.2 + r() * 0.4, -0.45 + r() * 0.9] : long ? [-0.15 + r() * 0.15, -0.15 + r() * 0.3, -0.6 + r() * 1.2] : [-0.3 + r() * 0.25, -0.35 + r() * 0.7, r() * 6.28],
       seedA: r() * 6.28,
-      front0: cfg.states.includes('burnt') ? 0.3 + 0.06 * r() : -1,
+      // a singed rim holds its front just under the lowest value of its field: only the scorch band shows
+      front0: cfg.states.includes('burnt') ? BURN_FRONT[cfg.burn][0] + BURN_FRONT[cfg.burn][1] * r() : kind === 'singed' ? fx.lo - 0.012 : -1,
       burned: store.get('burned.' + cfg.id, 0),
       age: cfg.states.includes('aged') ? 1 : 0,
       torn: false,
@@ -203,7 +223,28 @@ export function Renderer(canvas) {
     P.tPF = texture(f, { mip: true }); P.tPB = v ? texture(v, { mip: true }) : empty();
   }
 
+  // a paper built without a burn field (Stage.burn on any paper, or a singed rim) gets one on demand: the effects
+  // texture is swapped in place and the old one is released, unless it was the shared full texture. An envelope
+  // burns its letter too. Calls share one job, and a paper released meanwhile gets nothing.
+  function burnOne(Q) {
+    if (Q.fxBurn === 'burn') return Promise.resolve();
+    if (!Q.burnJob) Q.burnJob = drawEffects(Q.cfg, Q.T, 'burn').then((fx) => {
+      if (Q.released) return;
+      const old = Q.tFx;
+      if (old === tFull) Q.bytes += fx.canvas.width * fx.canvas.height * 4;
+      Q.tFx = texture(fx.canvas, {});
+      drop(old);
+      Q.burnPts = fx.burnPts;
+      Q.fxBurn = 'burn';
+    });
+    return Q.burnJob;
+  }
+  async function ensureBurn(P) {
+    await Promise.all([burnOne(P), P.letter && burnOne(P.letter)]);
+  }
+
   function release(P) {
+    P.released = true;
     [P.tH, P.tPF, P.tPB, P.tFx].forEach(drop);
     P.meshes.forEach((m) => { gl.deleteVertexArray(m.vao); m.bufs.forEach((b) => gl.deleteBuffer(b)); });
     if (P.letter) release(P.letter);
@@ -287,12 +328,16 @@ export function Renderer(canvas) {
     gl.uniform2f(sp.u.uHS, hs[0], hs[1]);
     gl.uniform1f(sp.u.uR, rr); gl.uniform1f(sp.u.uSoft, soft); gl.uniform1f(sp.u.uA, (0.62 - 0.2 * st.lift) * (st.alpha ?? 1));
     gl.uniformMatrix4fv(sp.u.uProj, false, proj);
+    // the open sheet's shadow follows its holes and burnt parts (a crumpled one is too small to tell)
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, P.tFx); gl.uniform1i(sp.u.uFx, 0);
+    gl.uniform1f(sp.u.uOpen, clamp((st.p - 0.85) / 0.15)); gl.uniform1f(sp.u.uFront, st.front ?? -1); gl.uniform1f(sp.u.uFlip, (st.f || 0) > 0.5 ? 1 : 0);
     gl.bindVertexArray(quad);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
   // a scene: a list of papers (the envelope and its letter), the shadow of one of them and the particles
   function draw(items, shadow, parts, w = canvas.width, h = canvas.height) {
+    if (dead || lost) return;
     gl.viewport(0, 0, w, h);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -316,9 +361,12 @@ export function Renderer(canvas) {
   // the still image of a closed paper comes from its own framebuffer: it never touches the animation canvas.
   // opened = the paper after it was read, loosely crumpled (the state a remembered paper returns to)
   let snapFB = null;
+  function freeSnap() { gl.deleteFramebuffer(snapFB.fb); gl.deleteRenderbuffer(snapFB.rb); gl.deleteTexture(snapFB.t); snapFB = null; }
   function snapshot(P, opened = false, format = 'image/png', size = 256) {
+    if (dead || lost) return '';
     const S = size;
     if (!snapFB || snapFB.S !== S) {
+      if (snapFB) freeSnap(); // a new size would leak the old texture, renderbuffer and framebuffer
       const t = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, t);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, S, S, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
@@ -330,7 +378,7 @@ export function Renderer(canvas) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
       gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rb);
-      snapFB = { fb, S, c: makeCanvas(S, S) };
+      snapFB = { fb, t, rb, S, c: makeCanvas(S, S) };
     }
     gl.bindFramebuffer(gl.FRAMEBUFFER, snapFB.fb);
     const ppu = S / (2 * D * Math.tan(FOV / 2));
@@ -356,5 +404,19 @@ export function Renderer(canvas) {
     return snapFB.c.toDataURL(format, 0.9);
   }
 
-  return { gl, build, refreshPrint, release, draw, snapshot };
+  // frees every GPU object this renderer made and gives the context back (papers must be released before)
+  function destroy() {
+    if (dead) return;
+    dead = true;
+    canvas.removeEventListener('webglcontextlost', onLost);
+    canvas.removeEventListener('webglcontextrestored', onRestored);
+    [pp, sp, qp].forEach((x) => gl.deleteProgram(x.p));
+    gl.deleteVertexArray(quad); gl.deleteBuffer(qb); gl.deleteVertexArray(pVao); gl.deleteBuffer(pBuf);
+    [tEmpty, tFull, tGrain].forEach((t) => { if (t) gl.deleteTexture(t); });
+    if (snapFB) freeSnap();
+    const ext = gl.getExtension('WEBGL_lose_context');
+    if (ext) ext.loseContext();
+  }
+
+  return { gl, build, refreshPrint, release, draw, snapshot, ensureBurn, isLost: () => lost, destroy };
 }

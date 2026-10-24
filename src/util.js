@@ -35,7 +35,7 @@ export const easeCrumple = (P) => (P.F.shape === 0 ? (t) => 1 - Math.pow(1 - t, 
 // global settings (public as Crumple.config)
 export const config = {
   // base URL of the assets folder (textures); detected from the script URL when possible
-  assets: (() => {
+  assets: /* @__PURE__ */ (() => {
     try {
       const src = document.currentScript && document.currentScript.src;
       if (src && /\/dist\/[^/]+$/.test(src)) return src.replace(/dist\/[^/]+$/, 'assets/');
@@ -61,6 +61,20 @@ export const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 // events go out on the trigger element (they bubble), e.g. crumple:open, crumple:close, crumple:flip, crumple:tear, crumple:burn
 export function emitEvent(el, name, detail) {
   try { (el || document).dispatchEvent(new CustomEvent('crumple:' + name, { bubbles: true, detail })); } catch (e) { /* old browsers */ }
+}
+
+// reduced motion: 'full' and 'reduce' force it, anything else ('auto') follows the system setting
+export function motionQuery() { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return null; } }
+export function wantsReduce(mode) {
+  if (mode === 'full') return false;
+  if (mode === 'reduce' || mode === 'reduced') return true;
+  const q = motionQuery();
+  return !!q && q.matches;
+}
+// add a listener and remember how to remove it (used by destroy())
+export function listen(list, target, type, fn, o) {
+  target.addEventListener(type, fn, o);
+  list.push(() => target.removeEventListener(type, fn, o));
 }
 
 // paper fonts arrive only when a paper is built: the page loads just its own

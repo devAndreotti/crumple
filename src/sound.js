@@ -2,7 +2,7 @@
 // registered with Sound.useSamples({ crumple, sheet, tear }) and are used when they load. Off by default.
 import { store } from './util.js';
 
-export const Sound = (() => {
+export const Sound = /* @__PURE__ */ (() => {
   let ac = null, master = null, noise = null, loading = null;
   let enabled = store.get('sound', false);
   let urls = {};

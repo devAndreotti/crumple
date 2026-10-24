@@ -51,12 +51,42 @@ export function creaseField(o, W, H) {
   return f;
 }
 
-// burn: noisy distance to the corner where the fire started; the burn front itself is a shader uniform
+// burn: distance field (in sheet diagonals, noisy) from where the fire started; the burn front is a shader uniform.
+// o.form picks the shape: corner (fire from one corner: the classic look), edge (along one whole side), center (a hole
+// burnt from inside), spots (a few embers), singed (distance to the nearest edge: only the browned rim, no holes)
 export function burnField(o, MW, MH) {
   const nz = noise2(o.seed * 7 + 11);
-  const v = o.seed % 4, ox = (v & 1) ? MW : 0, oy = (v & 2) ? MH : 0;
+  const r = rng(o.seed * 5 + 3);
   const diag = Math.hypot(MW, MH);
   const b = new Float32Array(MW * MH);
-  for (let j = 0; j < MH; j++) for (let i = 0; i < MW; i++) b[j * MW + i] = Math.sqrt((i - ox) * (i - ox) + (j - oy) * (j - oy)) / diag + (nz(i * 0.02, j * 0.02) - 0.5) * 0.32;
+  const put = (f) => { for (let j = 0; j < MH; j++) for (let i = 0; i < MW; i++) b[j * MW + i] = f(i, j); };
+  const form = o.form || 'corner';
+  if (form === 'edge') {
+    // the fire ran along one whole side (bottom, left or right): a ragged strip
+    const side = Math.floor(r() * 3);
+    put((i, j) => (side === 0 ? MH - j : side === 1 ? i : MW - i) / (diag * 1.6) + (nz(i * 0.05, j * 0.05) - 0.5) * 0.35);
+  } else if (form === 'center') {
+    // a hole burnt from inside (cigarette, candle) around a seeded point at 30-70% of the sheet
+    const cx = MW * (0.3 + 0.4 * r()), cy = MH * (0.3 + 0.4 * r());
+    put((i, j) => Math.hypot(i - cx, j - cy) / (diag * 0.7) + (nz(i * 0.04, j * 0.04) - 0.5) * 0.3);
+  } else if (form === 'spots') {
+    // 3 to 6 small embers, kept apart; each spot is the distance to its nearest ember
+    const n = 3 + Math.floor(r() * 4), pts = [];
+    for (let t = 0; t < 200 && pts.length < n; t++) {
+      const x = MW * (0.12 + 0.76 * r()), y = MH * (0.12 + 0.76 * r());
+      if (pts.every((q) => Math.hypot(q[0] - x, q[1] - y) > diag * 0.2)) pts.push([x, y]);
+    }
+    put((i, j) => {
+      let m = Infinity;
+      pts.forEach((q) => { m = Math.min(m, Math.hypot(i - q[0], j - q[1])); });
+      return m / (diag * 0.5) + (nz(i * 0.05, j * 0.05) - 0.5) * 0.1;
+    });
+  } else if (form === 'singed') {
+    // the browned rim: distance to the nearest edge, scaled so the scorch band stays a thin edge
+    put((i, j) => Math.min(i, MW - 1 - i, j, MH - 1 - j) / (diag * 0.5) + (nz(i * 0.03, j * 0.03) - 0.5) * 0.12);
+  } else {
+    const v = o.seed % 4, ox = (v & 1) ? MW : 0, oy = (v & 2) ? MH : 0;
+    put((i, j) => Math.sqrt((i - ox) * (i - ox) + (j - oy) * (j - oy)) / diag + (nz(i * 0.02, j * 0.02) - 0.5) * 0.32);
+  }
   return b;
 }

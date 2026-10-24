@@ -29,7 +29,22 @@
     ['state-scribbled', 'state.scribbled'],
     ['state-burn-after', 'state.burnAfter'],
     ['state-hidden-ink', 'state.hidden'],
-    ['state-envelope', 'state.envelope']
+    ['state-envelope', 'state.envelope'],
+    ['state-singed', 'state.singed'],
+    ['state-wine', 'state.wine'],
+    ['state-ink', 'state.ink'],
+    ['state-foxing', 'state.foxing'],
+    ['state-tape', 'state.tape'],
+    ['state-stamp', 'state.stamp'],
+    ['state-faded', 'state.faded']
+  ];
+  var BURN_IDS = ['corner', 'edge', 'center', 'spots'];
+  // the paper states of the playground, grouped by what they do to the sheet (the 'burnt' fire is in the first group)
+  var STATE_GROUPS = [
+    { key: 'play.group.fire', states: ['burnt', 'singed'] },
+    { key: 'play.group.stains', states: ['coffee', 'water', 'wine', 'ink'] },
+    { key: 'play.group.wear', states: ['torn', 'aged', 'faded', 'foxing'] },
+    { key: 'play.group.marks', states: ['prints', 'scribbled', 'stamp', 'tape'] }
   ];
 
   function card(paperId, nameKey, descKey) {
@@ -55,7 +70,8 @@
   var galleries = {
     types: TYPE_IDS.map(function (t) { return card('type-' + t, 'type.' + t + '.name', 'type.' + t + '.desc'); }),
     shapes: SHAPE_IDS.map(function (s) { return card('shape-' + s, 'shape.' + s, null); }),
-    states: STATE_IDS.map(function (s) { return card(s[0], s[1], null); })
+    states: STATE_IDS.map(function (s) { return card(s[0], s[1], null); }),
+    burns: BURN_IDS.map(function (b) { return card('burn-' + b, 'burn.' + b, 'burn.' + b + '.desc'); })
   };
   Object.keys(galleries).forEach(function (name) {
     var host = $('[data-gallery="' + name + '"]');
@@ -106,8 +122,11 @@
     seed: $('#ctl-seed'),
     open: $('#ctl-open'),
     burn: $('#ctl-burn'),
+    burnForm: $('#ctl-burn-form'),
+    stamp: $('#ctl-stamp'),
     random: $('#ctl-random')
   };
+  var DEFAULT_STAMP = 'RECEIVED';
   var progress = $('#progress');
   var json = $('#json-out');
 
@@ -126,15 +145,24 @@
       o.textContent = s ? T.t('shape.' + s) : T.t('play.shapeDefault');
       ctl.shape.appendChild(o);
     });
-  // the seven paper states (burn-after, hidden ink and the envelope are options of their own, not states)
-  ['torn', 'burnt', 'coffee', 'water', 'prints', 'aged', 'scribbled'].forEach(function (id) {
-    var label = el('label');
-    var box = el('input');
-    box.type = 'checkbox';
-    box.value = id;
-    label.appendChild(box);
-    label.appendChild(document.createTextNode(' ' + T.t('state.' + id)));
-    ctl.states.appendChild(label);
+  // the fourteen paper states, in groups (burn-after, hidden ink and the envelope are options of their own, not states)
+  STATE_GROUPS.forEach(function (g) {
+    var group = el('div', 'state-group');
+    var title = el('span', 'group-label');
+    title.textContent = T.t(g.key);
+    group.appendChild(title);
+    var checks = el('div', 'checks');
+    g.states.forEach(function (id) {
+      var label = el('label');
+      var box = el('input');
+      box.type = 'checkbox';
+      box.value = id;
+      label.appendChild(box);
+      label.appendChild(document.createTextNode(' ' + T.t('state.' + id)));
+      checks.appendChild(label);
+    });
+    group.appendChild(checks);
+    ctl.states.appendChild(group);
   });
 
   function setDefaults() {
@@ -146,6 +174,8 @@
     ctl.seed.value = '7';
     ctl.open.value = 'auto';
     ctl.burn.checked = false;
+    ctl.burnForm.value = 'corner';
+    ctl.stamp.value = '';
     progress.value = '1';
   }
   setDefaults();
@@ -169,6 +199,10 @@
     cfg.seed = Math.max(1, parseInt(ctl.seed.value, 10) || 7);
     cfg.open = ctl.open.value === 'drag' ? 'drag' : 'auto';
     if (ctl.burn.checked) cfg.burnAfterReading = true;
+    // burn and stamp only show up in the JSON when they differ from the defaults ('corner' and 'RECEIVED')
+    if (ctl.burnForm.value && ctl.burnForm.value !== 'corner') cfg.burn = ctl.burnForm.value;
+    var word = ctl.stamp.value.trim();
+    if (states.indexOf('stamp') !== -1 && word && word !== DEFAULT_STAMP) cfg.stamp = word;
     return cfg;
   }
 
@@ -193,9 +227,16 @@
   // controls that change the paper rebuild it (debounced); the type also decides whether shape is used
   function syncShapeEnabled() { ctl.shape.disabled = ctl.type.value === 'envelope' || !stage; }
   ctl.type.addEventListener('change', function () { syncShapeEnabled(); schedule(); });
-  [ctl.shape, ctl.open, ctl.burn].forEach(function (n) { n.addEventListener('change', schedule); });
-  $$('#ctl-states input').forEach(function (b) { b.addEventListener('change', schedule); });
-  [ctl.text, ctl.back, ctl.hidden, ctl.seed].forEach(function (n) { n.addEventListener('input', schedule); });
+  [ctl.shape, ctl.open, ctl.burn, ctl.burnForm].forEach(function (n) { n.addEventListener('change', schedule); });
+  // the stamp word is only usable while the stamp state is on
+  function syncStampEnabled() {
+    var on = $('#ctl-states input[value="stamp"]').checked;
+    ctl.stamp.disabled = !stage || !on;
+  }
+  $$('#ctl-states input').forEach(function (b) {
+    b.addEventListener('change', function () { syncStampEnabled(); schedule(); });
+  });
+  [ctl.text, ctl.back, ctl.hidden, ctl.seed, ctl.stamp].forEach(function (n) { n.addEventListener('input', schedule); });
   ctl.random.addEventListener('click', function () {
     ctl.seed.value = String(1 + Math.floor(Math.random() * 99998));
     schedule();
@@ -204,13 +245,18 @@
     if (stage) stage.setProgress(Number(progress.value));
   });
   syncShapeEnabled();
+  syncStampEnabled();
 
+  // flip, crumple and burn are allowed at any moment; burn returns a Promise (it resolves when the burn starts)
   var actions = {
     crumple: function () { stage && stage.crumple(); },
     uncrumple: function () { stage && stage.uncrumple(); },
     flip: function () { stage && stage.flip(); },
     tear: function () { stage && stage.tear(); },
-    burn: function () { stage && stage.burn(); },
+    burn: function () {
+      if (!stage) return;
+      Promise.resolve(stage.burn()).catch(function () { /* a failed burn leaves the paper as it is */ });
+    },
     restore: function () { if (stage) { stage.restore(); stage.restoreStub(); } }
   };
   $$('[data-act]').forEach(function (b) {
@@ -233,6 +279,33 @@
 
   paintJson();
   if (stage) timer = setTimeout(rebuild, 60);
+
+  // ---- mobile menu: below 560 px the nav folds into a button (CSS); Esc, a link or an outside click closes it
+  var menuBtn = $('#menu-btn');
+  var nav = $('#site-nav');
+  function setMenu(open, returnFocus) {
+    nav.classList.toggle('open', open);
+    menuBtn.setAttribute('aria-expanded', String(open));
+    if (!open && returnFocus) menuBtn.focus();
+  }
+  function menuOpen() { return nav.classList.contains('open'); }
+  menuBtn.addEventListener('click', function () { setMenu(!menuOpen(), false); });
+  nav.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('a')) setMenu(false, false);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menuOpen()) setMenu(false, true);
+  });
+  document.addEventListener('click', function (e) {
+    if (menuOpen() && !nav.contains(e.target) && !menuBtn.contains(e.target)) setMenu(false, false);
+  });
+  // leaving the small layout closes the menu, so the desktop nav is never hidden by a stale state
+  var smallScreen = window.matchMedia ? window.matchMedia('(max-width: 559px)') : null;
+  if (smallScreen) {
+    var onLayout = function () { if (!smallScreen.matches) setMenu(false, false); };
+    if (smallScreen.addEventListener) smallScreen.addEventListener('change', onLayout);
+    else if (smallScreen.addListener) smallScreen.addListener(onLayout);
+  }
 
   // ---- sound
   var soundBtn = $('#sound-toggle');

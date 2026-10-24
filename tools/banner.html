@@ -12,7 +12,7 @@
   canvas{position:absolute;z-index:1}
 </style></head>
 <body>
-<div class="txt"><h1>Crumple</h1><p>Crumpled paper you can open.</p><div class="tag">WebGL2 · zero dependencies · ~30 KB gzip</div></div>
+<div class="txt"><h1>Crumple</h1><p>Crumpled paper you can open.</p><div class="tag">WebGL2 · zero dependencies · ~35 KB gzip</div></div>
 <script src="../dist/crumple.min.js"></script>
 <script>
   // ?w=1600&h=560 (banner) or ?w=1200&h=630 (social preview)
@@ -22,10 +22,16 @@
   Crumple.config.assets = '../assets/';
   const text = 'To whoever finds this:\n\nI folded every thought I could not say out loud and left it here.\n\nRead it slowly.\n\n— A.';
   // ball → half open → open sheet, along an arc
-  const papers = [
+  // the social preview is narrower (1.9:1): the papers move right so none of them covers the title
+  const wide = W / H >= 2.2;
+  const papers = wide ? [
     { p: 0, x: 0.47, y: 0.62, s: 0.36, cfg: { id: 'b1', type: 'typed', shape: 'ball', seed: 7, text } },
     { p: 0.62, x: 0.58, y: 0.36, s: 0.62, cfg: { id: 'b2', type: 'typed', shape: 'ball', seed: 7, text } },
     { p: 1, x: 0.79, y: 0.5, s: 1.02, cfg: { id: 'b3', type: 'typed', shape: 'ball', seed: 7, text, states: ['coffee'] } },
+  ] : [
+    { p: 0, x: 0.6, y: 0.84, s: 0.2, cfg: { id: 'b1', type: 'typed', shape: 'ball', seed: 7, text } },
+    { p: 0.62, x: 0.7, y: 0.3, s: 0.42, cfg: { id: 'b2', type: 'typed', shape: 'ball', seed: 7, text } },
+    { p: 1, x: 0.84, y: 0.5, s: 0.85, cfg: { id: 'b3', type: 'typed', shape: 'ball', seed: 7, text, states: ['coffee'] } },
   ];
   window.__done = Promise.all(papers.map(async (o) => {
     const c = document.createElement('canvas');

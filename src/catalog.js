@@ -1,5 +1,5 @@
 // Catalog: paper types, closed shapes, states and the default texts. A paper is born from a config:
-// { id, type, shape, states, text, back, seed, open, hiddenInk, burnAfterReading, image, address, letter }
+// { id, type, shape, states, text, back, seed, open, hiddenInk, burnAfterReading, burn, image, address, letter, stamp }
 // Text markup: "# " at the start of a line = heading; ~~word~~{fix} = struck out and corrected by hand;
 // [[passage]] = redaction bar that fades a little more on every opening.
 
@@ -17,7 +17,9 @@ export const TYPES = {
   envelope: { name: 'Sealed envelope', w: 0.9, h: 0.96, body: 0.6, flap: 0.36, color: [0.93, 0.885, 0.79], shape: 'envelope', font: 'Caveat', size: 46, lineHeight: 50, x: 90, y: 600, ink: [30, 40, 100], hand: true },
 };
 export const SHAPES = { ball: 'Crumpled ball', flat: 'Flattened crumple', quarters: 'Folded in quarters', half: 'Folded in half', thirds: 'Folded in thirds (letter)', roll: 'Rolled up', twist: 'Twisted (candy wrapper)' };
-export const STATES = { torn: 'Torn', burnt: 'Burnt', coffee: 'Coffee stain', water: 'Water stain', prints: 'Dirty fingerprints', aged: 'Aged', scribbled: 'Scribbled' };
+export const STATES = { torn: 'Torn', burnt: 'Burnt', coffee: 'Coffee stain', water: 'Water stain', prints: 'Dirty fingerprints', aged: 'Aged', scribbled: 'Scribbled', singed: 'Singed', wine: 'Wine stain', ink: 'Ink blot', foxing: 'Foxing', tape: 'Tape', stamp: 'Rubber stamp', faded: 'Sun-faded' };
+// where a burn starts: from a corner (default), along one side, a hole from inside, or a few embers
+export const BURNS = ['corner', 'edge', 'center', 'spots'];
 export const TEXTS = {
   typed: 'To whoever finds this:\n\nI folded every thought I could not say out loud and left it here.\n\nRead it slowly.\n\n— A.',
   notebook: 'monday night\n\ncould not sleep again.\nmade a list of things to fix tomorrow.\n\ndo not read the rest.',
@@ -34,22 +36,28 @@ export const ADDRESS = 'A. Reader\n12 Paper Lane\nFoldtown';
 // corrections written by hand when the "scribbled" state picks words to strike out
 export const CORRECTIONS = ['never', 'again', 'always', 'not yet', 'once more', 'still'];
 
+// own keys only: 'toString' or 'constructor' from the prototype must not pass as a type, shape or state
+const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+
 export function normalize(c = {}) {
-  const type = TYPES[c.type] ? c.type : 'typed';
+  const type = has(TYPES, c.type) ? c.type : 'typed';
   const T = TYPES[type];
   return {
     id: c.id || type,
     type,
-    shape: type === 'envelope' ? 'envelope' : (SHAPES[c.shape] ? c.shape : T.shape),
-    states: (c.states || []).filter((e) => STATES[e]),
+    shape: type === 'envelope' ? 'envelope' : (has(SHAPES, c.shape) ? c.shape : T.shape),
+    states: (Array.isArray(c.states) ? c.states : []).filter((e) => has(STATES, e)),
     text: typeof c.text === 'string' ? c.text : TEXTS[type],
     back: typeof c.back === 'string' ? c.back : '',
-    seed: (c.seed | 0) || 7,
+    seed: Number.isFinite(c.seed) ? Math.trunc(c.seed) : 7, // 0 is a valid seed (rng starts from 1 either way)
     open: c.open === 'drag' ? 'drag' : 'auto',
     hiddenInk: typeof c.hiddenInk === 'string' ? c.hiddenInk : '',
     burnAfterReading: !!c.burnAfterReading,
+    burn: BURNS.includes(c.burn) ? c.burn : 'corner',
     image: c.image || '',
     address: typeof c.address === 'string' ? c.address : ADDRESS,
-    letter: TYPES[c.letter] && c.letter !== 'envelope' ? c.letter : 'typed',
+    letter: has(TYPES, c.letter) && c.letter !== 'envelope' ? c.letter : 'typed',
+    // the word of the 'stamp' state (drawn in capitals)
+    stamp: typeof c.stamp === 'string' && c.stamp.trim() ? c.stamp.trim() : 'RECEIVED',
   };
 }
