@@ -26,7 +26,7 @@ jobs:
       - name: tag matches package.json
         run: test "$GITHUB_REF_NAME" = "v$(node -p "require('./package.json').version")"
       # trusted publishing needs npm 11.5.1 or newer (Node 22 ships an older one)
-      - run: npm install -g npm@11
+      - run: npm install -g npm@11.5.1 --ignore-scripts
       - run: npm ci --ignore-scripts
       - run: npm run build
       - run: npm run test:node
