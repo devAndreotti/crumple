@@ -1,8 +1,7 @@
 // node tests/burnflip.cjs [baseURL]: burn on a plain paper (Stage), every burn form, singed, flips at any moment
 // (Scene flight and crumpled, Stage at p = 0 and 0.5, envelope). Saves screenshots to BURNFLIP_OUT (default tests/out/).
-const puppeteer = require(process.env.PUPPETEER || 'puppeteer-core');
+const { session } = require('./helpers.cjs');
 const fs = require('fs');
-const base = process.argv[2] || 'http://127.0.0.1:8080';
 const out = process.env.BURNFLIP_OUT || __dirname + '/out/';
 fs.mkdirSync(out, { recursive: true });
 const sleep = (t) => new Promise((r) => setTimeout(r, t));
@@ -10,7 +9,8 @@ const TEXT = 'To whoever finds this:\n\nI folded every thought I could not say o
 const fails = [];
 const check = (ok, what) => { console.log((ok ? 'ok   ' : 'FAIL ') + what); if (!ok) fails.push(what); };
 (async () => {
-  const b = await puppeteer.launch({ executablePath: process.env.CHROME || '/usr/local/bin/google-chrome', args: ['--no-sandbox'], timeout: 90000, protocolTimeout: 900000 });
+  const s = await session(process.argv[2]);
+  const b = s.browser, base = s.base;
   const p = await b.newPage();
   const errs = [];
   p.on('pageerror', (e) => errs.push(e.message));
@@ -96,7 +96,7 @@ const check = (ok, what) => { console.log((ok ? 'ok   ' : 'FAIL ') + what); if (
   await p.screenshot({ path: `${out}flip-flight-mid.png` });
 
   console.log('errors:', errs.length ? errs.join(' | ') : 'none');
-  await b.close();
+  await s.close();
   if (errs.length) fails.push('page errors');
   console.log(fails.length ? `FAILED: ${fails.join('; ')}` : 'all burn and flip checks passed');
   if (fails.length) process.exit(1);

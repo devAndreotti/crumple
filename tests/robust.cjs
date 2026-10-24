@@ -1,13 +1,13 @@
 // node tests/robust.cjs [baseURL]: Stage destroy (20 cycles), context loss and restore, focus and keys in Scene,
 // CSS fallback text, forged build failure, duplicate ids, detach and Scene destroy. Exits 1 on any failure.
-const puppeteer = require(process.env.PUPPETEER || 'puppeteer-core');
-const base = process.argv[2] || 'http://127.0.0.1:8080';
+const { session } = require('./helpers.cjs');
 const fails = [];
 const check = (name, ok, extra = '') => { console.log((ok ? 'ok    ' : 'FAIL  ') + name + (extra ? '  [' + extra + ']' : '')); if (!ok) fails.push(name); };
 // browser messages that are expected while a context is lost, or from the forced failures
 const EXPECTED = /CONTEXT_LOST|forced 2d failure|could not be built/;
 (async () => {
-  const b = await puppeteer.launch({ executablePath: process.env.CHROME || '/usr/local/bin/google-chrome', args: ['--no-sandbox', '--hide-scrollbars'], timeout: 90000, protocolTimeout: 900000 });
+  const s = await session(process.argv[2]);
+  const b = s.browser, base = s.base;
   const open = async (query = '') => {
     const p = await b.newPage();
     const log = { errs: [], warns: [] };
@@ -230,7 +230,7 @@ const EXPECTED = /CONTEXT_LOST|forced 2d failure|could not be built/;
     await p.close();
   }
 
-  await b.close();
+  await s.close();
   console.log(fails.length ? 'FAILED: ' + fails.join('; ') : 'all robust checks passed');
   if (fails.length) process.exit(1);
 })().catch((e) => { console.error('FAIL', e.message); process.exit(1); });

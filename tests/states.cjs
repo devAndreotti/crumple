@@ -1,12 +1,12 @@
 // node tests/states.cjs [baseURL]: renders the new paper states (typed and notebook, closed, open, back) and one combo; saves PNGs
 // to tests/out/ (or $OUT), fails on page errors. Needs dist/ built first (node tools/build.mjs).
-const puppeteer = require(process.env.PUPPETEER || 'puppeteer-core');
+const { session } = require('./helpers.cjs');
 const fs = require('fs');
-const base = process.argv[2] || 'http://127.0.0.1:8080';
 const out = process.env.OUT || __dirname + '/out/';
 fs.mkdirSync(out, { recursive: true });
 (async () => {
-  const b = await puppeteer.launch({ executablePath: process.env.CHROME || '/usr/local/bin/google-chrome', args: ['--no-sandbox', '--hide-scrollbars'], timeout: 90000, protocolTimeout: 900000 });
+  const s = await session(process.argv[2]);
+  const b = s.browser, base = s.base;
   const p = await b.newPage();
   const errs = [];
   p.on('pageerror', (e) => errs.push(e.message));
@@ -25,6 +25,6 @@ fs.mkdirSync(out, { recursive: true });
     }
   }
   console.log('papers:', n, 'errors:', errs.length ? errs.join(' | ') : 'none');
-  await b.close();
+  await s.close();
   if (errs.length) process.exit(1);
 })().catch((e) => { console.error('FAIL', e.message); process.exit(1); });
