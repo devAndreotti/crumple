@@ -462,7 +462,7 @@ var Tn = [
 ];
 function xn(e, n, t, s) {
   let a = (n - 88 - 26) / 2;
-  e.fillStyle = "rgba(25,25,25,0.9)", e.font = 'bold 34px "Libre Baskerville"', e.fillText("CLASSIFIEDS", 44, 92), e.fillRect(40, 108, n - 2 * 44 + 8, 3);
+  e.fillStyle = "rgba(25,25,25,0.9)", e.font = 'bold 34px "Libre Baskerville"', e.fillText("CLASSIFIEDS", 44, 92), e.fillRect(40, 108, n - 88 + 8, 3);
   let l = 44 + a + 26, f = 132, u = Math.round(a * 0.68);
   s.photo && Ht(e, s.photo, l, f, a, u), e.font = 'italic 16px "Libre Baskerville"', e.fillText("Old town, archive photo.", l, f + u + 22);
   let p = t - 60, d = [150, f + u + 60], y = 0, m = 44, w = d[0];
