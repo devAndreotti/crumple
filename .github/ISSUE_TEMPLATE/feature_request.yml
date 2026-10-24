@@ -1,0 +1,32 @@
+name: Feature request
+description: An idea for a paper type, state, shape or API.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What do you want to do?
+      description: Describe the goal first. The use case matters more than the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would the API or the look look like? A config example helps.
+      render: javascript
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints
+      options:
+        - label: The change keeps the library free of runtime dependencies.
+          required: true
+        - label: The change works without WebGL2 (the CSS fallback), or says why it cannot.
+          required: false
+        - label: The change respects reduced motion and keyboard use.
+          required: false
