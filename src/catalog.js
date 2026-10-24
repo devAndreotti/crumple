@@ -34,14 +34,17 @@ export const ADDRESS = 'A. Reader\n12 Paper Lane\nFoldtown';
 // corrections written by hand when the "scribbled" state picks words to strike out
 export const CORRECTIONS = ['never', 'again', 'always', 'not yet', 'once more', 'still'];
 
+// own keys only: 'toString' or 'constructor' from the prototype must not pass as a type, shape or state
+const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+
 export function normalize(c = {}) {
-  const type = TYPES[c.type] ? c.type : 'typed';
+  const type = has(TYPES, c.type) ? c.type : 'typed';
   const T = TYPES[type];
   return {
     id: c.id || type,
     type,
-    shape: type === 'envelope' ? 'envelope' : (SHAPES[c.shape] ? c.shape : T.shape),
-    states: (c.states || []).filter((e) => STATES[e]),
+    shape: type === 'envelope' ? 'envelope' : (has(SHAPES, c.shape) ? c.shape : T.shape),
+    states: (Array.isArray(c.states) ? c.states : []).filter((e) => has(STATES, e)),
     text: typeof c.text === 'string' ? c.text : TEXTS[type],
     back: typeof c.back === 'string' ? c.back : '',
     seed: (c.seed | 0) || 7,
@@ -50,6 +53,6 @@ export function normalize(c = {}) {
     burnAfterReading: !!c.burnAfterReading,
     image: c.image || '',
     address: typeof c.address === 'string' ? c.address : ADDRESS,
-    letter: TYPES[c.letter] && c.letter !== 'envelope' ? c.letter : 'typed',
+    letter: has(TYPES, c.letter) && c.letter !== 'envelope' ? c.letter : 'typed',
   };
 }
