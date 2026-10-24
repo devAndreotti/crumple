@@ -36,10 +36,11 @@ function serve() {
   })));
 }
 
-// launch Chrome; extra puppeteer options are merged in (e.g. args, headless)
+// launch Chrome; extra puppeteer options are merged in (e.g. args, headless). Recent Chrome only falls back to
+// software WebGL (SwiftShader, as on CI runners without a GPU) with --enable-unsafe-swiftshader
 function launch(extra = {}) {
   const exe = chromePath();
-  const opts = { args: ['--no-sandbox', '--hide-scrollbars'], timeout: 120000, protocolTimeout: 900000, ...extra };
+  const opts = { args: ['--no-sandbox', '--hide-scrollbars', '--enable-unsafe-swiftshader'], timeout: 120000, protocolTimeout: 900000, ...extra };
   if (exe) opts.executablePath = exe; else opts.channel = 'chrome';
   return puppeteer.launch(opts);
 }
