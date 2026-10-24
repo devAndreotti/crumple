@@ -6,6 +6,7 @@
   <img alt="GitHub top language" src="https://img.shields.io/github/languages/top/devAndreotti/crumple?style=flat-square&labelColor=111827&color=22c55e">
   <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/devAndreotti/crumple?style=flat-square&labelColor=111827&color=38bdf8">
   <img alt="GitHub stars" src="https://img.shields.io/github/stars/devAndreotti/crumple?style=flat-square&labelColor=111827&color=f59e0b">
+  <img alt="npm version" src="https://img.shields.io/npm/v/@devandreotti/crumple?style=flat-square&labelColor=111827&color=cb3837&logo=npm&logoColor=white">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-eab308?style=flat-square&labelColor=111827">
 </p>
 

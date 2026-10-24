@@ -17,7 +17,7 @@
   "homepage": "https://devandreotti.github.io/crumple/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/devAndreotti/crumple.git"
+    "url": "git+https://github.com/devAndreotti/crumple.git"
   },
   "bugs": "https://github.com/devAndreotti/crumple/issues",
   "license": "MIT",

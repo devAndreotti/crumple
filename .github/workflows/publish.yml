@@ -1,0 +1,35 @@
+name: publish
+
+# runs when a GitHub release is published (tag vX.Y.Z); npm trusts this workflow through
+# "trusted publishing" (set once on npmjs.com: package settings → Trusted publisher → GitHub Actions)
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      # the release tag must be the version in package.json, so a tag can never publish another number
+      - name: tag matches package.json
+        run: test "$GITHUB_REF_NAME" = "v$(node -p "require('./package.json').version")"
+      # trusted publishing needs npm 11.5.1 or newer (Node 22 ships an older one)
+      - run: npm install -g npm@11.5.1 --ignore-scripts
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm run test:node
+      - name: committed builds are up to date
+        run: git diff --exit-code -- dist docs/lib
+      - run: npm publish --provenance --access public

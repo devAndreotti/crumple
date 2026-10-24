@@ -65,6 +65,12 @@ Before you request a review, make sure that:
 - [ ] Visual changes come with before and after screenshots or a short clip in the pull request.
 - [ ] The commits follow Conventional Commits.
 
+## Releasing
+
+1. Bump `version` in `package.json` and add the entry to `CHANGELOG.md` in the same pull request.
+2. After it is merged to `main`, create a GitHub release with the tag `vX.Y.Z` (the same version).
+3. The `publish` workflow checks the tag against `package.json`, rebuilds, runs the node tests and publishes to npm with provenance. It needs the one-time trusted publisher setup on npmjs.com (see the workflow file).
+
 ## Reporting bugs and ideas
 
 Open an issue with the bug or feature template. For security problems, do not open a public issue; follow [SECURITY.md](./SECURITY.md).
