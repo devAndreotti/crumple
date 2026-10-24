@@ -107,6 +107,8 @@ p { margin: 0; }
 }
 .nav a:hover { color: var(--ink); background: rgba(255, 246, 230, 0.06); }
 .tools { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+/* the menu button only exists in the small layout (see the 559 px query below) */
+.menu-btn { display: none; }
 
 .chip {
   display: inline-flex;
@@ -248,6 +250,10 @@ button.btn-small:active { transform: translateY(1px); }
 .sec-head p { color: var(--muted); font-size: 17px; }
 .note { margin-top: 22px; color: var(--muted); font-size: 15px; max-width: 70ch; }
 
+.sub-head { margin-top: 56px; margin-bottom: 26px; max-width: 680px; }
+.sub-head h3 { font: 400 clamp(22px, 3vw, 30px)/1.15 var(--font-type); margin-bottom: 8px; }
+.sub-head p { color: var(--muted); font-size: 16px; }
+
 .grid { display: grid; gap: 18px; }
 .grid-types { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 .grid-small { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
@@ -365,6 +371,23 @@ button.btn-small:active { transform: translateY(1px); }
 }
 .states-field legend { padding: 0 6px; }
 .checks { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 4px; }
+/* the states, in four groups (fire, stains, wear, marks) */
+.state-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px 22px;
+  margin-top: 6px;
+}
+.state-group { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.group-label {
+  color: var(--accent);
+  font: 600 11px/1 var(--font-body);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--line);
+}
+.state-group .checks { gap: 8px 16px; }
 .checks label, .check {
   display: inline-flex;
   align-items: center;
@@ -536,6 +559,7 @@ button.btn-small:active { transform: translateY(1px); }
   .nav a { padding: 6px 10px; }
   .tools { margin-left: auto; }
   .footer-inner { flex-direction: column; text-align: center; }
+  .sub-head { margin-top: 44px; }
   .api table, .api tbody, .api tr, .api td { display: block; width: 100%; }
   .api thead { display: none; }
   .api tr {
@@ -547,6 +571,59 @@ button.btn-small:active { transform: translateY(1px); }
   }
   .api td { border: 0; padding: 3px 0; }
   .api td:first-child { width: 100%; padding-bottom: 6px; }
+}
+/* phones: the header stays one row; the nav becomes a menu under it */
+@media (max-width: 559px) {
+  .topbar-inner { padding: 10px 16px; gap: 10px; }
+  .menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    order: 2;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .menu-btn:hover, .menu-btn[aria-expanded="true"] { border-color: rgba(245, 194, 102, 0.6); color: var(--accent); }
+  .tools { order: 3; }
+  .nav {
+    display: none;
+    order: 4;
+    width: auto;
+    margin: 0;
+    padding: 8px 16px 14px;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.45);
+  }
+  .nav.open { display: flex; }
+  .nav a { padding: 12px 10px; font-size: 16px; }
+  .topbar-inner { position: relative; }
+  /* the sound chip keeps its name for screen readers; the dot shows the state */
+  .chip { position: relative; padding: 8px 10px; }
+  .chip-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    border: 0;
+    white-space: nowrap;
+  }
 }
 @media (max-width: 380px) {
   .brand span { display: none; }
