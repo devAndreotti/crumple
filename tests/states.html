@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>crumple states test</title>
+<style>body{margin:0;background:#16130f;color:#ebe5d6;font:14px monospace}.row{display:flex;flex-wrap:wrap;gap:24px;padding:40px}</style></head>
+<body><div class="row" id="row"></div>
+<script src="../dist/crumple.min.js"></script>
+<script>
+  // the new paper states on two types, and one combo (aged + foxing + faded + tape) on the typed sheet
+  Crumple.config.assets = '../assets/';
+  Crumple.Scene.init({ motion: 'full' });
+  const NEW = ['wine', 'ink', 'foxing', 'tape', 'stamp', 'faded'];
+  const cases = [];
+  NEW.forEach((s, i) => ['typed', 'notebook'].forEach((t, j) => cases.push({ id: `st-${s}-${t}`, type: t, states: [s], seed: 31 + i * 2 + j, stamp: 'received' })));
+  cases.push({ id: 'st-combo-typed', type: 'typed', states: ['aged', 'foxing', 'faded', 'tape'], seed: 77 });
+  cases.forEach((c) => {
+    const b = document.createElement('button');
+    b.dataset.id = c.id;
+    document.getElementById('row').appendChild(b);
+    Crumple.Scene.attach(b, { ...c, back: 'side two\nread the back' });
+  });
+  window.__ready = true;
+</script></body></html>
