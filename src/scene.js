@@ -26,7 +26,7 @@ export const Scene = /* @__PURE__ */ (() => {
   const parts = Particles();
   let A = null, raf = 0;
   // the text a screen reader gets: words only, a redaction is announced as "redacted"
-  const srText = (s) => s.replace(/\[\[.+?\]\]/g, 'redacted').replace(/~~.+?~~\{(.+?)\}/g, '$1').replace(/~~(.+?)~~/g, '$1').replace(/^# /gm, '');
+  const srText = (s) => s.replace(/\[\[[^\]\n]+\]\]/g, 'redacted').replace(/~~[^~\n]+~~\{([^}\n]+)\}/g, '$1').replace(/~~([^~\n]+)~~/g, '$1').replace(/^# /gm, '');
   // pre-hop, flight, unfold start (counted from the start of the flight) and unfold duration, in seconds
   const T_PRE = 0.16, T_FLY = 0.9, T_UNF0 = 0.42, T_UNF = 1.5, T_RED = 1.0;
 
@@ -489,7 +489,7 @@ export const Scene = /* @__PURE__ */ (() => {
       const body = head ? line.slice(2) : line;
       const box = head ? document.createElement('span') : parent;
       if (head) box.className = 'crumple-h';
-      const re = /~~(.+?)~~(?:\{(.+?)\})?|\[\[(.+?)\]\]/g;
+      const re = /~~([^~\n]+)~~(?:\{([^}\n]+)\})?|\[\[([^\]\n]+)\]\]/g;
       let last = 0, m;
       while ((m = re.exec(body))) {
         if (m.index > last) box.append(body.slice(last, m.index));

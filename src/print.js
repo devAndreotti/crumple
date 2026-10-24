@@ -467,7 +467,7 @@ async function wineStain(c, ctx, W, H, cfg, front) {
     [[R * 0.22, 0.07, 0.04], [R * 0.07, 0.4, 0], [R * 0.03, 0.16, R * 0.06]].forEach(([w, o, d]) => {
       ctx.strokeStyle = `rgba(96,12,36,${o * al})`; ctx.lineWidth = w;
       ctx.beginPath();
-      for (let a = a0; a <= a0 + sweep; a += 0.04) { const p = pt(a, d); if (a === a0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]); }
+      for (let i = 0, a = a0; a <= a0 + sweep; i++, a += 0.04) { const p = pt(a, d); if (i) ctx.lineTo(p[0], p[1]); else ctx.moveTo(p[0], p[1]); }
       ctx.stroke();
     });
   }
@@ -596,7 +596,7 @@ function rubberStamp(ctx, W, H, cfg, below) {
   const d = sc.getImageData(0, 0, size, size), o = d.data, hs = size / 2;
   for (let k = 0; k < o.length; k += 4) {
     if (!o[k + 3]) continue;
-    const p = k / 4, x = p % size, y = (p / size) | 0, dx = (x - hs) / (bw / 2), dy = (y - hs) / (bh / 2);
+    const p = k / 4, x = p % size, y = Math.floor(p / size), dx = (x - hs) / (bw / 2), dy = (y - hs) / (bh / 2);
     const mid = 1 - 0.25 * Math.min(1, dx * dx + dy * dy);
     const cov = clamp((n(x / (fs * 1.5), y / (fs * 1.5)) - 0.25) * 3.2) * mid * (r() < 0.94 ? 1 : 0.3);
     o[k + 3] = Math.round(o[k + 3] * cov);

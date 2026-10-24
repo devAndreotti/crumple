@@ -24,8 +24,9 @@ function serve() {
   const server = http.createServer((req, res) => {
     let rel;
     try { rel = decodeURIComponent(req.url.split('?')[0]); } catch (e) { res.writeHead(400); res.end(); return; }
-    const f = path.join(root, rel);
-    if (!f.startsWith(root + path.sep) && f !== root) { res.writeHead(403); res.end(); return; }
+    // normalized, then kept inside the repo root: '..' in a URL never reaches other files
+    const f = path.normalize(path.join(root, rel));
+    if (!f.startsWith(root + path.sep)) { res.writeHead(403); res.end(); return; }
     if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); res.end(); return; }
     res.writeHead(200, { 'Content-Type': types[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
     fs.createReadStream(f).pipe(res);
