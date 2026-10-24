@@ -1,6 +1,6 @@
 // Animation pieces shared by the Scene (fly to center) and the Stage (inline preview): tweens, the envelope
 // composition, screen boxes, particle emitters, drag/pinch to unfold and the flashlight.
-import { clamp, smooth, lerp, linear, easeOut, easeUnfold } from './util.js';
+import { clamp, smooth, lerp, linear, easeOut, easeUnfold, listen } from './util.js';
 import { Sound } from './sound.js';
 
 // time-based tweens on numeric fields of an animation state A
@@ -104,9 +104,10 @@ export function emit(parts, A, scene, dt) {
 // drag to unfold: moving away from the center opens, moving back crumples; a two-finger pinch does the same
 export function dragControl(el, api) {
   const points = new Map();
+  const offs = [];
   let d = null;
   const dist = () => { const [a, b] = [...points.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
-  el.addEventListener('pointerdown', (e) => {
+  const onDown = (e) => {
     const A = api.active();
     if (!A) return;
     const box = api.box();
@@ -118,8 +119,8 @@ export function dragControl(el, api) {
     A.tw = A.tw.filter((t) => t.key !== 'p');
     if (points.size === 2) d = { pinch: true, d0: dist(), p0: A.p, moved: true, last: A.p, box };
     else d = { pinch: false, r0: Math.hypot(e.clientX - box.cx, e.clientY - box.cy), p0: A.p, x: e.clientX, y: e.clientY, moved: false, last: A.p, box };
-  });
-  el.addEventListener('pointermove', (e) => {
+  };
+  const onMove = (e) => {
     if (!d || !points.has(e.pointerId)) return;
     points.set(e.pointerId, { x: e.clientX, y: e.clientY });
     const A = api.active();
@@ -134,7 +135,7 @@ export function dragControl(el, api) {
     if (Math.abs(A.p - d.last) > 0.035) { Sound.play('grain'); d.last = A.p; }
     A.dragging = true;
     api.redraw();
-  });
+  };
   const release = (e) => {
     if (!points.has(e.pointerId)) return;
     points.delete(e.pointerId);
@@ -149,8 +150,9 @@ export function dragControl(el, api) {
     else { Sound.play('crumple', 0.35); tween(A, 'p', 0, 0.35 * A.p + 0.12, easeOut); }
     api.redraw();
   };
-  el.addEventListener('pointerup', release);
-  el.addEventListener('pointercancel', release);
+  [['pointerdown', onDown], ['pointermove', onMove], ['pointerup', release], ['pointercancel', release]].forEach(([t, f]) => listen(offs, el, t, f));
+  // returns a function that removes the listeners
+  return () => offs.splice(0).forEach((f) => f());
 }
 
 // flashlight: a low light under the cursor. It follows the pointer with time-based smoothing (independent of the

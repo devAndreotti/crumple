@@ -1,6 +1,6 @@
 // Scene: a crumpled paper sits on the page (a button with a still image); on click it flies to the center of the
 // screen, unfolds into a readable sheet, and on close crumples and flies back to its spot.
-import { clamp, smooth, linear, easeIO, easeOut, easeFly, easeReturn, easeSoft, easeOpen, easeCrumple, store, emitEvent } from './util.js';
+import { clamp, smooth, linear, easeIO, easeOut, easeFly, easeReturn, easeSoft, easeOpen, easeCrumple, store, emitEvent, listen, motionQuery, wantsReduce } from './util.js';
 import { TYPES, normalize } from './catalog.js';
 import { Renderer, FOV, D, LIGHT } from './renderer.js';
 import { Sound } from './sound.js';
@@ -19,22 +19,20 @@ const DEFAULT_LABELS = {
 export const Scene = /* @__PURE__ */ (() => {
   let opts = { labels: DEFAULT_LABELS, remember: false, motion: 'auto', flashlight: true, maxBuilt: 3 };
   let reduce = false;
-  let R, tried = false, cv, backdrop, bar, bFlip, bTear, bClose, hint, srEl, fallback;
+  let R, tried = false, cv, backdrop, bar, bFlip, bTear, bClose, hint, srEl, fallback, styleEl = null, mq = null;
   const entries = [];
+  const byBtn = new WeakMap(); // trigger element -> its entry
+  const offs = []; // removers for the listeners init() added (destroy runs them)
   const parts = Particles();
   let A = null, raf = 0;
+  // the text a screen reader gets: words only, a redaction is announced as "redacted"
+  const srText = (s) => s.replace(/\[\[.+?\]\]/g, 'redacted').replace(/~~.+?~~\{(.+?)\}/g, '$1').replace(/~~(.+?)~~/g, '$1').replace(/^# /gm, '');
   // pre-hop, flight, unfold start (counted from the start of the flight) and unfold duration, in seconds
   const T_PRE = 0.16, T_FLY = 0.9, T_UNF0 = 0.42, T_UNF = 1.5, T_RED = 1.0;
 
-  function computeReduce() {
-    if (opts.motion === 'full') return false;
-    if (opts.motion === 'reduced') return true;
-    try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
-  }
-
   function dom() {
     if (cv) return;
-    reduce = computeReduce();
+    reduce = wantsReduce(opts.motion);
     const css = document.createElement('style');
     css.textContent = `
 :root{--crumple-backdrop:rgba(6,5,4,.8);--crumple-ui-bg:rgba(14,13,12,.7);--crumple-ui-fg:#ebe5d6;--crumple-ui-border:rgba(235,229,214,.4);--crumple-ui-font:12px/1 'Courier Prime',ui-monospace,monospace;--crumple-accent:#f5c266}
@@ -61,12 +59,17 @@ export const Scene = /* @__PURE__ */ (() => {
 .crumple-fallback .sheet{max-width:min(520px,90vw);max-height:86vh;overflow:auto;padding:36px 34px;box-shadow:0 18px 40px rgba(0,0,0,.6);white-space:pre-line;font-size:19px;line-height:1.6;color:#2a2219}
 .crumple-fallback .sheet img{display:block;max-width:100%;margin:0 auto 16px}
 .crumple-fallback button{position:fixed;right:18px;top:16px}
+.crumple-fallback del{color:#5b4d3e;text-decoration:line-through;text-decoration-thickness:2px}
+.crumple-fallback ins{text-decoration:none;color:#1d3a8c;font-family:Caveat,'Comic Sans MS',cursive;font-size:1.12em;padding:0 .12em}
+.crumple-fallback .crumple-h{display:block;font-weight:700;font-size:1.15em;margin:.2em 0}
+.crumple-fallback .crumple-redact{display:inline-block;height:.85em;vertical-align:-.08em;background:#1b1713;border-radius:2px;margin:0 .1em}
 @media (prefers-reduced-motion:reduce){.crumple-trigger.recrumple img,.crumple-trigger:hover img{animation:none}}`;
     document.head.appendChild(css);
+    styleEl = css;
     const L = opts.labels;
     backdrop = document.createElement('div'); backdrop.className = 'crumple-backdrop';
     cv = document.createElement('canvas'); cv.className = 'crumple-scene'; cv.setAttribute('aria-hidden', 'true');
-    bar = document.createElement('div'); bar.className = 'crumple-bar';
+    bar = document.createElement('div'); bar.className = 'crumple-bar'; bar.setAttribute('role', 'dialog'); bar.setAttribute('aria-modal', 'true'); bar.tabIndex = -1;
     bFlip = document.createElement('button'); bFlip.type = 'button'; bFlip.textContent = L.flip;
     bTear = document.createElement('button'); bTear.type = 'button'; bTear.textContent = L.tear; bTear.hidden = true;
     bClose = document.createElement('button'); bClose.type = 'button'; bClose.textContent = L.close;
@@ -75,40 +78,46 @@ export const Scene = /* @__PURE__ */ (() => {
     srEl = document.createElement('div'); srEl.className = 'crumple-sr'; srEl.setAttribute('aria-live', 'polite');
     fallback = document.createElement('div'); fallback.className = 'crumple-fallback'; fallback.setAttribute('role', 'dialog'); fallback.setAttribute('aria-modal', 'true');
     document.body.append(backdrop, cv, bar, hint, srEl, fallback);
-    bClose.addEventListener('click', close);
-    bFlip.addEventListener('click', flip);
-    bTear.addEventListener('click', tear);
-    addEventListener('keydown', (e) => {
-      if (fallback.classList.contains('on') && e.key === 'Escape') { closeFallback(); return; }
+    listen(offs, bClose, 'click', () => close());
+    listen(offs, bFlip, 'click', () => flip());
+    listen(offs, bTear, 'click', () => tear());
+    // keys belong to the page when a modifier is held or a field has focus (Ctrl+F stays the browser's)
+    listen(offs, window, 'keydown', (e) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || editable(e.target)) return;
+      if (fallback.classList.contains('on')) { if (e.key === 'Escape') closeFallback(); else if (e.key === 'Tab') trap(e, fallback); return; }
       if (!A) return;
-      if (e.key === 'Escape') close();
+      if (e.key === 'Tab') trap(e, bar);
+      else if (e.key === 'Escape') close();
       else if (e.key === 'f' || e.key === 'F') flip();
     });
-    addEventListener('resize', () => { if (A) { resize(); kick(); } });
-    addEventListener('pointermove', (e) => {
+    listen(offs, window, 'resize', () => { if (A) { resize(); kick(); } });
+    listen(offs, window, 'pointermove', (e) => {
       if (!opts.flashlight || !A || A.phase !== 'open' || A.dragging || e.pointerType === 'touch') return;
       const b = A.boxCache || box();
       const inside = !!b && e.clientX > b.x0 - 30 && e.clientX < b.x1 + 30 && e.clientY > b.y0 - 30 && e.clientY < b.y1 + 30;
       lampTarget(A, e.clientX, e.clientY, cv.clientWidth, cv.clientHeight, cv.clientHeight / (2 * D * Math.tan(FOV / 2)), inside);
       kick();
     });
-    document.addEventListener('mouseout', (e) => { if (A && !e.relatedTarget) { A.lampOn = 0; kick(); } });
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) kick(); });
-    cv.addEventListener('dblclick', () => flip());
-    dragControl(cv, {
+    listen(offs, document, 'mouseout', (e) => { if (A && !e.relatedTarget) { A.lampOn = 0; kick(); } });
+    listen(offs, document, 'visibilitychange', () => { if (!document.hidden) kick(); });
+    listen(offs, cv, 'dblclick', () => flip());
+    // 'auto' follows the system setting while the page is open
+    mq = motionQuery();
+    if (mq) listen(offs, mq, 'change', () => { reduce = wantsReduce(opts.motion); });
+    offs.push(dragControl(cv, {
       active: () => (A && A.phase === 'open' ? A : null),
       box,
       outside: () => close(),
       tap: (e) => { const b = stubBox(); if (b && e.clientX > b.x0 && e.clientX < b.x1 && e.clientY > b.y0 && e.clientY < b.y1) { tear(); return true; } return false; },
       redraw: () => kick(),
-    });
+    }));
   }
 
   function ensureRenderer() {
     if (tried) return R;
     tried = true;
     dom();
-    try { R = Renderer(cv); } catch (e) { R = null; }
+    try { R = Renderer(cv, { onRestore: restored }); } catch (e) { R = null; }
     return R;
   }
 
@@ -169,7 +178,7 @@ export const Scene = /* @__PURE__ */ (() => {
 
   function loop(now) {
     raf = 0;
-    if (!A || document.hidden) return;
+    if (!A || document.hidden || R.isLost() || A.rebuilding) return;
     // when only embers and particles move, 30 frames per second are enough
     if (!A.tw.length && !A.dragging && !A.lampMoving && !A.resume && A.tPrev && now - A.tPrev < 32) { raf = requestAnimationFrame(loop); return; }
     // when resuming after a pause, the first step is one frame long: nothing jumps
@@ -212,8 +221,10 @@ export const Scene = /* @__PURE__ */ (() => {
     cv.style.pointerEvents = 'auto';
     backdrop.classList.add('on');
     bar.classList.add('on');
+    bar.setAttribute('aria-label', TYPES[P.cfg.type].name);
+    bClose.focus({ preventScroll: true }); // the reader lands on the way out
     bTear.hidden = P.stubX === null || P.torn;
-    srEl.textContent = P.cfg.text.replace(/[#~[\]{}]/g, '') + (P.cfg.back ? ' ' + opts.labels.back + ' ' + P.cfg.back : '');
+    srEl.textContent = srText(P.cfg.text) + (P.cfg.back ? ' ' + opts.labels.back + ' ' + srText(P.cfg.back) : '');
     const manual = P.cfg.open === 'drag';
     const env = P.cfg.type === 'envelope';
     const ready = () => { if (!A) return; A.phase = 'open'; if (manual && A.p < 0.5) hint.classList.add('on'); };
@@ -334,32 +345,59 @@ export const Scene = /* @__PURE__ */ (() => {
 
   // trigger: a pre-rendered still image without WebGL; the paper is built only when someone gets close or touches it
   function attach(btn, cfgIn, o = {}) {
+    const ent = { btn, cfg: normalize(cfgIn), P: null, building: null, opts: o, opened: false, off: [], io: null, gone: false, madeImg: false, madeLabel: false };
+    // no body yet (a script in the head): the trigger is bound once the page is parsed
+    if (document.body) bind(ent);
+    else document.addEventListener('DOMContentLoaded', () => bind(ent), { once: true });
+    return ent;
+  }
+  function bind(ent) {
+    const { btn, cfg, opts: o } = ent;
     dom();
-    const cfg = normalize(cfgIn);
-    const ent = { btn, cfg, P: null, building: null, opts: o, opened: false };
+    // the same element again: the older binding goes, so there is never a second click listener
+    const prev = byBtn.get(btn);
+    if (prev) unbind(prev);
+    // the same paper id again: the previous trigger is detached (ids name the saved state)
+    const dup = entries.find((e) => e.cfg.id === cfg.id);
+    if (dup) { console.warn(`crumple: id "${cfg.id}" is already attached, the previous paper is detached`); unbind(dup); }
     entries.push(ent);
+    byBtn.set(btn, ent);
     btn.classList.add('crumple-trigger');
+    if (!btn.getAttribute('aria-label')) { btn.setAttribute('aria-label', opts.labels.open); ent.madeLabel = true; }
     if (store.get('destroyed.' + cfg.id, false)) { btn.hidden = true; ent.destroyed = true; }
-    if (!btn.getAttribute('aria-label')) btn.setAttribute('aria-label', opts.labels.open);
-    btn.addEventListener('click', async () => {
+    ent.opened = remembered(cfg.id);
+    listen(ent.off, btn, 'click', async () => {
       const P = await build(ent);
       if (P) open(ent); else openFallback(ent);
     });
-    ent.opened = remembered(cfg.id);
     let img = btn.querySelector('img');
     if (o.snapshot) {
-      if (!img) { img = document.createElement('img'); img.alt = ''; btn.appendChild(img); }
+      if (!img) { img = document.createElement('img'); img.alt = ''; btn.appendChild(img); ent.madeImg = true; }
       img.onerror = () => { ent.opts = {}; img.onerror = null; observe(ent); };
       img.src = ent.opened && o.snapshotOpened ? o.snapshotOpened : o.snapshot;
       const prepare = () => { idle(() => build(ent)); };
-      ['pointerenter', 'focus', 'touchstart'].forEach((ev) => btn.addEventListener(ev, prepare, { once: true, passive: true }));
-      btn.addEventListener('pointerdown', () => build(ent), { passive: true }); // ~100 ms before the click
+      ['pointerenter', 'focus', 'touchstart'].forEach((ev) => listen(ent.off, btn, ev, prepare, { once: true, passive: true }));
+      listen(ent.off, btn, 'pointerdown', () => build(ent), { passive: true }); // ~100 ms before the click
     } else observe(ent);
-    return ent;
+  }
+  // undoes bind(): listeners, observer, the built paper, and the classes, image and label that attach added
+  function unbind(ent) {
+    ent.gone = true;
+    ent.off.splice(0).forEach((f) => f());
+    if (ent.io) ent.io.disconnect();
+    const i = entries.indexOf(ent); if (i >= 0) entries.splice(i, 1);
+    const j = built.indexOf(ent); if (j >= 0) built.splice(j, 1);
+    if (A && A.ent === ent) finish();
+    if (ent.P) { R.release(ent.P); ent.P = null; }
+    if (byBtn.get(ent.btn) === ent) byBtn.delete(ent.btn);
+    ent.btn.classList.remove('crumple-trigger', 'active', 'recrumple');
+    if (ent.madeLabel) ent.btn.removeAttribute('aria-label');
+    if (ent.madeImg) { const img = ent.btn.querySelector('img'); if (img) img.remove(); }
   }
   function observe(ent) {
     if ('IntersectionObserver' in window) {
       const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { io.disconnect(); idle(() => build(ent).then(() => updateTrigger(ent))); } }), { rootMargin: '600px 0px' });
+      ent.io = io;
       io.observe(ent.btn);
     } else idle(() => build(ent).then(() => updateTrigger(ent)));
   }
@@ -367,31 +405,61 @@ export const Scene = /* @__PURE__ */ (() => {
   const idle = (fn) => (globalThis.requestIdleCallback ? requestIdleCallback(fn, { timeout: 700 }) : setTimeout(fn, 60));
   // at most a few papers built at once (least recently used first out): older ones free their textures, the still image stays
   const built = [];
+  // bumped when the context is restored: builds that started before the loss are not used
+  let gen = 0;
   function build(ent) {
     if (ent.P) { const i = built.indexOf(ent); if (i >= 0) built.push(built.splice(i, 1)[0]); return Promise.resolve(ent.P); }
     if (ent.building) return ent.building;
-    ent.building = (async () => {
-      if (!ensureRenderer()) return null;
-      ent.P = await R.build(ent.cfg);
+    return (ent.building = buildNow(ent));
+  }
+  // a failed build clears its cache, so the next click tries again; the click then shows the CSS version
+  async function buildNow(ent) {
+    const g = gen;
+    try {
+      if (ent.gone || !ensureRenderer() || R.isLost()) return null;
+      const r = R;
+      const P = await r.build(ent.cfg);
+      if (g !== gen) return null;
+      if (ent.gone) { r.release(P); return null; }
+      ent.P = P;
       built.push(ent);
       while (built.length > opts.maxBuilt) {
         const i = built.findIndex((x) => (!A || x !== A.ent) && x !== ent);
         if (i < 0) break;
         const old = built.splice(i, 1)[0];
         if (!old.opts.snapshot && old.P) updateTrigger(old);
-        if (old.P) R.release(old.P);
+        if (old.P) r.release(old.P);
         old.P = null; old.building = null;
       }
       return ent.P;
-    })();
-    return ent.building;
+    } catch (e) {
+      console.warn('crumple: the paper could not be built, the CSS version is shown instead', e);
+      return null;
+    } finally {
+      if (g === gen) ent.building = null;
+    }
+  }
+  // the browser gave the context back: the old GPU objects are gone, so the papers on screen are built again
+  function restored() {
+    gen++;
+    const had = built.splice(0);
+    entries.forEach((ent) => { ent.P = null; ent.building = null; });
+    had.forEach((ent) => build(ent).then(() => updateTrigger(ent)));
+    if (A) {
+      const ent = A.ent;
+      A.rebuilding = true;
+      build(ent).then((P) => {
+        if (!A || A.ent !== ent) return;
+        if (P) { A.P = P; A.rebuilding = false; kick(); } else { A.ashes = false; finish(); }
+      });
+    }
   }
   // trigger image: the crumpled paper (or the loosely crumpled one, if it was opened and remember is on)
   function updateTrigger(ent) {
-    if (ent.destroyed) return;
+    if (ent.destroyed || ent.gone) return;
     ent.opened = remembered(ent.cfg.id);
     let img = ent.btn.querySelector('img');
-    if (!img) { img = document.createElement('img'); img.alt = ''; ent.btn.appendChild(img); }
+    if (!img) { img = document.createElement('img'); img.alt = ''; ent.btn.appendChild(img); ent.madeImg = true; }
     if (ent.opts.snapshot) { img.src = ent.opened && ent.opts.snapshotOpened ? ent.opts.snapshotOpened : ent.opts.snapshot; return; }
     if (ent.P && R) img.src = R.snapshot(ent.P, ent.opened);
   }
@@ -408,7 +476,37 @@ export const Scene = /* @__PURE__ */ (() => {
     if (any) Sound.play('crumple', 0.9);
   }
 
-  // without WebGL2: the paper shows as a CSS sheet with its text (and the still image, if any)
+  // without WebGL2 (or when a build fails): the paper shows as a CSS sheet. Text becomes DOM nodes, never HTML:
+  // ~~word~~{fix} = struck word and a handwritten fix, [[passage]] = redaction bar, "# " = heading
+  function richText(text, parent) {
+    let prevHead = false;
+    text.split('\n').forEach((line, i) => {
+      const head = line.startsWith('# ');
+      if (i && !head && !prevHead) parent.append('\n'); // a heading is a block: no extra break around it
+      prevHead = head;
+      const body = head ? line.slice(2) : line;
+      const box = head ? document.createElement('span') : parent;
+      if (head) box.className = 'crumple-h';
+      const re = /~~(.+?)~~(?:\{(.+?)\})?|\[\[(.+?)\]\]/g;
+      let last = 0, m;
+      while ((m = re.exec(body))) {
+        if (m.index > last) box.append(body.slice(last, m.index));
+        if (m[3] !== undefined) {
+          // the text is not in the DOM at all: nothing to copy, nothing to read
+          const r = document.createElement('span');
+          r.className = 'crumple-redact'; r.setAttribute('role', 'img'); r.setAttribute('aria-label', 'redacted');
+          r.style.width = Math.max(3, m[3].length * 0.5) + 'em';
+          box.append(r);
+        } else {
+          const d = document.createElement('del'); d.textContent = m[1]; box.append(d);
+          if (m[2] !== undefined) { const ins = document.createElement('ins'); ins.textContent = m[2]; box.append(ins); }
+        }
+        last = re.lastIndex;
+      }
+      if (last < body.length) box.append(body.slice(last));
+      if (head) parent.append(box);
+    });
+  }
   function openFallback(ent) {
     dom();
     const T = TYPES[ent.cfg.type];
@@ -418,8 +516,10 @@ export const Scene = /* @__PURE__ */ (() => {
     sheet.style.background = `rgb(${c(0)},${c(1)},${c(2)})`;
     sheet.style.fontFamily = `"${T.font}", "Courier Prime", monospace`;
     if (ent.opts.snapshotOpened) { const i = document.createElement('img'); i.src = ent.opts.snapshotOpened; i.alt = ''; sheet.appendChild(i); }
-    sheet.appendChild(document.createTextNode(ent.cfg.text.replace(/^# /gm, '').replace(/~~(.+?)~~(\{(.+?)\})?/g, '$1').replace(/\[\[(.+?)\]\]/g, '$1') + (ent.cfg.back ? '\n\n— ' + opts.labels.back + ' —\n' + ent.cfg.back : '')));
+    richText(ent.cfg.text, sheet);
+    if (ent.cfg.back) { sheet.append('\n\n— ' + opts.labels.back + ' —\n'); richText(ent.cfg.back, sheet); }
     const b = document.createElement('button'); b.type = 'button'; b.textContent = opts.labels.close; b.addEventListener('click', closeFallback);
+    fallback.setAttribute('aria-label', T.name);
     fallback.replaceChildren(sheet, b);
     fallback.classList.add('on');
     b.focus();
@@ -432,8 +532,36 @@ export const Scene = /* @__PURE__ */ (() => {
     if (fallback._ent) fallback._ent.btn.focus({ preventScroll: true });
   }
 
+  // Tab and Shift+Tab stay inside the overlay's buttons
+  function trap(e, root) {
+    const els = [...root.querySelectorAll('button')].filter((b) => !b.hidden);
+    if (!els.length) return;
+    e.preventDefault();
+    const i = els.indexOf(document.activeElement), last = els.length - 1;
+    const next = i < 0 ? 0 : e.shiftKey ? (i === 0 ? last : i - 1) : (i === last ? 0 : i + 1);
+    els[next].focus({ preventScroll: true });
+  }
+  // typing fields keep their keys (and Ctrl/Cmd/Alt combinations belong to the browser)
+  const editable = (t) => !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+
+  // removes everything init and attach added: the page is back as it was, and attach() starts it again
+  function destroy() {
+    if (!cv) return;
+    A = null;
+    cancelAnimationFrame(raf); raf = 0;
+    entries.slice().forEach(unbind);
+    built.length = 0;
+    offs.splice(0).forEach((f) => f());
+    if (R) R.destroy();
+    R = null; tried = false;
+    styleEl.remove();
+    [backdrop, cv, bar, hint, srEl, fallback].forEach((el) => el.remove());
+    backdrop = cv = bar = hint = srEl = fallback = null;
+    parts.clear();
+  }
+
   return {
-    // options: { labels, remember, motion: 'auto' | 'full' | 'reduced', flashlight, maxBuilt }
+    // options: { labels, remember, motion: 'auto' | 'reduce' | 'full' ('reduced' still works), flashlight, maxBuilt }
     init(o = {}) {
       opts = { ...opts, ...o, labels: { ...DEFAULT_LABELS, ...(o.labels || {}) } };
       if (cv) {
@@ -441,10 +569,16 @@ export const Scene = /* @__PURE__ */ (() => {
         bFlip.textContent = opts.labels.flip; bTear.textContent = opts.labels.tear; bClose.textContent = opts.labels.close; hint.textContent = opts.labels.hint;
       }
       dom();
-      reduce = computeReduce();
-      idle(ensureRenderer);
+      reduce = wantsReduce(opts.motion);
+      idle(() => { if (cv) ensureRenderer(); }); // destroyed meanwhile: nothing to build
     },
     attach,
+    // detaches a trigger element, or the paper with that id
+    detach(target) {
+      const ent = typeof target === 'string' ? entries.find((e) => e.cfg.id === target) : byBtn.get(target);
+      if (ent) unbind(ent);
+    },
+    destroy,
     open: (ent) => build(ent).then((P) => (P ? open(ent) : openFallback(ent))),
     close, flip, tear, reset,
     get reducedMotion() { return reduce; },

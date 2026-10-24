@@ -47,7 +47,7 @@ export function normalize(c = {}) {
     states: (Array.isArray(c.states) ? c.states : []).filter((e) => has(STATES, e)),
     text: typeof c.text === 'string' ? c.text : TEXTS[type],
     back: typeof c.back === 'string' ? c.back : '',
-    seed: (c.seed | 0) || 7,
+    seed: Number.isFinite(c.seed) ? c.seed | 0 : 7, // 0 is a valid seed (rng starts from 1 either way)
     open: c.open === 'drag' ? 'drag' : 'auto',
     hiddenInk: typeof c.hiddenInk === 'string' ? c.hiddenInk : '',
     burnAfterReading: !!c.burnAfterReading,
