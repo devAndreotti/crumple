@@ -35,7 +35,7 @@ export const easeCrumple = (P) => (P.F.shape === 0 ? (t) => 1 - Math.pow(1 - t, 
 // global settings (public as Crumple.config)
 export const config = {
   // base URL of the assets folder (textures); detected from the script URL when possible
-  assets: (() => {
+  assets: /* @__PURE__ */ (() => {
     try {
       const src = document.currentScript && document.currentScript.src;
       if (src && /\/dist\/[^/]+$/.test(src)) return src.replace(/dist\/[^/]+$/, 'assets/');
