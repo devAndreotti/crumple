@@ -1,6 +1,6 @@
 # 📄 Crumple
 
-**English** · [Português (BR)](./README.pt-BR.md)
+**English** · [Português](./README.pt-BR.md)
 
 <p align="center">
   <img alt="GitHub top language" src="https://img.shields.io/github/languages/top/devAndreotti/crumple?style=flat-square&labelColor=111827&color=22c55e">
