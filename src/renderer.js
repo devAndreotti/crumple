@@ -156,7 +156,7 @@ export function Renderer(canvas, options = {}) {
     const T = TYPES[cfg.type];
     grain();
     // the letter lives inside the envelope: same text, back, states and hidden ink; folded in thirds. Built alongside the envelope
-    const letterP = cfg.type === 'envelope' ? build({ id: cfg.id + '-letter', type: cfg.letter, shape: 'thirds', text: cfg.text, back: cfg.back, states: cfg.states.filter((e) => e !== 'torn'), seed: cfg.seed + 1, hiddenInk: cfg.hiddenInk, burn: cfg.burn, burnAfterReading: cfg.burnAfterReading }) : null;
+    const letterP = cfg.type === 'envelope' ? build({ id: cfg.id + '-letter', type: cfg.letter, shape: 'thirds', text: cfg.text, back: cfg.back, states: cfg.states.filter((e) => e !== 'torn'), seed: cfg.seed + 1, hiddenInk: cfg.hiddenInk, burn: cfg.burn, burnAfterReading: cfg.burnAfterReading, stamp: cfg.stamp }) : null;
     await ensureFonts([T.font, 'Caveat', 'Courier Prime', 'Special Elite']);
     const hw = T.w / 2, hh = T.h / 2;
     const F = shapeParams(cfg.shape, T);
@@ -174,7 +174,7 @@ export function Renderer(canvas, options = {}) {
       meshes.push(mesh(stubX, hw, hh, nx - nMain, ny, exX, exY));
     } else meshes.push(mesh(-hw, hw, hh, nx, ny, exX, exY));
     // an empty back and a paper without cut-outs use the shared 1x1 textures (saves ~6 MB of texture per paper)
-    const backEmpty = !(cfg.back || cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'newspaper' || ['coffee', 'water', 'prints', 'aged'].some((e) => cfg.states.includes(e)));
+    const backEmpty = !(cfg.back || cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'newspaper' || ['coffee', 'water', 'prints', 'aged', 'wine', 'ink', 'foxing', 'faded'].some((e) => cfg.states.includes(e)));
     const kind = burnKind(cfg);
     const noEffects = !(cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.states.includes('torn') || kind);
     const [creases, printF, printB, fx] = await Promise.all([

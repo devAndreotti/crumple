@@ -2,7 +2,7 @@
 
 export type PaperType = 'typed' | 'notebook' | 'form' | 'receipt' | 'ticket' | 'memo' | 'newspaper' | 'sticky' | 'polaroid' | 'envelope';
 export type PaperShape = 'ball' | 'flat' | 'quarters' | 'half' | 'thirds' | 'roll' | 'twist';
-export type PaperState = 'torn' | 'burnt' | 'coffee' | 'water' | 'prints' | 'aged' | 'scribbled' | 'singed';
+export type PaperState = 'torn' | 'burnt' | 'coffee' | 'water' | 'prints' | 'aged' | 'scribbled' | 'singed' | 'wine' | 'ink' | 'foxing' | 'tape' | 'stamp' | 'faded';
 /** Where a burn starts: from one corner (default), along one whole side, a hole burnt from inside, or a few embers. */
 export type BurnForm = 'corner' | 'edge' | 'center' | 'spots';
 
@@ -32,6 +32,8 @@ export interface PaperConfig {
   address?: string;
   /** Type of the letter inside an envelope. */
   letter?: Exclude<PaperType, 'envelope'>;
+  /** Word printed by the 'stamp' state, drawn in capitals (default 'RECEIVED'). */
+  stamp?: string;
 }
 
 export interface TypeInfo { name: string; w: number; h: number; color: [number, number, number]; shape: PaperShape | 'envelope'; font: string; [key: string]: unknown }

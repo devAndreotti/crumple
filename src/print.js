@@ -24,8 +24,12 @@ function parseText(txt) {
 }
 const fontFor = (T, head, size) => `${head && !T.hand ? 'bold ' : ''}${Math.round(size)}px "${T.font}", "Courier Prime", monospace`;
 
+// sun-faded ink: lighter and a little warmer
+const fadeInk = (c) => [c[0] + (200 - c[0]) * 0.4 + 8, c[1] + (170 - c[1]) * 0.3 + 4, c[2] + (120 - c[2]) * 0.3 - 4].map(Math.round);
+
 function writeText(ctx, cfg, T, txt, area, openings, r) {
   const lines = parseText(txt);
+  const ink = cfg.states.includes('faded') ? fadeInk(T.ink) : T.ink;
   // scribbled without markup: someone strikes out two words and corrects them by hand
   if (cfg.states.includes('scribbled') && !lines.some((l) => l.toks.some((t) => t.kind === 'strike'))) {
     const cand = [];
@@ -62,7 +66,7 @@ function writeText(ctx, cfg, T, txt, area, openings, r) {
       const x0 = area.x + (ln.head && area.headFull ? 0 : col * (colW + 40));
       let x = (area.center || (ln.head && area.centerHead)) ? x0 + (width - rowW) / 2 : x0;
       row.forEach((t) => {
-        drawWord(ctx, T, t, x, y, T.ink, r, nz);
+        drawWord(ctx, T, t, x, y, ink, r, nz);
         if (t.kind === 'strike') strike(ctx, t, x, y, size, r);
         if (t.kind === 'redact') { ctx.fillStyle = `rgba(12,12,14,${redaction})`; ctx.fillRect(x - 5, y - size * 0.82, t.tw + 10, size * 1.06); }
         x += t.tw + space;
@@ -71,6 +75,7 @@ function writeText(ctx, cfg, T, txt, area, openings, r) {
     });
     if (ln.head && area.headFull) area.colY = y + 10;
   });
+  return y;
 }
 
 function drawWord(ctx, T, t, x, y, color, r, nz) {
@@ -336,13 +341,20 @@ export async function drawPrint(cfg, T, side, openings) {
     : { x: Math.round(T.x * 0.8), y: Math.min(T.y, Math.round(H * 0.28)), w: W - Math.round(T.x * 1.6), h: H - Math.min(T.y, Math.round(H * 0.28)) - 40, center: cfg.type === 'ticket' };
   if (cfg.type === 'ticket' && !front) { area.x = Math.round(W * 0.55); area.w = Math.round(W * 0.4); }
   if (cfg.type === 'polaroid' && !front) area = { x: 60, y: Math.round(H * 0.3), w: W - 120, h: H * 0.6, center: true };
-  if (txt && area) writeText(ctx, cfg, T, txt, area, openings, r);
+  const textEnd = txt && area ? writeText(ctx, cfg, T, txt, area, openings, r) : 0;
   const rs = rng(cfg.seed * 17 + (front ? 1 : 2));
   // stains and fingerprints go through the sheet: on the back they sit at the same spot (mirrored) and fainter
   if (cfg.states.includes('coffee')) await coffeeStain(c, ctx, W, H, cfg, front);
   if (cfg.states.includes('water')) await waterStain(ctx, W, H, cfg, front);
   if (cfg.states.includes('prints')) await fingerprints(ctx, W, H, cfg, front);
+  if (cfg.states.includes('wine')) await wineStain(c, ctx, W, H, cfg, front);
+  if (cfg.states.includes('ink')) inkBlot(ctx, W, H, cfg, front);
   if (cfg.states.includes('aged')) age(ctx, W, H, rs);
+  if (cfg.states.includes('faded')) fadeWash(ctx, W, H, cfg);
+  if (cfg.states.includes('foxing')) foxing(ctx, W, H, cfg);
+  // the stamp sits over the text, the tape over everything; both are only on the front
+  if (front && cfg.states.includes('stamp')) rubberStamp(ctx, W, H, cfg, textEnd);
+  if (front && cfg.states.includes('tape')) tape(ctx, W, H, cfg);
   return c;
 }
 
@@ -423,6 +435,208 @@ function age(ctx, W, H, r) {
     ctx.fillStyle = s; ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.fill();
   }
   ctx.restore();
+}
+
+// wine: one or two partial rings of a glass (dark rim, lighter band inside), a few drops and a dribble; the ink inside bleeds like coffee
+async function wineStain(c, ctx, W, H, cfg, front) {
+  const r = rng(cfg.seed * 43 + 3);
+  const x = W * (0.3 + 0.4 * r()), cy = H * (0.4 + 0.3 * r()), R = Math.min(W, H) * (0.1 + 0.04 * r());
+  const cx = front ? x : W - x, al = front ? 1 : 0.5;
+  if (front) {
+    const copy = makeCanvas(W, H);
+    copy.getContext('2d').drawImage(c, 0, 0);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.04, 0, Math.PI * 2); ctx.clip();
+    ctx.clearRect(cx - R * 1.1, cy - R * 1.1, R * 2.2, R * 2.2);
+    ctx.filter = 'blur(2px)'; ctx.globalAlpha = 0.8; ctx.drawImage(copy, 0, 0);
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  // a faint dark pool inside the rings
+  const g = ctx.createRadialGradient(cx, cy, R * 0.2, cx, cy, R * 1.05);
+  g.addColorStop(0, `rgba(120,14,38,${0.03 * al})`); g.addColorStop(0.8, `rgba(120,14,38,${0.1 * al})`); g.addColorStop(1, 'rgba(90,8,28,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R * 1.05, 0, Math.PI * 2); ctx.fill();
+  ctx.lineCap = 'round'; ctx.filter = 'blur(0.8px)';
+  for (let k = 0; k < 2; k++) {
+    const a0 = r() * 6.28, sweep = 3.4 + r() * 1.4, rr = R * (0.94 + 0.12 * k + 0.03 * r()), ph = r() * 6.28;
+    // the wobbly ring: radius varies a little with the angle
+    const pt = (a, d) => { const q = (rr - d) * (1 + 0.025 * Math.sin(a * 5 + ph) + 0.012 * Math.sin(a * 9 + ph * 2)); return [cx + Math.cos(a) * q, cy + Math.sin(a) * q]; };
+    // the dark rim, then a lighter band just inside it
+    // a faint wide halo where the wet wine spread, then the dark rim and a lighter band inside it
+    [[R * 0.22, 0.07, 0.04], [R * 0.07, 0.4, 0], [R * 0.03, 0.16, R * 0.06]].forEach(([w, o, d]) => {
+      ctx.strokeStyle = `rgba(96,12,36,${o * al})`; ctx.lineWidth = w;
+      ctx.beginPath();
+      for (let a = a0; a <= a0 + sweep; a += 0.04) { const p = pt(a, d); if (a === a0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]); }
+      ctx.stroke();
+    });
+  }
+  // drops flicked off the rim, a few of them with a tiny satellite
+  ctx.filter = 'none';
+  for (let k = 0, n = 4 + Math.floor(r() * 4); k < n; k++) {
+    const a = r() * 6.28, d = R * (1.35 + r() * 1.1), s = R * (0.02 + 0.035 * r());
+    ctx.fillStyle = `rgba(104,10,30,${0.45 * al})`; ctx.beginPath(); ctx.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, s, 0, Math.PI * 2); ctx.fill();
+    if (k % 2) { ctx.beginPath(); ctx.arc(cx + Math.cos(a + 0.2) * d * 1.12, cy + Math.sin(a + 0.2) * d * 1.12, s * 0.35, 0, Math.PI * 2); ctx.fill(); }
+  }
+  ctx.restore();
+}
+
+// fountain-pen ink: a blue-black blot with an irregular edge, feathering into the fibers, satellite drops and a short drag
+function blotShape(r, R) {
+  const h = [1, 2, 3, 5, 7, 11].map((k) => [k, r() * 6.28, (0.06 + 0.14 * r()) * 2 / k]);
+  const pts = [];
+  for (let i = 0; i < 40; i++) {
+    const a = i / 40 * Math.PI * 2;
+    let q = 1; h.forEach(([k, ph, amp]) => { q += amp * Math.sin(k * a + ph); });
+    pts.push([Math.cos(a) * R * q, Math.sin(a) * R * q]);
+  }
+  return pts;
+}
+function fillPts(ctx, pts, cx, cy, s) {
+  ctx.beginPath();
+  pts.forEach((p, i) => { if (i) ctx.lineTo(cx + p[0] * s, cy + p[1] * s); else ctx.moveTo(cx + p[0] * s, cy + p[1] * s); });
+  ctx.closePath(); ctx.fill();
+}
+function inkBlot(ctx, W, H, cfg, front) {
+  const r = rng(cfg.seed * 47 + 5), u = Math.min(W, H);
+  const x0 = W * (0.2 + 0.6 * r()), y = H * (0.2 + 0.6 * r()), R = u * (0.03 + 0.015 * r());
+  const x = front ? x0 : W - x0, al = front ? 1 : 0.5, col = [16, 22, 58];
+  const pts = blotShape(r, R);
+  ctx.save();
+  // feathering: fainter rings just outside the edge, where the ink soaked into the fibers
+  ctx.fillStyle = rgba(col, 0.07 * al); fillPts(ctx, pts, x, y, 1.45); fillPts(ctx, pts, x, y, 1.22);
+  ctx.fillStyle = rgba(col, 0.86 * al); ctx.filter = 'blur(0.5px)'; fillPts(ctx, pts, x, y, 1); ctx.filter = 'none';
+  // drops thrown off the nib, smaller the farther they land
+  ctx.fillStyle = rgba(col, 0.86 * al);
+  for (let k = 0, n = 6 + Math.floor(r() * 5); k < n; k++) {
+    const a = r() * 6.28, d = R * (1.5 + 2.4 * r()), s = R * (0.16 + 0.14 * r()) * (1.6 - d / (R * 4));
+    ctx.beginPath(); ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d, Math.max(s, 0.8), 0, Math.PI * 2); ctx.fill();
+  }
+  // a short drag of the nib: one tapering shape with a wobbling edge
+  const a = r() * 6.28, L = R * (1.6 + 1.2 * r()), ux = Math.cos(a), uy = Math.sin(a), side = [], left = [];
+  for (let i = 0; i <= 10; i++) {
+    const t = i / 10, hw = R * 0.42 * Math.pow(1 - t, 1.3) * (0.85 + 0.3 * r()), d = R * 0.7 + L * t;
+    side.push([ux * d - uy * hw, uy * d + ux * hw]); left.push([ux * d + uy * hw, uy * d - ux * hw]);
+  }
+  ctx.fillStyle = rgba(col, 0.6 * al); ctx.beginPath();
+  side.concat(left.reverse()).forEach((p, i) => { if (i) ctx.lineTo(x + p[0], y + p[1]); else ctx.moveTo(x + p[0], y + p[1]); });
+  ctx.closePath(); ctx.fill();
+  // hairs pulled out of the wet edge
+  ctx.strokeStyle = rgba(col, 0.28 * al); ctx.lineWidth = 0.9; ctx.lineCap = 'round';
+  for (let k = 0; k < 18; k++) {
+    const b = r() * 6.28, d0 = R * (0.95 + 0.1 * r()), d1 = d0 + R * (0.3 + 0.9 * r());
+    ctx.beginPath(); ctx.moveTo(x + Math.cos(b) * d0, y + Math.sin(b) * d0); ctx.lineTo(x + Math.cos(b + 0.05) * d1, y + Math.sin(b + 0.05) * d1); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// sun-faded paper: a warm yellowing wash, strongest toward one edge and uneven (noise); both sides
+function fadeWash(ctx, W, H, cfg) {
+  const r = rng(cfg.seed * 41 + 2), n = noise2(cfg.seed + 19);
+  const a = r() * Math.PI * 2, dx = Math.cos(a), dy = Math.sin(a);
+  const sw = 96, sh = Math.round(sw * H / W);
+  const c = makeCanvas(sw, sh, true), sc = c.getContext('2d'), d = sc.createImageData(sw, sh), o = d.data;
+  for (let j = 0; j < sh; j++) for (let i = 0; i < sw; i++) {
+    // p runs from the far side (0) to the chosen edge (1)
+    const p = clamp((i / sw - 0.5) * dx + (j / sh - 0.5) * dy + 0.5);
+    const v = Math.pow(p, 2.4) * (0.45 + 0.55 * n(i * 0.12, j * 0.12)), k = (j * sw + i) * 4;
+    o[k] = 165; o[k + 1] = 112; o[k + 2] = 45; o[k + 3] = Math.round(255 * 0.42 * v);
+  }
+  sc.putImageData(d, 0, 0);
+  ctx.save(); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(c, 0, 0, W, H); ctx.restore();
+}
+
+// foxing: rust-brown age spots, soft or crisp, mostly small; they gather toward the edges
+function foxing(ctx, W, H, cfg) {
+  const r = rng(cfg.seed * 61 + 11), u = Math.min(W, H) / 900;
+  const colors = [[150, 78, 30], [170, 96, 40], [128, 62, 24]];
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  for (let k = 0, tries = 0; k < 150 && tries < 900; tries++) {
+    const x = r() * W, y = r() * H;
+    const edge = Math.max(Math.abs(x / W - 0.5), Math.abs(y / H - 0.5)) * 2;
+    if (r() > 0.15 + 0.85 * edge * edge * edge) continue;
+    k++;
+    // most spots are small and crisp; the rest are soft, squashed blotches of varied size
+    const soft = r() < 0.4, rad = u * (soft ? 4 + Math.pow(r(), 1.5) * 15 : 1 + Math.pow(r(), 2) * 5), c = colors[Math.floor(r() * 3)], a = 0.34 + 0.4 * r();
+    const g = ctx.createRadialGradient(0, 0, rad * (soft ? 0 : 0.55), 0, 0, rad);
+    if (soft) { g.addColorStop(0, rgba(c, a * 0.6)); g.addColorStop(0.55, rgba(c, a * 0.4)); g.addColorStop(1, rgba(c, 0)); }
+    else { g.addColorStop(0, rgba(c, a * 0.7)); g.addColorStop(0.85, rgba(c, a * 0.8)); g.addColorStop(0.97, rgba(c, a * 1.15)); g.addColorStop(1, rgba(c, 0)); }
+    ctx.save(); ctx.translate(x, y); ctx.rotate(r() * 3.14); ctx.scale(1, soft ? 0.55 + 0.45 * r() : 1);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, rad, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+// rubber stamp: a box around a word in red or blue, about half the sheet wide, pressed crooked in the empty part below the text;
+// the ink is denser in the middle, skips in patches, and the border is doubled as if pressed twice
+function rubberStamp(ctx, W, H, cfg, below) {
+  const r = rng(cfg.seed * 59 + 9), n = noise2(cfg.seed + 23);
+  const word = String(cfg.stamp).toUpperCase(), ink = r() < 0.6 ? [176, 26, 36] : [34, 64, 150];
+  // letter spacing grows with the size, so the word is measured at 100 px and scaled to the target width
+  const m = makeCanvas(1, 1).getContext('2d');
+  m.font = `bold 100px "Courier Prime", monospace`; m.letterSpacing = '12px';
+  const kw = m.measureText(word).width / 100;
+  const bw = W * 0.44, fs = bw / (kw + 1.2), bh = fs * 2.1;
+  const ang = -(0.14 + 0.17 * r()), cx = W * (0.46 + 0.1 * r());
+  const cy = Math.min(H - bh / 2 - 30, Math.max(H * 0.55, below + bh / 2 + 24));
+  const size = Math.ceil(Math.hypot(bw, bh) + fs * 0.8);
+  const oc = makeCanvas(size, size, true), sc = oc.getContext('2d');
+  sc.translate(size / 2, size / 2);
+  sc.fillStyle = sc.strokeStyle = rgba(ink, 1);
+  sc.textAlign = 'center'; sc.textBaseline = 'middle';
+  sc.font = `bold ${fs}px "Courier Prime", monospace`; sc.letterSpacing = fs * 0.12 + 'px';
+  // the outer border, a second pass a little off it (pressed twice), and an inner frame
+  sc.lineWidth = fs * 0.13; sc.strokeRect(-bw / 2, -bh / 2, bw, bh);
+  sc.globalAlpha = 0.5; sc.lineWidth = fs * 0.1; sc.strokeRect(-bw / 2 + fs * 0.07, -bh / 2 - fs * 0.05, bw, bh); sc.globalAlpha = 1;
+  sc.lineWidth = fs * 0.05; sc.strokeRect(-bw / 2 + fs * 0.3, -bh / 2 + fs * 0.3, bw - fs * 0.6, bh - fs * 0.6);
+  sc.fillText(word, -fs * 0.06, fs * 0.05);
+  // uneven coverage: denser in the middle, blotchy patches with no ink, a little grain
+  const d = sc.getImageData(0, 0, size, size), o = d.data, hs = size / 2;
+  for (let k = 0; k < o.length; k += 4) {
+    if (!o[k + 3]) continue;
+    const p = k / 4, x = p % size, y = (p / size) | 0, dx = (x - hs) / (bw / 2), dy = (y - hs) / (bh / 2);
+    const mid = 1 - 0.25 * Math.min(1, dx * dx + dy * dy);
+    const cov = clamp((n(x / (fs * 1.5), y / (fs * 1.5)) - 0.25) * 3.2) * mid * (r() < 0.94 ? 1 : 0.3);
+    o[k + 3] = Math.round(o[k + 3] * cov);
+  }
+  sc.putImageData(d, 0, 0);
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = 0.9;
+  ctx.translate(cx, cy); ctx.rotate(ang); ctx.drawImage(oc, -size / 2, -size / 2);
+  ctx.restore();
+}
+
+// taped note: two strips across the top corners, translucent amber with straight cut ends (one torn in a zigzag), a gloss band and specks
+function tape(ctx, W, H, cfg) {
+  const r = rng(cfg.seed * 53 + 7), L = W * (0.24 + 0.04 * r()), w = W * 0.1;
+  [[0.1, 0.05, 0.7], [0.9, 0.05, -0.7]].forEach(([px, py, ang]) => {
+    const x = W * (px + (r() - 0.5) * 0.03), y = H * (py + (r() - 0.5) * 0.02), a = ang + (r() - 0.5) * 0.1;
+    ctx.save();
+    ctx.translate(x, y); ctx.rotate(a);
+    // the torn end is a zigzag on the right, the other end is cut straight
+    const zig = [];
+    for (let i = 0; i <= 6; i++) zig.push([L / 2 - (i % 2 ? 0 : 2 + 4 * r()), -w / 2 + w * i / 6]);
+    const body = () => {
+      ctx.beginPath(); ctx.moveTo(-L / 2, -w / 2);
+      zig.forEach((p) => ctx.lineTo(p[0], p[1]));
+      ctx.lineTo(-L / 2, w / 2); ctx.closePath();
+    };
+    body();
+    ctx.fillStyle = 'rgba(226,176,96,0.48)'; ctx.fill();
+    const g = ctx.createLinearGradient(0, -w / 2, 0, w / 2);
+    g.addColorStop(0, 'rgba(255,248,230,0)'); g.addColorStop(0.3, 'rgba(255,248,230,0.3)'); g.addColorStop(0.5, 'rgba(255,248,230,0.06)'); g.addColorStop(1, 'rgba(255,248,230,0)');
+    ctx.fillStyle = g; ctx.fill();
+    // darker edges, slightly thicker at the cut end
+    body(); ctx.strokeStyle = 'rgba(140,92,36,0.5)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = 'rgba(140,92,36,0.16)'; ctx.fillRect(-L / 2, -w / 2, L * 0.03, w);
+    for (let s = 0, k = 6 + Math.floor(r() * 4); s < k; s++) {
+      ctx.fillStyle = `rgba(70,46,22,${0.3 + 0.3 * r()})`;
+      ctx.beginPath(); ctx.arc((r() - 0.5) * L * 0.8, (r() - 0.5) * w * 0.7, 1 + 2 * r(), 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  });
 }
 
 // hidden ink (indented writing): the pen groove, visible only under grazing light. Rows bottom-up, like the crease field
