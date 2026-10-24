@@ -63,6 +63,20 @@ export function emitEvent(el, name, detail) {
   try { (el || document).dispatchEvent(new CustomEvent('crumple:' + name, { bubbles: true, detail })); } catch (e) { /* old browsers */ }
 }
 
+// reduced motion: 'full' and 'reduce' force it, anything else ('auto') follows the system setting
+export function motionQuery() { try { return matchMedia('(prefers-reduced-motion: reduce)'); } catch (e) { return null; } }
+export function wantsReduce(mode) {
+  if (mode === 'full') return false;
+  if (mode === 'reduce' || mode === 'reduced') return true;
+  const q = motionQuery();
+  return !!q && q.matches;
+}
+// add a listener and remember how to remove it (used by destroy())
+export function listen(list, target, type, fn, o) {
+  target.addEventListener(type, fn, o);
+  list.push(() => target.removeEventListener(type, fn, o));
+}
+
 // paper fonts arrive only when a paper is built: the page loads just its own
 const FONTS = { 'Special Elite': 'Special+Elite', 'Courier Prime': 'Courier+Prime:wght@400;700', Caveat: 'Caveat:wght@500', VT323: 'VT323', 'Libre Baskerville': 'Libre+Baskerville:ital,wght@0,400;0,700;1,400' };
 const fontsRequested = {};

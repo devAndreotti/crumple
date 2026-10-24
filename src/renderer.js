@@ -34,9 +34,11 @@ function shapeParams(shape, T) {
   return { shape: 0, k0, squash: 1, roll: 0, A0: T.card ? 0.07 : 0.12, Ares: 0.0045, ext: [2 * (R + 0.06), 2 * (R + 0.06)] };
 }
 
-export function Renderer(canvas) {
+// options: { onRestore } runs after the browser gives back a lost context (the caller rebuilds its papers then)
+export function Renderer(canvas, options = {}) {
   const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: true });
   if (!gl) return null;
+  let pp, sp, qp, quad, qb, pVao, pBuf, lost = false, dead = false;
   const program = (vs, fs) => {
     const sh = (t, c) => { const s = gl.createShader(t); gl.shaderSource(s, c); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
     const p = gl.createProgram();
@@ -46,20 +48,29 @@ export function Renderer(canvas) {
     for (let i = 0; i < n; i++) { const a = gl.getActiveUniform(p, i); u[a.name] = gl.getUniformLocation(p, a.name); }
     return { p, u };
   };
-  const pp = program(VS, FS), sp = program(SVS, SFS), qp = program(PVS, PFS);
-  const quad = gl.createVertexArray();
-  gl.bindVertexArray(quad);
-  const qb = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, qb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-  const ql = gl.getAttribLocation(sp.p, 'aQ');
-  gl.enableVertexAttribArray(ql); gl.vertexAttribPointer(ql, 2, gl.FLOAT, false, 0, 0);
-  gl.bindVertexArray(null);
-  const pVao = gl.createVertexArray(), pBuf = gl.createBuffer();
-  gl.bindVertexArray(pVao);
-  gl.bindBuffer(gl.ARRAY_BUFFER, pBuf);
-  gl.bufferData(gl.ARRAY_BUFFER, 420 * 32, gl.DYNAMIC_DRAW); // fixed size: each frame only rewrites the part in use
-  [['aP', 3, 0], ['aC', 4, 12], ['aS', 1, 28]].forEach(([name, n, off]) => { const l = gl.getAttribLocation(qp.p, name); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, n, gl.FLOAT, false, 32, off); });
-  gl.bindVertexArray(null);
+  // the programs and the shared buffers: made now, and again after a context restore
+  function setup() {
+    pp = program(VS, FS); sp = program(SVS, SFS); qp = program(PVS, PFS);
+    quad = gl.createVertexArray();
+    gl.bindVertexArray(quad);
+    qb = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, qb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const ql = gl.getAttribLocation(sp.p, 'aQ');
+    gl.enableVertexAttribArray(ql); gl.vertexAttribPointer(ql, 2, gl.FLOAT, false, 0, 0);
+    gl.bindVertexArray(null);
+    pVao = gl.createVertexArray(); pBuf = gl.createBuffer();
+    gl.bindVertexArray(pVao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, pBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, 420 * 32, gl.DYNAMIC_DRAW); // fixed size: each frame only rewrites the part in use
+    [['aP', 3, 0], ['aC', 4, 12], ['aS', 1, 28]].forEach(([name, n, off]) => { const l = gl.getAttribLocation(qp.p, name); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, n, gl.FLOAT, false, 32, off); });
+    gl.bindVertexArray(null);
+  }
+  setup();
+  // a lost context stops all drawing; once the browser restores it, the GPU objects are made again
+  const onLost = (e) => { e.preventDefault(); lost = true; };
+  const onRestored = () => { lost = false; setup(); tEmpty = null; tFull = null; tGrain = null; grainReady = null; snapFB = null; if (options.onRestore) options.onRestore(); };
+  canvas.addEventListener('webglcontextlost', onLost);
+  canvas.addEventListener('webglcontextrestored', onRestored);
 
   // grid mesh with exact extra columns and rows (folds at x = 0, y = 0, thirds, flap and stub) so folds stay straight
   function mesh(x0, x1, hh, nx, ny, extraX, extraY) {
@@ -123,7 +134,7 @@ export function Renderer(canvas) {
     if (tGrain) return tGrain;
     tGrain = tex1([240, 240, 240, 255]);
     grainReady = loadTexture('grain').then((img) => {
-      if (!img) return;
+      if (!img || dead) return;
       gl.bindTexture(gl.TEXTURE_2D, tGrain);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
       gl.generateMipmap(gl.TEXTURE_2D);
@@ -293,6 +304,7 @@ export function Renderer(canvas) {
 
   // a scene: a list of papers (the envelope and its letter), the shadow of one of them and the particles
   function draw(items, shadow, parts, w = canvas.width, h = canvas.height) {
+    if (dead || lost) return;
     gl.viewport(0, 0, w, h);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -316,9 +328,12 @@ export function Renderer(canvas) {
   // the still image of a closed paper comes from its own framebuffer: it never touches the animation canvas.
   // opened = the paper after it was read, loosely crumpled (the state a remembered paper returns to)
   let snapFB = null;
+  function freeSnap() { gl.deleteFramebuffer(snapFB.fb); gl.deleteRenderbuffer(snapFB.rb); gl.deleteTexture(snapFB.t); snapFB = null; }
   function snapshot(P, opened = false, format = 'image/png', size = 256) {
+    if (dead || lost) return '';
     const S = size;
     if (!snapFB || snapFB.S !== S) {
+      if (snapFB) freeSnap(); // a new size would leak the old texture, renderbuffer and framebuffer
       const t = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, t);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, S, S, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
@@ -330,7 +345,7 @@ export function Renderer(canvas) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
       gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rb);
-      snapFB = { fb, S, c: makeCanvas(S, S) };
+      snapFB = { fb, t, rb, S, c: makeCanvas(S, S) };
     }
     gl.bindFramebuffer(gl.FRAMEBUFFER, snapFB.fb);
     const ppu = S / (2 * D * Math.tan(FOV / 2));
@@ -356,5 +371,19 @@ export function Renderer(canvas) {
     return snapFB.c.toDataURL(format, 0.9);
   }
 
-  return { gl, build, refreshPrint, release, draw, snapshot };
+  // frees every GPU object this renderer made and gives the context back (papers must be released before)
+  function destroy() {
+    if (dead) return;
+    dead = true;
+    canvas.removeEventListener('webglcontextlost', onLost);
+    canvas.removeEventListener('webglcontextrestored', onRestored);
+    [pp, sp, qp].forEach((x) => gl.deleteProgram(x.p));
+    gl.deleteVertexArray(quad); gl.deleteBuffer(qb); gl.deleteVertexArray(pVao); gl.deleteBuffer(pBuf);
+    [tEmpty, tFull, tGrain].forEach((t) => { if (t) gl.deleteTexture(t); });
+    if (snapFB) freeSnap();
+    const ext = gl.getExtension('WEBGL_lose_context');
+    if (ext) ext.loseContext();
+  }
+
+  return { gl, build, refreshPrint, release, draw, snapshot, isLost: () => lost, destroy };
 }
