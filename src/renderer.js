@@ -140,7 +140,7 @@ export function Renderer(canvas) {
     const T = TYPES[cfg.type];
     grain();
     // the letter lives inside the envelope: same text, back, states and hidden ink; folded in thirds. Built alongside the envelope
-    const letterP = cfg.type === 'envelope' ? build({ id: cfg.id + '-letter', type: cfg.letter, shape: 'thirds', text: cfg.text, back: cfg.back, states: cfg.states.filter((e) => e !== 'torn'), seed: cfg.seed + 1, hiddenInk: cfg.hiddenInk }) : null;
+    const letterP = cfg.type === 'envelope' ? build({ id: cfg.id + '-letter', type: cfg.letter, shape: 'thirds', text: cfg.text, back: cfg.back, states: cfg.states.filter((e) => e !== 'torn'), seed: cfg.seed + 1, hiddenInk: cfg.hiddenInk, stamp: cfg.stamp }) : null;
     await ensureFonts([T.font, 'Caveat', 'Courier Prime', 'Special Elite']);
     const hw = T.w / 2, hh = T.h / 2;
     const F = shapeParams(cfg.shape, T);

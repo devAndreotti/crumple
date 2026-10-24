@@ -75,6 +75,7 @@ function writeText(ctx, cfg, T, txt, area, openings, r) {
     });
     if (ln.head && area.headFull) area.colY = y + 10;
   });
+  return y;
 }
 
 function drawWord(ctx, T, t, x, y, color, r, nz) {
@@ -340,7 +341,7 @@ export async function drawPrint(cfg, T, side, openings) {
     : { x: Math.round(T.x * 0.8), y: Math.min(T.y, Math.round(H * 0.28)), w: W - Math.round(T.x * 1.6), h: H - Math.min(T.y, Math.round(H * 0.28)) - 40, center: cfg.type === 'ticket' };
   if (cfg.type === 'ticket' && !front) { area.x = Math.round(W * 0.55); area.w = Math.round(W * 0.4); }
   if (cfg.type === 'polaroid' && !front) area = { x: 60, y: Math.round(H * 0.3), w: W - 120, h: H * 0.6, center: true };
-  if (txt && area) writeText(ctx, cfg, T, txt, area, openings, r);
+  const textEnd = txt && area ? writeText(ctx, cfg, T, txt, area, openings, r) : 0;
   const rs = rng(cfg.seed * 17 + (front ? 1 : 2));
   // stains and fingerprints go through the sheet: on the back they sit at the same spot (mirrored) and fainter
   if (cfg.states.includes('coffee')) await coffeeStain(c, ctx, W, H, cfg, front);
@@ -352,7 +353,7 @@ export async function drawPrint(cfg, T, side, openings) {
   if (cfg.states.includes('faded')) fadeWash(ctx, W, H, cfg);
   if (cfg.states.includes('foxing')) foxing(ctx, W, H, cfg);
   // the stamp sits over the text, the tape over everything; both are only on the front
-  if (front && cfg.states.includes('stamp')) rubberStamp(ctx, W, H, cfg);
+  if (front && cfg.states.includes('stamp')) rubberStamp(ctx, W, H, cfg, textEnd);
   if (front && cfg.states.includes('tape')) tape(ctx, W, H, cfg);
   return c;
 }
@@ -568,66 +569,74 @@ function foxing(ctx, W, H, cfg) {
   ctx.restore();
 }
 
-// rubber stamp: red or blue ink, a box or ring around a word, pressed slightly crooked; the ink skips in patches and grain
-function rubberStamp(ctx, W, H, cfg) {
+// rubber stamp: a box around a word in red or blue, about half the sheet wide, pressed crooked in the empty part below the text;
+// the ink is denser in the middle, skips in patches, and the border is doubled as if pressed twice
+function rubberStamp(ctx, W, H, cfg, below) {
   const r = rng(cfg.seed * 59 + 9), n = noise2(cfg.seed + 23);
   const word = String(cfg.stamp).toUpperCase(), ink = r() < 0.6 ? [176, 26, 36] : [34, 64, 150];
-  const fs = Math.min(W, H) * (0.04 + 0.01 * r()), round = r() < 0.4;
-  const cx = W * (0.56 + 0.26 * r()), cy = H * (0.1 + 0.2 * r()), ang = (r() - 0.5) * 0.24;
+  // letter spacing grows with the size, so the word is measured at 100 px and scaled to the target width
   const m = makeCanvas(1, 1).getContext('2d');
-  m.font = `bold ${fs}px "Courier Prime", monospace`;
-  const tw = m.measureText(word).width;
-  const bw = tw + fs * 1.5, bh = fs * 2.1, Rr = Math.max(tw / 2 + fs * 0.75, fs * 1.4);
-  const size = Math.ceil((round ? 2 * Rr : Math.hypot(bw, bh)) + fs * 0.6);
+  m.font = `bold 100px "Courier Prime", monospace`; m.letterSpacing = '12px';
+  const kw = m.measureText(word).width / 100;
+  const bw = W * 0.44, fs = bw / (kw + 1.2), bh = fs * 2.1;
+  const ang = -(0.14 + 0.17 * r()), cx = W * (0.46 + 0.1 * r());
+  const cy = Math.min(H - bh / 2 - 30, Math.max(H * 0.55, below + bh / 2 + 24));
+  const size = Math.ceil(Math.hypot(bw, bh) + fs * 0.8);
   const oc = makeCanvas(size, size, true), sc = oc.getContext('2d');
   sc.translate(size / 2, size / 2);
   sc.fillStyle = sc.strokeStyle = rgba(ink, 1);
-  sc.textAlign = 'center'; sc.textBaseline = 'middle'; sc.font = `bold ${fs}px "Courier Prime", monospace`;
-  if (round) {
-    sc.lineWidth = fs * 0.12; sc.beginPath(); sc.arc(0, 0, Rr, 0, Math.PI * 2); sc.stroke();
-    sc.lineWidth = fs * 0.04; sc.beginPath(); sc.arc(0, 0, Rr - fs * 0.22, 0, Math.PI * 2); sc.stroke();
-  } else {
-    sc.lineWidth = fs * 0.12; sc.strokeRect(-bw / 2, -bh / 2, bw, bh);
-    sc.lineWidth = fs * 0.04; sc.strokeRect(-bw / 2 + fs * 0.22, -bh / 2 + fs * 0.22, bw - fs * 0.44, bh - fs * 0.44);
-  }
-  sc.fillText(word, 0, fs * 0.05);
-  // uneven coverage: blotchy patches with no ink and a little grain
-  const d = sc.getImageData(0, 0, size, size), o = d.data;
+  sc.textAlign = 'center'; sc.textBaseline = 'middle';
+  sc.font = `bold ${fs}px "Courier Prime", monospace`; sc.letterSpacing = fs * 0.12 + 'px';
+  // the outer border, a second pass a little off it (pressed twice), and an inner frame
+  sc.lineWidth = fs * 0.13; sc.strokeRect(-bw / 2, -bh / 2, bw, bh);
+  sc.globalAlpha = 0.5; sc.lineWidth = fs * 0.1; sc.strokeRect(-bw / 2 + fs * 0.07, -bh / 2 - fs * 0.05, bw, bh); sc.globalAlpha = 1;
+  sc.lineWidth = fs * 0.05; sc.strokeRect(-bw / 2 + fs * 0.3, -bh / 2 + fs * 0.3, bw - fs * 0.6, bh - fs * 0.6);
+  sc.fillText(word, -fs * 0.06, fs * 0.05);
+  // uneven coverage: denser in the middle, blotchy patches with no ink, a little grain
+  const d = sc.getImageData(0, 0, size, size), o = d.data, hs = size / 2;
   for (let k = 0; k < o.length; k += 4) {
     if (!o[k + 3]) continue;
-    const p = k / 4, x = p % size, y = (p / size) | 0;
-    const cov = clamp((n(x / (fs * 1.6), y / (fs * 1.6)) - 0.3) * 3.5) * (r() < 0.93 ? 1 : 0.4);
+    const p = k / 4, x = p % size, y = (p / size) | 0, dx = (x - hs) / (bw / 2), dy = (y - hs) / (bh / 2);
+    const mid = 1 - 0.25 * Math.min(1, dx * dx + dy * dy);
+    const cov = clamp((n(x / (fs * 1.5), y / (fs * 1.5)) - 0.25) * 3.2) * mid * (r() < 0.94 ? 1 : 0.3);
     o[k + 3] = Math.round(o[k + 3] * cov);
   }
   sc.putImageData(d, 0, 0);
   ctx.save();
-  ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = 0.85;
+  ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = 0.9;
   ctx.translate(cx, cy); ctx.rotate(ang); ctx.drawImage(oc, -size / 2, -size / 2);
   ctx.restore();
 }
 
-// old clear tape gone amber: a translucent strip across a corner, darker straight edges, a gloss band and trapped specks
+// taped note: two strips across the top corners, translucent amber with straight cut ends (one torn in a zigzag), a gloss band and specks
 function tape(ctx, W, H, cfg) {
-  const r = rng(cfg.seed * 53 + 7), m = Math.min(W, H);
-  const corners = [[0.04, 0.06, -0.78], [0.96, 0.94, 0.62], [0.95, 0.05, 2.4], [0.05, 0.95, -2.5]];
-  const i0 = Math.floor(r() * 4), two = r() < 0.5;
-  for (let k = 0; k < (two ? 2 : 1); k++) {
-    const [px, py, ang] = corners[(i0 + 2 * k) % 4];
-    const x = W * (px + (r() - 0.5) * 0.03), y = H * (py + (r() - 0.5) * 0.03), L = m * (0.44 + 0.1 * r()), w = m * (0.085 + 0.02 * r());
+  const r = rng(cfg.seed * 53 + 7), L = W * (0.24 + 0.04 * r()), w = W * 0.1;
+  [[0.1, 0.05, 0.7], [0.9, 0.05, -0.7]].forEach(([px, py, ang]) => {
+    const x = W * (px + (r() - 0.5) * 0.03), y = H * (py + (r() - 0.5) * 0.02), a = ang + (r() - 0.5) * 0.1;
     ctx.save();
-    ctx.translate(x, y); ctx.rotate(ang + (r() - 0.5) * 0.1);
-    ctx.fillStyle = 'rgba(228,176,96,0.38)'; ctx.fillRect(-L / 2, -w / 2, L, w);
-    ctx.strokeStyle = 'rgba(140,92,36,0.45)'; ctx.lineWidth = 2.2;
-    ctx.beginPath(); ctx.moveTo(-L / 2, -w / 2); ctx.lineTo(L / 2, -w / 2); ctx.moveTo(-L / 2, w / 2); ctx.lineTo(L / 2, w / 2); ctx.stroke();
+    ctx.translate(x, y); ctx.rotate(a);
+    // the torn end is a zigzag on the right, the other end is cut straight
+    const zig = [];
+    for (let i = 0; i <= 6; i++) zig.push([L / 2 - (i % 2 ? 0 : 2 + 4 * r()), -w / 2 + w * i / 6]);
+    const body = () => {
+      ctx.beginPath(); ctx.moveTo(-L / 2, -w / 2);
+      zig.forEach((p) => ctx.lineTo(p[0], p[1]));
+      ctx.lineTo(-L / 2, w / 2); ctx.closePath();
+    };
+    body();
+    ctx.fillStyle = 'rgba(226,176,96,0.48)'; ctx.fill();
     const g = ctx.createLinearGradient(0, -w / 2, 0, w / 2);
-    g.addColorStop(0, 'rgba(255,248,230,0)'); g.addColorStop(0.3, 'rgba(255,248,230,0.26)'); g.addColorStop(0.5, 'rgba(255,248,230,0.05)'); g.addColorStop(1, 'rgba(255,248,230,0)');
-    ctx.fillStyle = g; ctx.fillRect(-L / 2, -w / 2, L, w);
-    for (let s = 0, n = 10 + Math.floor(r() * 8); s < n; s++) {
+    g.addColorStop(0, 'rgba(255,248,230,0)'); g.addColorStop(0.3, 'rgba(255,248,230,0.3)'); g.addColorStop(0.5, 'rgba(255,248,230,0.06)'); g.addColorStop(1, 'rgba(255,248,230,0)');
+    ctx.fillStyle = g; ctx.fill();
+    // darker edges, slightly thicker at the cut end
+    body(); ctx.strokeStyle = 'rgba(140,92,36,0.5)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = 'rgba(140,92,36,0.16)'; ctx.fillRect(-L / 2, -w / 2, L * 0.03, w);
+    for (let s = 0, k = 6 + Math.floor(r() * 4); s < k; s++) {
       ctx.fillStyle = `rgba(70,46,22,${0.3 + 0.3 * r()})`;
-      ctx.beginPath(); ctx.arc((r() - 0.5) * L * 0.95, (r() - 0.5) * w * 0.8, 0.8 + 1.9 * r(), 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc((r() - 0.5) * L * 0.8, (r() - 0.5) * w * 0.7, 1 + 2 * r(), 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
-  }
+  });
 }
 
 // hidden ink (indented writing): the pen groove, visible only under grazing light. Rows bottom-up, like the crease field
