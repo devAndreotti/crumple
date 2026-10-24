@@ -1,5 +1,6 @@
 // node tests/burnflip.cjs [baseURL]: burn on a plain paper (Stage), every burn form, singed, flips at any moment
 // (Scene flight and crumpled, Stage at p = 0 and 0.5, envelope). Saves screenshots to BURNFLIP_OUT (default tests/out/).
+// Stage advances at most 0.05 s per frame, so on a slow software renderer a 0.8 s tween can take a minute of wall time
 const { session } = require('./helpers.cjs');
 const fs = require('fs');
 const out = process.env.BURNFLIP_OUT || __dirname + '/out/';
@@ -54,23 +55,23 @@ const check = (ok, what) => { console.log((ok ? 'ok   ' : 'FAIL ') + what); if (
   // 3. Stage flip at p = 0 and p = 0.5, and the side is kept through crumple
   await set({ type: 'typed', seed: 21, text: TEXT }, 0);
   await p.evaluate(() => __stage.flip());
-  await p.waitForFunction('__stage.state.f > 0.99', { timeout: 60000, polling: 100 });
+  await p.waitForFunction('__stage.state.f > 0.99', { timeout: 180000, polling: 100 });
   await shot('flip-p0');
   check(await p.evaluate(() => __stage.state.f > 0.99), 'stage flip works at p = 0');
   await p.evaluate(() => __stage.uncrumple());
-  await p.waitForFunction('__stage.state.p > 0.99', { timeout: 60000, polling: 100 });
+  await p.waitForFunction('__stage.state.p > 0.99', { timeout: 180000, polling: 100 });
   await p.evaluate(() => __stage.crumple());
   await sleep(400);
   check(await p.evaluate(() => __stage.state.f > 0.99), 'crumple keeps the flipped side');
   await set({ type: 'typed', seed: 21, text: TEXT }, 0.5);
   await p.evaluate(() => __stage.flip());
-  await p.waitForFunction('__stage.state.f > 0.99', { timeout: 60000, polling: 100 });
+  await p.waitForFunction('__stage.state.f > 0.99', { timeout: 180000, polling: 100 });
   await shot('flip-p05');
 
   // 4. envelope flipped closed and mid-opening (the letter stays on its side)
   await set({ type: 'envelope', seed: 21, text: TEXT }, 0);
   await p.evaluate(() => __stage.flip());
-  await p.waitForFunction('__stage.state.f > 0.99', { timeout: 60000, polling: 100 });
+  await p.waitForFunction('__stage.state.f > 0.99', { timeout: 180000, polling: 100 });
   await sleep(300);
   await shot('envelope-flipped-closed');
   await p.evaluate(() => __stage.setProgress(0.5));
@@ -80,7 +81,7 @@ const check = (ok, what) => { console.log((ok ? 'ok   ' : 'FAIL ') + what); if (
   // 5. Scene: flip during the flight and while crumpled emits 'flip'
   await p.evaluate(() => { window.__flips = []; __entry.btn.addEventListener('crumple:flip', (e) => __flips.push(e.detail.back)); });
   await p.evaluate(() => Crumple.Scene.open(__entry));
-  await p.waitForFunction('Crumple.Scene.debug && Crumple.Scene.debug.phase === "opening"', { timeout: 60000, polling: 20 });
+  await p.waitForFunction('Crumple.Scene.debug && Crumple.Scene.debug.phase === "opening"', { timeout: 180000, polling: 20 });
   await p.evaluate(() => Crumple.Scene.flip());
   await sleep(200);
   check(await p.evaluate(() => __flips.length) === 1, "Scene flip during the flight emits 'flip'");
