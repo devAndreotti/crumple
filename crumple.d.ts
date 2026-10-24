@@ -56,16 +56,28 @@ export interface RendererApi {
   release(paper: Paper): void;
   /** Still image of a closed paper (or a loosely crumpled one with opened = true) as a data URL. */
   snapshot(paper: Paper, opened?: boolean, format?: string, size?: number): string;
+  /** True between a webglcontextlost and the matching restore: nothing is drawn meanwhile. */
+  isLost(): boolean;
+  /** Frees the programs, buffers, textures and framebuffers, then releases the GL context. Release the papers first. */
+  destroy(): void;
 }
-export function Renderer(canvas: HTMLCanvasElement): RendererApi | null;
+export interface RendererOptions {
+  /** Runs after the browser restores a lost context: papers made before the loss must be built again. */
+  onRestore?(): void;
+}
+export function Renderer(canvas: HTMLCanvasElement, options?: RendererOptions): RendererApi | null;
+
+/** How motion is handled: 'auto' follows prefers-reduced-motion, 'reduce' and 'full' force it. */
+export type MotionMode = 'auto' | 'reduce' | 'full';
 
 export interface SceneLabels { flip?: string; tear?: string; close?: string; hint?: string; open?: string; back?: string }
 export interface SceneOptions {
   labels?: SceneLabels;
   /** Opened papers return loosely crumpled (and stay that way until reset()). */
   remember?: boolean;
-  /** 'auto' follows prefers-reduced-motion. */
-  motion?: 'auto' | 'full' | 'reduced';
+  /** 'auto' follows prefers-reduced-motion (and reacts when it changes). */
+  /** 'reduced' is the old spelling of 'reduce', still accepted. */
+  motion?: MotionMode | 'reduced';
   /** Low warm light that follows the mouse over the open sheet. */
   flashlight?: boolean;
   /** How many papers keep their GPU textures at once. */
@@ -80,7 +92,12 @@ export interface AttachOptions {
 export interface SceneEntry { btn: HTMLElement; cfg: Required<PaperConfig> }
 export const Scene: {
   init(options?: SceneOptions): void;
+  /** Makes a trigger open a paper. Attaching the same element again replaces its binding; an id already in use detaches the older paper (with a console warning). Before the body exists, binding waits for DOMContentLoaded. */
   attach(trigger: HTMLElement, config: PaperConfig, options?: AttachOptions): SceneEntry;
+  /** Undoes attach for one trigger element, or for the paper with that id. */
+  detach(target: HTMLElement | string): void;
+  /** Removes the overlay, listeners, observers and the WebGL context. attach() (or init()) starts it again. */
+  destroy(): void;
   open(entry: SceneEntry): Promise<void>;
   close(): void;
   flip(): void;
@@ -90,9 +107,22 @@ export const Scene: {
   readonly reducedMotion: boolean;
   readonly entries: SceneEntry[];
   readonly isOpen: boolean;
+  /** @internal test hook: draws a fixed frame of an attached paper. */
+  frame(index: number, tf: number, p: number, f?: number, tear?: number, destroy?: number): Promise<void>;
+  /** @internal test hook: lights the flashlight at screen (x, y). */
+  flashlight(x: number, y: number): void;
+  /** @internal test hook: the animation state, for tests. */
+  readonly debug: { phase: string; ashes: boolean; destroy: number | undefined; n: number; raf: number; tw: string[]; lampPos: number[] | null; lamp: number } | null;
 };
 
-export interface StageOptions { flashlight?: boolean; drag?: boolean; fit?: number }
+export interface StageOptions {
+  flashlight?: boolean;
+  drag?: boolean;
+  /** Share of the canvas height the open sheet takes. */
+  fit?: number;
+  /** 'auto' follows prefers-reduced-motion; reduced motion runs the tweens at 40% of their time. */
+  motion?: MotionMode;
+}
 export interface StageApi {
   set(config: PaperConfig, options?: { progress?: number }): Promise<Paper | null>;
   crumple(): void;
@@ -108,6 +138,10 @@ export interface StageApi {
   png(): string;
   snapshot(opened?: boolean, format?: string, size?: number): string;
   readonly paper: Paper | null;
+  /** Frees the paper, listeners and the WebGL context. Every method is a no-op afterwards. */
+  destroy(): void;
+  /** @internal test hook: the animation state, for tests. */
+  readonly state: Record<string, unknown>;
 }
 export function Stage(canvas: HTMLCanvasElement, options?: StageOptions): StageApi | null;
 
