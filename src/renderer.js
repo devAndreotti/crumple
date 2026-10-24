@@ -158,7 +158,7 @@ export function Renderer(canvas) {
       meshes.push(mesh(stubX, hw, hh, nx - nMain, ny, exX, exY));
     } else meshes.push(mesh(-hw, hw, hh, nx, ny, exX, exY));
     // an empty back and a paper without cut-outs use the shared 1x1 textures (saves ~6 MB of texture per paper)
-    const backEmpty = !(cfg.back || cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'newspaper' || ['coffee', 'water', 'prints', 'aged'].some((e) => cfg.states.includes(e)));
+    const backEmpty = !(cfg.back || cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'newspaper' || ['coffee', 'water', 'prints', 'aged', 'wine', 'ink', 'foxing', 'faded'].some((e) => cfg.states.includes(e)));
     const noEffects = !(cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.states.includes('torn') || cfg.states.includes('burnt') || cfg.burnAfterReading);
     const [creases, printF, printB, fx] = await Promise.all([
       Jobs.run('creases', [{ seed: cfg.seed, shape: cfg.shape, w: T.w, h: T.h, card: !!T.card, foldY }, W, H]),

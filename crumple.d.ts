@@ -2,7 +2,7 @@
 
 export type PaperType = 'typed' | 'notebook' | 'form' | 'receipt' | 'ticket' | 'memo' | 'newspaper' | 'sticky' | 'polaroid' | 'envelope';
 export type PaperShape = 'ball' | 'flat' | 'quarters' | 'half' | 'thirds' | 'roll' | 'twist';
-export type PaperState = 'torn' | 'burnt' | 'coffee' | 'water' | 'prints' | 'aged' | 'scribbled';
+export type PaperState = 'torn' | 'burnt' | 'coffee' | 'water' | 'prints' | 'aged' | 'scribbled' | 'wine' | 'ink' | 'foxing' | 'tape' | 'stamp' | 'faded';
 
 export interface PaperConfig {
   /** Unique id (used for storage keys and events). Defaults to the type. */
@@ -28,6 +28,8 @@ export interface PaperConfig {
   address?: string;
   /** Type of the letter inside an envelope. */
   letter?: Exclude<PaperType, 'envelope'>;
+  /** Word printed by the 'stamp' state, drawn in capitals (default 'RECEIVED'). */
+  stamp?: string;
 }
 
 export interface TypeInfo { name: string; w: number; h: number; color: [number, number, number]; shape: PaperShape | 'envelope'; font: string; [key: string]: unknown }

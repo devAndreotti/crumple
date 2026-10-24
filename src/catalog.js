@@ -1,5 +1,5 @@
 // Catalog: paper types, closed shapes, states and the default texts. A paper is born from a config:
-// { id, type, shape, states, text, back, seed, open, hiddenInk, burnAfterReading, image, address, letter }
+// { id, type, shape, states, text, back, seed, open, hiddenInk, burnAfterReading, image, address, letter, stamp }
 // Text markup: "# " at the start of a line = heading; ~~word~~{fix} = struck out and corrected by hand;
 // [[passage]] = redaction bar that fades a little more on every opening.
 
@@ -17,7 +17,7 @@ export const TYPES = {
   envelope: { name: 'Sealed envelope', w: 0.9, h: 0.96, body: 0.6, flap: 0.36, color: [0.93, 0.885, 0.79], shape: 'envelope', font: 'Caveat', size: 46, lineHeight: 50, x: 90, y: 600, ink: [30, 40, 100], hand: true },
 };
 export const SHAPES = { ball: 'Crumpled ball', flat: 'Flattened crumple', quarters: 'Folded in quarters', half: 'Folded in half', thirds: 'Folded in thirds (letter)', roll: 'Rolled up', twist: 'Twisted (candy wrapper)' };
-export const STATES = { torn: 'Torn', burnt: 'Burnt', coffee: 'Coffee stain', water: 'Water stain', prints: 'Dirty fingerprints', aged: 'Aged', scribbled: 'Scribbled' };
+export const STATES = { torn: 'Torn', burnt: 'Burnt', coffee: 'Coffee stain', water: 'Water stain', prints: 'Dirty fingerprints', aged: 'Aged', scribbled: 'Scribbled', wine: 'Wine stain', ink: 'Ink blot', foxing: 'Foxing', tape: 'Tape', stamp: 'Rubber stamp', faded: 'Sun-faded' };
 export const TEXTS = {
   typed: 'To whoever finds this:\n\nI folded every thought I could not say out loud and left it here.\n\nRead it slowly.\n\n— A.',
   notebook: 'monday night\n\ncould not sleep again.\nmade a list of things to fix tomorrow.\n\ndo not read the rest.',
@@ -51,5 +51,7 @@ export function normalize(c = {}) {
     image: c.image || '',
     address: typeof c.address === 'string' ? c.address : ADDRESS,
     letter: TYPES[c.letter] && c.letter !== 'envelope' ? c.letter : 'typed',
+    // the word of the 'stamp' state (drawn in capitals)
+    stamp: typeof c.stamp === 'string' && c.stamp.trim() ? c.stamp.trim() : 'RECEIVED',
   };
 }
