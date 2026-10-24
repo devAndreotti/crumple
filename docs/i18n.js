@@ -24,10 +24,10 @@
     'shapes.title': 'Shapes',
     'shapes.lede': 'The same typed sheet, folded or crumpled seven ways.',
     'states.title': 'States',
-    'states.lede': 'Wear, stains and secrets.',
+    'states.lede': 'Fourteen states: wear, stains, fire and marks, plus the secrets.',
     'states.hint': 'Move the light over the hidden ink to read it (mouse on a desktop). Burn after reading is gone for good once you close it.',
     'play.title': 'Playground',
-    'play.lede': 'Build a paper, then crumple, unfold, flip, tear or burn it. The JSON box shows exactly what you are using.',
+    'play.lede': 'Build a paper, then crumple, unfold, flip at any moment, tear it, or burn it four ways. The JSON box shows exactly what you are using.',
     'play.webgl': 'This browser has no WebGL2, so the live stage is not available. The gallery above falls back to plain sheets.',
     'play.type': 'Type',
     'play.shape': 'Shape',
@@ -57,9 +57,9 @@
     'install.title': 'Install and usage',
     'install.lede': 'Pick the way you load it. All of them need Crumple.config.assets pointing at the assets folder.',
     'install.a': 'Script tag (CDN)',
-    'install.a.note': 'Set the assets folder before the first paper is built. The CDN serves the textures and the demo photos.',
+    'install.a.note': 'Set the assets folder before the first paper is built. The CDN serves the textures and the demo photos. Pinned to 1.0.0.',
     'install.b': 'npm (ES modules)',
-    'install.b.note': 'Install from GitHub, then import what you need. Scene attaches to buttons, Stage draws into your own canvas.',
+    'install.b.note': 'Install from npm, then import what you need. Scene attaches to buttons, Stage draws into your own canvas. Node and CommonJS work too.',
     'install.c': 'Minimal HTML',
     'install.d': 'Stage example',
     'install.e': 'Events',
@@ -73,7 +73,7 @@
     'api.cfg.id': 'Unique id, used for storage keys and events. Defaults to the type.',
     'api.cfg.type': 'One of the ten paper types.',
     'api.cfg.shape': 'Closed shape. Envelopes always use their own shape.',
-    'api.cfg.states': 'Array of states: torn, burnt, coffee, water, prints, aged, scribbled.',
+    'api.cfg.states': 'Array of the fourteen states: torn, burnt, coffee, water, prints, aged, scribbled, singed, wine, ink, foxing, tape, stamp, faded.',
     'api.cfg.text': 'Front text, with the markup described below.',
     'api.cfg.back': 'Back text, shown when the paper is flipped.',
     'api.cfg.seed': 'Integer. The same seed always gives the same crumple.',
@@ -85,7 +85,7 @@
     'api.cfg.letter': 'Type of the letter inside an envelope.',
     'api.scene.title': 'Scene (triggers)',
     'api.scene.desc': 'Papers that sit on the page as buttons and fly to the center when clicked.',
-    'api.scene.init': 'Call once. Options: labels, remember, motion (auto, full or reduced), flashlight (default true), maxBuilt (papers kept on the GPU, default 3).',
+    'api.scene.init': 'Call once. Options: labels, remember, motion (auto, full or reduce), flashlight (default true), maxBuilt (papers kept on the GPU, default 3).',
     'api.scene.attach': 'Turns a button into a crumpled-paper trigger. Options: snapshot and snapshotOpened (still images).',
     'api.scene.open': 'Opens an attached entry programmatically. Resolves when the paper is built.',
     'api.scene.close': 'Closes the open paper (the same as Escape or a click outside).',
@@ -94,9 +94,9 @@
     'api.scene.props': 'entries (list), isOpen (boolean), reducedMotion (boolean).',
     'api.stage.title': 'Stage (inline canvas)',
     'api.stage.desc': 'A paper rendered in place in your own canvas, with no flight.',
-    'api.stage.new': 'Crumple.Stage(canvas, { fit, flashlight, drag }). fit is the share of the canvas height the open sheet takes (default 0.8).',
+    'api.stage.new': "Crumple.Stage(canvas, { fit, flashlight, drag, motion }). fit is the share of the canvas height the open sheet takes (default 0.8). motion is 'auto', 'reduce' or 'full'. Returns null without WebGL2.",
     'api.stage.set': 'Builds a paper from a config and shows it. Resolves with the paper (or null if a newer call replaced it).',
-    'api.stage.actions': 'crumple(), uncrumple(), toggle(), flip(), tear(), restoreStub(), burn(), restore().',
+    'api.stage.actions': 'crumple(), uncrumple(), toggle(), flip() (at any moment), tear(), restoreStub(), restore().',
     'api.stage.progress': 'setProgress(0..1): 0 is closed, 1 is fully open.',
     'api.stage.out': 'png() returns a data URL of the current frame. snapshot(opened, format, size) returns a still image.',
     'api.sound.title': 'Sound',
@@ -165,7 +165,42 @@
     'state.scribbled': 'Scribbled',
     'state.burnAfter': 'Burn after reading',
     'state.hidden': 'Hidden ink',
-    'state.envelope': 'Sealed envelope'
+    'state.envelope': 'Sealed envelope',
+    'state.singed': 'Singed',
+    'state.wine': 'Wine stain',
+    'state.ink': 'Ink blot',
+    'state.foxing': 'Foxing',
+    'state.tape': 'Tape',
+    'state.stamp': 'Rubber stamp',
+    'state.faded': 'Sun-faded',
+    'burns.title': 'Burn forms',
+    'burns.lede': 'Four ways to burn: from a corner, along an edge, a hole from the center, or a few embers.',
+    'burn.corner': 'Corner',
+    'burn.edge': 'Edge',
+    'burn.center': 'Center hole',
+    'burn.spots': 'Embers',
+    'burn.corner.desc': 'The fire starts in one corner and creeps in.',
+    'burn.edge.desc': 'The fire runs along one whole side.',
+    'burn.center.desc': 'A hole burns out of the middle.',
+    'burn.spots.desc': 'A few embers, each with its own scorch.',
+    'play.burnForm': 'Burn form',
+    'play.stampWord': 'Stamp word (16 letters)',
+    'play.group.fire': 'Fire',
+    'play.group.stains': 'Stains',
+    'play.group.wear': 'Wear',
+    'play.group.marks': 'Marks',
+    'menu.label': 'Menu',
+    'api.cfg.burn': "Where the fire starts: 'corner' (default), 'edge', 'center' or 'spots'. Used by burnt, burnAfterReading and Stage.burn().",
+    'api.cfg.stamp': "The word of the rubber stamp state, in capitals. Default 'RECEIVED'.",
+    'api.scene.detach': 'Undoes attach for one trigger, or for the paper with that id.',
+    'api.scene.destroy': 'Removes the overlay, listeners, observers and the WebGL context. attach() or init() starts it again.',
+    'api.stage.burn': 'Burns the paper from its burn form, on any paper. Returns a Promise that resolves once the burn has started.',
+    'api.stage.destroy': 'Frees the paper, listeners and the WebGL context. Every method is a no-op afterwards.',
+    'api.module.title': 'Modules and renderer',
+    'api.module.desc': 'ES modules and CommonJS. Importing the package in Node or on a server is safe: nothing touches window until you call it.',
+    'api.module.import': "import { Scene, Stage, config } from '@devandreotti/crumple', or const { Stage } = require('@devandreotti/crumple').",
+    'api.module.renderer': 'A lower-level renderer on your own canvas (build, snapshot, release). destroy() frees its GL resources; release the papers first.',
+    'meta.imageAlt': 'Crumpled paper note unfolding into a readable sheet, with the Crumple title'
   };
 
   var PT = {
@@ -189,10 +224,10 @@
     'shapes.title': 'Formas',
     'shapes.lede': 'A mesma folha datilografada, dobrada ou amassada de sete jeitos.',
     'states.title': 'Estados',
-    'states.lede': 'Desgaste, manchas e segredos.',
+    'states.lede': 'Quatorze estados: desgaste, manchas, fogo e marcas, além dos segredos.',
     'states.hint': 'Passe a luz sobre a tinta oculta para lê-la (mouse, no computador). Papel que queima depois de ler some de vez quando você fecha.',
     'play.title': 'Playground',
-    'play.lede': 'Monte um papel e depois amasse, abra, vire, rasgue ou queime. A caixa JSON mostra exatamente o que você está usando.',
+    'play.lede': 'Monte um papel e depois amasse, abra, vire a qualquer momento, rasgue ou queime de quatro jeitos. A caixa JSON mostra exatamente o que você está usando.',
     'play.webgl': 'Este navegador não tem WebGL2, então o palco ao vivo não está disponível. A galeria acima mostra folhas simples.',
     'play.type': 'Tipo',
     'play.shape': 'Forma',
@@ -222,7 +257,7 @@
     'install.title': 'Instalação e uso',
     'install.lede': 'Escolha a forma de carregar. Todas precisam de Crumple.config.assets apontando para a pasta de assets.',
     'install.a': 'Tag script (CDN)',
-    'install.a.note': 'Defina a pasta de assets antes de criar o primeiro papel. O CDN serve as texturas e as fotos de demonstração.',
+    'install.a.note': 'Defina a pasta de assets antes de criar o primeiro papel. O CDN serve as texturas e as fotos de demonstração. Fixado na versão 1.0.0.',
     'install.b': 'npm (módulos ES)',
     'install.b.note': 'Instale pelo GitHub e importe o que precisar. Scene prende a botões, Stage desenha no seu próprio canvas.',
     'install.c': 'HTML mínimo',
@@ -238,7 +273,7 @@
     'api.cfg.id': 'Id único, usado em chaves de armazenamento e eventos. Padrão: o tipo.',
     'api.cfg.type': 'Um dos dez tipos de papel.',
     'api.cfg.shape': 'Forma fechada. Envelopes sempre usam a própria forma.',
-    'api.cfg.states': 'Lista de estados: torn, burnt, coffee, water, prints, aged, scribbled.',
+    'api.cfg.states': 'Lista dos quatorze estados: torn, burnt, coffee, water, prints, aged, scribbled, singed, wine, ink, foxing, tape, stamp, faded.',
     'api.cfg.text': 'Texto da frente, com a marcação descrita abaixo.',
     'api.cfg.back': 'Texto do verso, mostrado quando o papel é virado.',
     'api.cfg.seed': 'Inteiro. A mesma semente sempre dá o mesmo amassado.',
@@ -250,7 +285,7 @@
     'api.cfg.letter': 'Tipo da carta dentro do envelope.',
     'api.scene.title': 'Scene (gatilhos)',
     'api.scene.desc': 'Papéis que ficam na página como botões e voam para o centro quando clicados.',
-    'api.scene.init': 'Chame uma vez. Opções: labels, remember, motion (auto, full ou reduced), flashlight (padrão true), maxBuilt (papéis mantidos na GPU, padrão 3).',
+    'api.scene.init': 'Chame uma vez. Opções: labels, remember, motion (auto, full ou reduce), flashlight (padrão true), maxBuilt (papéis mantidos na GPU, padrão 3).',
     'api.scene.attach': 'Transforma um botão em gatilho de papel amassado. Opções: snapshot e snapshotOpened (imagens estáticas).',
     'api.scene.open': 'Abre uma entrada anexada por código. Resolve quando o papel está pronto.',
     'api.scene.close': 'Fecha o papel aberto (igual ao Escape ou a um clique fora).',
@@ -259,9 +294,9 @@
     'api.scene.props': 'entries (lista), isOpen (booleano), reducedMotion (booleano).',
     'api.stage.title': 'Stage (canvas embutido)',
     'api.stage.desc': 'Um papel desenhado no lugar, dentro do seu próprio canvas, sem voo.',
-    'api.stage.new': 'Crumple.Stage(canvas, { fit, flashlight, drag }). fit é a parte da altura do canvas que a folha aberta ocupa (padrão 0.8).',
+    'api.stage.new': "Crumple.Stage(canvas, { fit, flashlight, drag, motion }). fit é a parte da altura do canvas que a folha aberta ocupa (padrão 0.8). motion é 'auto', 'reduce' ou 'full'. Devolve null sem WebGL2.",
     'api.stage.set': 'Cria um papel a partir de uma configuração e mostra. Resolve com o papel (ou null se outra chamada mais nova o substituiu).',
-    'api.stage.actions': 'crumple(), uncrumple(), toggle(), flip(), tear(), restoreStub(), burn(), restore().',
+    'api.stage.actions': 'crumple(), uncrumple(), toggle(), flip() (a qualquer momento), tear(), restoreStub(), restore().',
     'api.stage.progress': 'setProgress(0..1): 0 é fechado, 1 é totalmente aberto.',
     'api.stage.out': 'png() devolve uma data URL do quadro atual. snapshot(opened, format, size) devolve uma imagem estática.',
     'api.sound.title': 'Som',
@@ -330,7 +365,42 @@
     'state.scribbled': 'Rabiscado',
     'state.burnAfter': 'Queima depois de ler',
     'state.hidden': 'Tinta oculta',
-    'state.envelope': 'Envelope lacrado'
+    'state.envelope': 'Envelope lacrado',
+    'state.singed': 'Chamuscado',
+    'state.wine': 'Mancha de vinho',
+    'state.ink': 'Borrão de tinta',
+    'state.foxing': 'Manchas do tempo',
+    'state.tape': 'Fita adesiva',
+    'state.stamp': 'Carimbo',
+    'state.faded': 'Desbotado pelo sol',
+    'burns.title': 'Formas de queimar',
+    'burns.lede': 'Quatro jeitos de queimar: a partir de um canto, ao longo de uma borda, um furo no meio ou algumas brasas.',
+    'burn.corner': 'Canto',
+    'burn.edge': 'Borda',
+    'burn.center': 'Furo no meio',
+    'burn.spots': 'Brasas',
+    'burn.corner.desc': 'O fogo começa em um canto e vai avançando.',
+    'burn.edge.desc': 'O fogo corre por um lado inteiro.',
+    'burn.center.desc': 'Um furo se abre no meio da folha.',
+    'burn.spots.desc': 'Algumas brasas, cada uma com a sua queimadura.',
+    'play.burnForm': 'Forma da queima',
+    'play.stampWord': 'Palavra do carimbo (16 letras)',
+    'play.group.fire': 'Fogo',
+    'play.group.stains': 'Manchas',
+    'play.group.wear': 'Desgaste',
+    'play.group.marks': 'Marcas',
+    'menu.label': 'Menu',
+    'api.cfg.burn': "Onde o fogo começa: 'corner' (padrão), 'edge', 'center' ou 'spots'. Usado por burnt, burnAfterReading e Stage.burn().",
+    'api.cfg.stamp': "A palavra do estado de carimbo, em maiúsculas. Padrão 'RECEIVED'.",
+    'api.scene.detach': 'Desfaz o attach de um gatilho, ou do papel com aquele id.',
+    'api.scene.destroy': 'Remove a sobreposição, os listeners, os observadores e o contexto WebGL. attach() ou init() reinicia.',
+    'api.stage.burn': 'Queima o papel a partir da forma de queima, em qualquer papel. Devolve uma Promise que resolve quando a queima começa.',
+    'api.stage.destroy': 'Libera o papel, os listeners e o contexto WebGL. Depois disso, todo método não faz nada.',
+    'api.module.title': 'Módulos e renderizador',
+    'api.module.desc': 'Módulos ES e CommonJS. Importar o pacote no Node ou no servidor é seguro: nada toca no window até você chamar.',
+    'api.module.import': "import { Scene, Stage, config } from '@devandreotti/crumple', ou const { Stage } = require('@devandreotti/crumple').",
+    'api.module.renderer': 'Um renderizador de baixo nível no seu próprio canvas (build, snapshot, release). destroy() libera os recursos GL; solte os papéis antes.',
+    'meta.imageAlt': 'Bilhete de papel amassado se abrindo numa folha legível, com o título Crumple'
   };
 
   // Brazilian Portuguese paper texts, keyed by paper id (English text is in papers.json)
@@ -367,7 +437,18 @@
       'state-scribbled': { text: 'Vou ~~nunca~~{sempre} esquecer como o lago estava de manhã.\n\n— A.' },
       'state-burn-after': { text: 'Este bilhete queima depois de ler.\n\nVá em frente, leia uma vez só.' },
       'state-hidden-ink': { hiddenInk: 'a mensagem de verdade está escrita sob a luz, bem pequena', text: 'Não há nada para ver aqui.\n\nContinue lendo.' },
-      'state-envelope': { text: 'Querido amigo,\n\neste envelope está lacrado desde o outono. Abra quando tiver uma hora tranquila.\n\n— seu' }
+      'state-envelope': { text: 'Querido amigo,\n\neste envelope está lacrado desde o outono. Abra quando tiver uma hora tranquila.\n\n— seu' },
+      'state-singed': { text: 'As bordas ficaram marrons antes que eu lesse a última linha.\n\nO meio ainda está aqui.' },
+      'state-wine': { text: 'O jantar atrasou.\n\nO vinho marcou o canto da página.' },
+      'state-ink': { text: 'A caneta vazou no caminho para casa.\n\nAs palavras ainda estão sob o borrão.' },
+      'state-foxing': { text: 'Guardado numa caixa no sótão por quarenta anos.\n\nAs manchas marrons são os anos.' },
+      'state-tape': { text: 'Prendi os cantos com fita na geladeira.\n\nAgora a fita amarelou junto com o bilhete.' },
+      'state-stamp': { stamp: 'RECEBIDO', text: 'Recebido, arquivado e esquecido.\n\nO carimbo foi a única coisa que ficou em ordem.' },
+      'state-faded': { text: 'Isto foi escrito a tinta azul.\n\nO sol levou quase todo o azul.' },
+      'burn-corner': { text: 'O fogo começou num canto e subiu devagar.\n\nO resto da folha ainda se lê.' },
+      'burn-edge': { text: 'O fogo andou ao longo da borda inteira.\n\nO texto do meio ainda está intacto.' },
+      'burn-center': { text: 'Um furo se abriu no meio, e as palavras ao redor ainda se leem.' },
+      'burn-spots': { text: 'Algumas brasas caíram aqui e ali.\n\nCada uma deixou uma marca pequena.' }
     }
   };
 
@@ -376,7 +457,22 @@
   function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage blocked: keep the default */ } }
 
+  // ?lang=pt or ?lang=en (a deep link) wins over the stored choice for this load; it is not stored by itself
+  function fromUrl() {
+    try {
+      var m = /[?&]lang=(en|pt)(?:&|$)/.exec(location.search);
+      return m ? m[1] : null;
+    } catch (e) { return null; }
+  }
+
+  function setMeta(sel, value) {
+    var node = document.querySelector(sel);
+    if (node) node.setAttribute('content', value);
+  }
+
   function detect() {
+    var fromLink = fromUrl();
+    if (fromLink) return fromLink;
     var stored = safeGet(STORE_KEY);
     if (stored === 'en' || stored === 'pt') return stored;
     var nav = (navigator.language || 'en').toLowerCase();
@@ -415,18 +511,27 @@
       }
       document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
       document.title = this.t('meta.title');
-      var md = document.querySelector('meta[name="description"]');
-      if (md) md.setAttribute('content', this.t('meta.description'));
-      var og = document.querySelector('meta[property="og:title"]');
-      if (og) og.setAttribute('content', this.t('meta.title'));
-      var od = document.querySelector('meta[property="og:description"]');
-      if (od) od.setAttribute('content', this.t('meta.description'));
+      setMeta('meta[name="description"]', this.t('meta.description'));
+      setMeta('meta[property="og:title"]', this.t('meta.title'));
+      setMeta('meta[property="og:description"]', this.t('meta.description'));
+      setMeta('meta[property="og:image:alt"]', this.t('meta.imageAlt'));
+      setMeta('meta[property="og:locale"]', lang === 'pt' ? 'pt_BR' : 'en_US');
+      setMeta('meta[property="og:locale:alternate"]', lang === 'pt' ? 'en_US' : 'pt_BR');
     },
-    // stores the choice and reloads, so every paper is created in the new language
+    // stores the choice and reloads, so every paper is created in the new language. A ?lang= link is
+    // dropped from the address first, otherwise the reload would bring the old language back
     set: function (next) {
       if (next !== 'en' && next !== 'pt') return;
       safeSet(STORE_KEY, next);
-      if (next !== lang) location.reload();
+      if (next === lang) return;
+      try {
+        var u = new URL(location.href);
+        if (u.searchParams.has('lang')) {
+          u.searchParams.delete('lang');
+          history.replaceState(null, '', u.pathname + u.search + u.hash);
+        }
+      } catch (e) { /* no URL API: the reload keeps the link's language */ }
+      location.reload();
     }
   };
 })();

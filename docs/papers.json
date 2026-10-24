@@ -33,5 +33,18 @@
   {"id":"state-scribbled","type":"typed","states":["scribbled"],"seed":57,"text":"I will ~~never~~{always} forget how the lake looked in the morning.\n\n— A."},
   {"id":"state-burn-after","type":"typed","seed":58,"burnAfterReading":true,"text":"This note burns after reading.\n\nGo on, read it once."},
   {"id":"state-hidden-ink","type":"typed","seed":59,"hiddenInk":"the real message is written under the light, very small","text":"Nothing to see here.\n\nKeep reading."},
-  {"id":"state-envelope","type":"envelope","seed":60,"text":"Dear friend,\n\nthis envelope has been sealed since the autumn. Open it when you have a quiet hour.\n\n— yours"}
+  {"id":"state-envelope","type":"envelope","seed":60,"text":"Dear friend,\n\nthis envelope has been sealed since the autumn. Open it when you have a quiet hour.\n\n— yours"},
+
+  {"id":"state-singed","type":"typed","states":["singed"],"seed":61,"text":"The edges went brown before I could read the last line.\n\nThe middle is still here."},
+  {"id":"state-wine","type":"typed","states":["wine"],"seed":62,"text":"Dinner ran late.\n\nThe wine marked the corner of the page."},
+  {"id":"state-ink","type":"typed","states":["ink"],"seed":63,"text":"The pen leaked on the way home.\n\nThe words are still under the blot."},
+  {"id":"state-foxing","type":"typed","states":["foxing"],"seed":64,"text":"Kept in a box in the attic for forty years.\n\nThe brown spots are the years."},
+  {"id":"state-tape","type":"typed","states":["tape"],"seed":65,"text":"I taped the corners to the fridge.\n\nNow the tape has yellowed along with the note."},
+  {"id":"state-stamp","type":"typed","states":["stamp"],"seed":66,"text":"Received, filed and forgotten.\n\nThe stamp is the only part that stayed in order."},
+  {"id":"state-faded","type":"typed","states":["faded"],"seed":67,"text":"This was written in blue ink.\n\nThe sun took almost all of the blue."},
+
+  {"id":"burn-corner","type":"typed","states":["burnt"],"burn":"corner","seed":71,"text":"The fire started in one corner and climbed slowly.\n\nThe rest of the sheet is still readable."},
+  {"id":"burn-edge","type":"typed","states":["burnt"],"burn":"edge","seed":72,"text":"The fire walked along the whole edge.\n\nThe middle of the text is still intact."},
+  {"id":"burn-center","type":"typed","states":["burnt"],"burn":"center","seed":73,"text":"A hole burned out of the middle, and the words around it can still be read."},
+  {"id":"burn-spots","type":"typed","states":["burnt"],"burn":"spots","seed":74,"text":"A few embers landed here and there.\n\nEach one left a small mark."}
 ]

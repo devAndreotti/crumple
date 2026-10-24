@@ -12,9 +12,17 @@
   <meta property="og:title" content="Crumple: crumpled paper you can open">
   <meta property="og:description" content="Crumple is a dependency-free WebGL2 library. A crumpled note flies to the center of the screen and unfolds into a readable sheet.">
   <meta property="og:image" content="https://devandreotti.github.io/crumple/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Crumpled paper note unfolding into a readable sheet, with the Crumple title">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="pt_BR">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://devandreotti.github.io/crumple/og.jpg">
-  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://devandreotti.github.io/crumple/">
+  <link rel="alternate" hreflang="en" href="https://devandreotti.github.io/crumple/">
+  <link rel="alternate" hreflang="pt-BR" href="https://devandreotti.github.io/crumple/?lang=pt">
+  <link rel="alternate" hreflang="x-default" href="https://devandreotti.github.io/crumple/">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,14 +38,17 @@
         <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M16 2.5 22.5 6l5.5 3.5 1.2 6.4-3.6 5.1 1.4 6.2-6.2 3.2-4.6 2.4-5.9-2.5-5.2-4.2L3.4 16.5 6.5 10.6 9.3 5.2z" fill="#ebe5d6" stroke="#f5c266" stroke-width="1.2" stroke-linejoin="round"/><path d="M9.5 12.5 16 9.6l5.4 3.1M11 19.5l5-2.6 5.5 2.8" fill="none" stroke="#8a7656" stroke-width="1" stroke-linecap="round"/></svg>
         <span>Crumple</span>
       </a>
-      <nav class="nav" aria-label="Main navigation" data-i18n-aria="nav.label">
+      <button type="button" class="menu-btn" id="menu-btn" aria-controls="site-nav" aria-expanded="false" data-i18n-aria="menu.label" aria-label="Menu">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <nav class="nav" id="site-nav" aria-label="Main navigation" data-i18n-aria="nav.label">
         <a href="#types" data-i18n="nav.types">Types</a>
         <a href="#playground" data-i18n="nav.playground">Playground</a>
         <a href="#install" data-i18n="nav.docs">Docs</a>
       </nav>
       <div class="tools">
         <button type="button" class="chip" id="sound-toggle" aria-pressed="false">
-          <span class="chip-dot" aria-hidden="true"></span><span id="sound-label" data-i18n="sound.off">Sound off</span>
+          <span class="chip-dot" aria-hidden="true"></span><span id="sound-label" class="chip-label" data-i18n="sound.off">Sound off</span>
         </button>
         <div class="lang" role="group" aria-label="Language" data-i18n-aria="lang.label">
           <button type="button" data-lang="en" aria-pressed="true">EN</button>
@@ -91,17 +102,23 @@
     <section class="section" id="states" aria-labelledby="states-title">
       <header class="sec-head">
         <h2 id="states-title" data-i18n="states.title">States</h2>
-        <p data-i18n="states.lede">Wear, stains and secrets.</p>
+        <p data-i18n="states.lede">Fourteen states: wear, stains, fire and marks, plus the secrets.</p>
       </header>
       <div class="grid grid-small" data-gallery="states"></div>
       <p class="note" data-i18n="states.hint">Move the light over the hidden ink to read it (mouse on a desktop). Burn after reading is gone for good once you close it.</p>
+
+      <div class="sub-head">
+        <h3 data-i18n="burns.title">Burn forms</h3>
+        <p data-i18n="burns.lede">Four ways to burn: from a corner, along an edge, a hole from the center, or a few embers.</p>
+      </div>
+      <div class="grid grid-small" data-gallery="burns"></div>
     </section>
 
     <!-- Playground -->
     <section class="section" id="playground" aria-labelledby="play-title">
       <header class="sec-head">
         <h2 id="play-title" data-i18n="play.title">Playground</h2>
-        <p data-i18n="play.lede">Build a paper, then crumple, unfold, flip, tear or burn it. The JSON box shows exactly what you are using.</p>
+        <p data-i18n="play.lede">Build a paper, then crumple, unfold, flip at any moment, tear it, or burn it four ways. The JSON box shows exactly what you are using.</p>
       </header>
 
       <div class="stage-wrap">
@@ -133,6 +150,15 @@
           <select id="ctl-shape"></select>
         </label>
         <label class="field">
+          <span data-i18n="play.burnForm">Burn form</span>
+          <select id="ctl-burn-form">
+            <option value="corner" data-i18n="burn.corner">Corner</option>
+            <option value="edge" data-i18n="burn.edge">Edge</option>
+            <option value="center" data-i18n="burn.center">Center hole</option>
+            <option value="spots" data-i18n="burn.spots">Embers</option>
+          </select>
+        </label>
+        <label class="field">
           <span data-i18n="play.open">Open mode</span>
           <select id="ctl-open">
             <option value="auto" data-i18n="play.openAuto">auto (unfolds by itself)</option>
@@ -148,8 +174,12 @@
         </div>
         <fieldset class="field field-wide states-field">
           <legend data-i18n="play.states">States</legend>
-          <div class="checks" id="ctl-states"></div>
+          <div class="state-groups" id="ctl-states"></div>
         </fieldset>
+        <label class="field">
+          <span data-i18n="play.stampWord">Stamp word</span>
+          <input type="text" id="ctl-stamp" maxlength="16" placeholder="RECEIVED" spellcheck="false" autocomplete="off" disabled>
+        </label>
         <label class="field field-wide">
           <span data-i18n="play.text">Front text</span>
           <textarea id="ctl-text" rows="6" spellcheck="false"></textarea>
@@ -190,9 +220,9 @@
           <p class="doc-note" data-i18n="install.a.note">Set the assets folder before the first paper is built. The CDN serves the textures and the demo photos.</p>
           <div class="code">
             <div class="code-head"><span>HTML</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
-            <pre><code>&lt;script src="https://cdn.jsdelivr.net/gh/devAndreotti/crumple@main/dist/crumple.min.js"&gt;&lt;/script&gt;
+            <pre><code>&lt;script src="https://cdn.jsdelivr.net/gh/devAndreotti/crumple@1.0.0/dist/crumple.min.js"&gt;&lt;/script&gt;
 &lt;script&gt;
-  Crumple.config.assets = 'https://cdn.jsdelivr.net/gh/devAndreotti/crumple@main/assets/';
+  Crumple.config.assets = 'https://cdn.jsdelivr.net/gh/devAndreotti/crumple@1.0.0/assets/';
 &lt;/script&gt;</code></pre>
           </div>
         </article>
@@ -202,7 +232,7 @@
           <p class="doc-note" data-i18n="install.b.note">Install from GitHub, then import what you need. Scene attaches to buttons, Stage draws into your own canvas.</p>
           <div class="code">
             <div class="code-head"><span>shell</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
-            <pre><code>npm install github:devAndreotti/crumple</code></pre>
+            <pre><code>npm i @devandreotti/crumple</code></pre>
           </div>
           <div class="code">
             <div class="code-head"><span>JavaScript</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
@@ -212,6 +242,10 @@
 config.assets = '/assets/';
 Scene.init({ motion: 'auto' });</code></pre>
           </div>
+          <div class="code">
+            <div class="code-head"><span>CommonJS</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
+            <pre><code>const { Stage } = require('@devandreotti/crumple');</code></pre>
+          </div>
         </article>
 
         <article class="doc">
@@ -220,7 +254,7 @@ Scene.init({ motion: 'auto' });</code></pre>
             <div class="code-head"><span>HTML</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
             <pre><code>&lt;button id="note"&gt;Open the note&lt;/button&gt;
 
-&lt;script src="https://cdn.jsdelivr.net/gh/devAndreotti/crumple@main/dist/crumple.min.js"&gt;&lt;/script&gt;
+&lt;script src="https://cdn.jsdelivr.net/gh/devAndreotti/crumple@1.0.0/dist/crumple.min.js"&gt;&lt;/script&gt;
 &lt;script&gt;
   Crumple.Scene.init();
   Crumple.Scene.attach(document.getElementById('note'), {
@@ -239,7 +273,7 @@ Scene.init({ motion: 'auto' });</code></pre>
             <pre><code>&lt;canvas id="sheet" style="width: 100%; height: 480px"&gt;&lt;/canvas&gt;
 &lt;button id="flip"&gt;Flip&lt;/button&gt;
 
-&lt;script src="https://cdn.jsdelivr.net/gh/devAndreotti/crumple@main/dist/crumple.min.js"&gt;&lt;/script&gt;
+&lt;script src="https://cdn.jsdelivr.net/gh/devAndreotti/crumple@1.0.0/dist/crumple.min.js"&gt;&lt;/script&gt;
 &lt;script&gt;
   (async () =&gt; {
     const stage = Crumple.Stage(document.getElementById('sheet'), { fit: 0.8 });
@@ -295,6 +329,8 @@ document.addEventListener('crumple:burn', (e) =&gt; {
             <tr><td><code>image</code></td><td data-i18n="api.cfg.image">Photo URL for the polaroid type (same origin or CORS-enabled).</td></tr>
             <tr><td><code>address</code></td><td data-i18n="api.cfg.address">Address written on the envelope.</td></tr>
             <tr><td><code>letter</code></td><td data-i18n="api.cfg.letter">Type of the letter inside an envelope.</td></tr>
+            <tr><td><code>burn</code></td><td data-i18n="api.cfg.burn">Where the fire starts: 'corner' (default), 'edge', 'center' or 'spots'. Used by burnt, burnAfterReading and Stage.burn().</td></tr>
+            <tr><td><code>stamp</code></td><td data-i18n="api.cfg.stamp">The word of the rubber stamp state, in capitals. Default 'RECEIVED'.</td></tr>
           </tbody>
         </table>
 
@@ -303,7 +339,9 @@ document.addEventListener('crumple:burn', (e) =&gt; {
         <table>
           <thead><tr><th data-i18n="api.col.name">Name</th><th data-i18n="api.col.desc">Description</th></tr></thead>
           <tbody>
-            <tr><td><code>Scene.init(options)</code></td><td data-i18n="api.scene.init">Call once. Options: labels, remember, motion (auto, full or reduced), flashlight (default true), maxBuilt (papers kept on the GPU, default 3).</td></tr>
+            <tr><td><code>Scene.init(options)</code></td><td data-i18n="api.scene.init">Call once. Options: labels, remember, motion (auto, full or reduce), flashlight (default true), maxBuilt (papers kept on the GPU, default 3).</td></tr>
+            <tr><td><code>Scene.detach(el or id)</code></td><td data-i18n="api.scene.detach">Undoes attach for one trigger, or for the paper with that id.</td></tr>
+            <tr><td><code>Scene.destroy()</code></td><td data-i18n="api.scene.destroy">Removes the overlay, listeners, observers and the WebGL context. attach() or init() starts it again.</td></tr>
             <tr><td><code>Scene.attach(el, config, opts)</code></td><td data-i18n="api.scene.attach">Turns a button into a crumpled-paper trigger. Options: snapshot and snapshotOpened (still images).</td></tr>
             <tr><td><code>Scene.open(entry)</code></td><td data-i18n="api.scene.open">Opens an attached entry programmatically. Resolves when the paper is built.</td></tr>
             <tr><td><code>Scene.close()</code></td><td data-i18n="api.scene.close">Closes the open paper (the same as Escape or a click outside).</td></tr>
@@ -318,9 +356,11 @@ document.addEventListener('crumple:burn', (e) =&gt; {
         <table>
           <thead><tr><th data-i18n="api.col.name">Name</th><th data-i18n="api.col.desc">Description</th></tr></thead>
           <tbody>
-            <tr><td><code>Stage(canvas, opts)</code></td><td data-i18n="api.stage.new">Crumple.Stage(canvas, { fit, flashlight, drag }). fit is the share of the canvas height the open sheet takes (default 0.8).</td></tr>
+            <tr><td><code>Stage(canvas, opts)</code></td><td data-i18n="api.stage.new">Crumple.Stage(canvas, { fit, flashlight, drag, motion }). fit is the share of the canvas height the open sheet takes (default 0.8). motion is 'auto', 'reduce' or 'full'. Returns null without WebGL2.</td></tr>
             <tr><td><code>set(config, { progress })</code></td><td data-i18n="api.stage.set">Builds a paper from a config and shows it. Resolves with the paper (or null if a newer call replaced it).</td></tr>
-            <tr><td><code>crumple · uncrumple · toggle</code></td><td data-i18n="api.stage.actions">crumple(), uncrumple(), toggle(), flip(), tear(), restoreStub(), burn(), restore().</td></tr>
+            <tr><td><code>crumple · uncrumple · toggle</code></td><td data-i18n="api.stage.actions">crumple(), uncrumple(), toggle(), flip() (at any moment), tear(), restoreStub(), restore().</td></tr>
+            <tr><td><code>burn()</code></td><td data-i18n="api.stage.burn">Burns the paper from its burn form, on any paper. Returns a Promise that resolves once the burn has started.</td></tr>
+            <tr><td><code>destroy()</code></td><td data-i18n="api.stage.destroy">Frees the paper, listeners and the WebGL context. Every method is a no-op afterwards.</td></tr>
             <tr><td><code>setProgress(v)</code></td><td data-i18n="api.stage.progress">setProgress(0..1): 0 is closed, 1 is fully open.</td></tr>
             <tr><td><code>png() · snapshot()</code></td><td data-i18n="api.stage.out">png() returns a data URL of the current frame. snapshot(opened, format, size) returns a still image.</td></tr>
           </tbody>
@@ -359,6 +399,16 @@ document.addEventListener('crumple:burn', (e) =&gt; {
             <tr><td><code># title</code></td><td data-i18n="api.markup.heading">A line that starts with "# " is a heading.</td></tr>
             <tr><td><code>~~word~~{fix}</code></td><td data-i18n="api.markup.strike">A struck-out word with a handwritten correction.</td></tr>
             <tr><td><code>[[text]]</code></td><td data-i18n="api.markup.redact">A redaction bar that fades a little more on every opening.</td></tr>
+          </tbody>
+        </table>
+
+        <h3 data-i18n="api.module.title">Modules and renderer</h3>
+        <p class="api-note" data-i18n="api.module.desc">ES modules and CommonJS. Importing the package in Node or on a server is safe: nothing touches window until you call it.</p>
+        <table>
+          <thead><tr><th data-i18n="api.col.name">Name</th><th data-i18n="api.col.desc">Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>import · require</code></td><td data-i18n="api.module.import">import { Scene, Stage, config } from '@devandreotti/crumple', or const { Stage } = require('@devandreotti/crumple').</td></tr>
+            <tr><td><code>Renderer(canvas)</code></td><td data-i18n="api.module.renderer">A lower-level renderer on your own canvas (build, snapshot, release). destroy() frees its GL resources; release the papers first.</td></tr>
           </tbody>
         </table>
 
