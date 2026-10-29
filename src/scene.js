@@ -1,6 +1,6 @@
 // Scene: a crumpled paper sits on the page (a button with a still image); on click it flies to the center of the
 // screen, unfolds into a readable sheet, and on close crumples and flies back to its spot.
-import { clamp, smooth, linear, easeIO, easeOut, easeFly, easeReturn, easeSoft, easeOpen, easeCrumple, store, emitEvent, listen, motionQuery, wantsReduce, haptic } from './util.js';
+import { clamp, smooth, linear, easeIO, easeOut, easeFly, easeReturn, easeSoft, easeOpen, easeCrumple, store, emitEvent, listen, motionQuery, wantsReduce, haptic, parseColor } from './util.js';
 import { TYPES, normalize } from './catalog.js';
 import { Renderer, FOV, D, LIGHT } from './renderer.js';
 import { Sound } from './sound.js';
@@ -527,7 +527,9 @@ body.crumple-open{overflow:hidden;touch-action:none}
   function openFallback(ent) {
     dom();
     const T = TYPES[ent.cfg.type];
-    const c = (k) => Math.round(T.color[k] * 255);
+    const col = ent.cfg.color ? parseColor(ent.cfg.color) : null;
+    const color = col || T.color;
+    const c = (k) => Math.round(color[k] * 255);
     const sheet = document.createElement('div');
     sheet.className = 'sheet';
     sheet.style.background = `rgb(${c(0)},${c(1)},${c(2)})`;

@@ -34,9 +34,17 @@ export interface PaperConfig {
   address?: string;
   /** Type of the letter inside an envelope. */
   letter?: Exclude<PaperType, 'envelope'>;
-  /** Word printed by the 'stamp' state, drawn in capitals (default 'RECEIVED'). */
-  stamp?: string;
-  /** Paper weight in grams per square meter (gsm) or physical thickness. Affects fold radii and curling stiffness. */
+  /** Word printed by the 'stamp' state, drawn in capitals (default 'RECEIVED'), or an object with text, color, angle and align. */
+  stamp?: string | { text: string; color?: string; angle?: number; align?: 'center' | 'left' | 'right' };
+  /** Custom background color override (RGB array [r, g, b] 0..1 or hex string "#rrggbb"). */
+  color?: [number, number, number] | string;
+  /** Watermark rendered as a faint embossed-style translucent insignia centered on the sheet. */
+  watermark?: string | { text: string; symbol?: string };
+  /** Wax seal placed on the paper. */
+  seal?: { symbol?: string; color?: string | [number, number, number] };
+  /** Numeric multiplier (0..2, default 1.0) scaling stain radius and opacity in coffee, wine, ink, prints, foxing. */
+  wearIntensity?: number;
+  /** Paper weight in grams per square meter (gsm) or physical thickness. Affects fold radii, curling stiffness and acoustic resonance. */
   gsm?: number;
   weight?: number;
   thickness?: number;
