@@ -244,7 +244,7 @@ body.crumple-open{overflow:hidden;touch-action:none}
     if (reduce) {
       cv.style.opacity = '0'; requestAnimationFrame(() => { cv.style.opacity = '1'; });
       A.tf = 1; A.phase = 'open';
-      if (!manual) { tween(A, 'p', 1, T_RED * (env ? 1.6 : 1), easeOut); Sound.play('uncrumple', T_RED); } else hint.classList.add('on');
+      if (!manual) { tween(A, 'p', 1, T_RED * (env ? 1.6 : 1), easeOut); Sound.play('uncrumple', T_RED, 0, { type: P.cfg.type, gsm: P.cfg.gsm }); } else hint.classList.add('on');
     } else {
       // a little hop in place, the arc flight, and the unfolding starting mid-air; at the end the sheet settles
       A.pre = 0; A.arc = 0.24;
@@ -254,7 +254,7 @@ body.crumple-open{overflow:hidden;touch-action:none}
       if (!manual) {
         const settle = () => { if (A && A.phase !== 'closing') { A.settle = 0; tween(A, 'settle', 1, 0.9, linear); kick(); } };
         tween(A, 'p', 1, dur, env ? easeSoft : easeOpen(P), t0 + T_UNF0, settle);
-        Sound.play(env ? 'seal' : 'uncrumple', dur, t0 + T_UNF0);
+        Sound.play(env ? 'seal' : 'uncrumple', dur, t0 + T_UNF0, { type: P.cfg.type, gsm: P.cfg.gsm });
       }
     }
     if (P.front0 > -0.5) Sound.play('fire', 2.5, 0.6);
@@ -287,7 +287,7 @@ body.crumple-open{overflow:hidden;touch-action:none}
     if (A.tf > 0.999) A.ext0 = extentAt(A.P, pEnd);
     const tp = reduce ? 0.6 : env ? 1.9 : 0.85, dur = tp * Math.max(0.35, A.p - pEnd);
     if (A.f > 0) tween(A, 'f', 0, 0.45, easeIO);
-    if (A.p > pEnd + 0.02) Sound.play('crumple', dur);
+    if (A.p > pEnd + 0.02) Sound.play('crumple', dur, 0, { type: A.P.cfg.type, gsm: A.P.cfg.gsm });
     tween(A, 'p', pEnd, dur, env ? easeSoft : easeCrumple(A.P));
     if (reduce) tween(A, 'tf', 1, tp, linear, 0, finish);
     else {
@@ -344,7 +344,7 @@ body.crumple-open{overflow:hidden;touch-action:none}
   // any time but while closing or burning away (the flip turns the whole model, so it works at any opening)
   function flip() {
     if (!A || A.phase === 'closing' || A.destroy !== undefined) return;
-    Sound.play('flip');
+    Sound.play('flip', 1, 0, { type: A.P.cfg.type, gsm: A.P.cfg.gsm });
     haptic(10);
     tween(A, 'f', A.f < 0.5 ? 1 : 0, 0.8, linear);
     emitEvent(A.ent.btn, 'flip', { id: A.P.cfg.id, back: A.f < 0.5 });

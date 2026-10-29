@@ -177,3 +177,61 @@ test('creaseField handles new shapes and wear states (accordion, triangle, damp,
     assert.ok(cf.every(Number.isFinite));
   }
 });
+
+test('Sound: dynamic acoustic resonance modulated by paper weight and type', () => {
+  const { Sound } = src;
+
+  // default / reset tuning
+  assert.deepEqual(Sound.tune(), { freq: 420, q: 2.4, gain: 3.5 });
+  assert.deepEqual(Sound.tuning, { freq: 420, q: 2.4, gain: 3.5 });
+
+  // Heavy stock: 280Hz - 340Hz, higher Q factor (> 2.4)
+  for (const t of ['postcard', 'shipping', 'punchcard', 'kraft', 'polaroid', 'ticket']) {
+    const tune = Sound.tune({ type: t });
+    assert.ok(tune.freq >= 280 && tune.freq <= 340, `${t} freq ${tune.freq} should be in [280, 340]`);
+    assert.ok(tune.q > 2.4, `${t} Q ${tune.q} should be higher than 2.4`);
+  }
+
+  // Lightweight sheets: 560Hz - 680Hz
+  for (const t of ['carbon', 'receipt', 'newspaper']) {
+    const tune = Sound.tune({ type: t });
+    assert.ok(tune.freq >= 560 && tune.freq <= 680, `${t} freq ${tune.freq} should be in [560, 680]`);
+  }
+
+  // Standard sheets: ~420Hz
+  for (const t of ['typed', 'notebook', 'memo', 'form']) {
+    const tune = Sound.tune({ type: t });
+    assert.equal(tune.freq, 420, `${t} freq should be 420`);
+    assert.equal(tune.q, 2.4);
+  }
+
+  // GSM continuous modulation
+  const heavyGsm = Sound.tune({ gsm: 280 });
+  assert.ok(heavyGsm.freq >= 280 && heavyGsm.freq <= 340);
+  assert.ok(heavyGsm.q > 2.4);
+
+  const lightGsm = Sound.tune({ gsm: 45 });
+  assert.ok(lightGsm.freq >= 560 && lightGsm.freq <= 680);
+
+  const stdGsm = Sound.tune({ gsm: 80 });
+  assert.equal(stdGsm.freq, 420);
+  assert.equal(stdGsm.q, 2.4);
+
+  // Sound.play polymorphic argument handling and backward compatibility
+  Sound.play('uncrumple');
+  assert.doesNotThrow(() => Sound.play('crumple', 0.9));
+  assert.doesNotThrow(() => Sound.play('flip'));
+
+  Sound.play('uncrumple', { type: 'postcard' });
+  assert.equal(Sound.tuning.freq, 290);
+
+  Sound.play('crumple', 0.9, { type: 'carbon' });
+  assert.equal(Sound.tuning.freq, 660);
+
+  Sound.play('flip', 1, 0, { type: 'shipping', gsm: 240 });
+  assert.ok(Sound.tuning.freq >= 280 && Sound.tuning.freq <= 340);
+
+  // normalize preserves gsm when provided
+  const normWithGsm = normalize({ type: 'postcard', gsm: 300 });
+  assert.equal(normWithGsm.gsm, 300);
+});

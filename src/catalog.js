@@ -90,5 +90,6 @@ export function normalize(c = {}) {
     stamp: typeof c.stamp === 'string' && c.stamp.trim() ? c.stamp.trim() : 'RECEIVED',
   };
   if (c.rich && typeof c.rich === 'object') res.rich = c.rich;
+  if (Number.isFinite(c.gsm)) res.gsm = c.gsm;
   return res;
 }

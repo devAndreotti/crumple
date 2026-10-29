@@ -42,6 +42,8 @@ export interface PaperConfig {
     body: string | ((ctx: CanvasRenderingContext2D, area: { x: number; y: number; w: number; h: number }, w: number, h: number) => void | Promise<void>);
     style?: string;
   };
+  /** Paper weight in grams per square meter (gsm). Modulates acoustic resonance. */
+  gsm?: number;
 }
 
 export interface TypeInfo { name: string; w: number; h: number; color: [number, number, number]; shape: PaperShape | 'envelope'; font: string; [key: string]: unknown }
@@ -169,12 +171,22 @@ export interface StageApi {
 }
 export function Stage(canvas: HTMLCanvasElement, options?: StageOptions): StageApi | null;
 
+export interface SoundTuneOptions {
+  type?: string;
+  gsm?: number;
+  freq?: number;
+  q?: number;
+  gain?: number;
+}
+
 export const Sound: {
   readonly enabled: boolean;
+  readonly tuning: { freq: number; q: number; gain: number };
   set(enabled: boolean): void;
   /** Optional recordings used instead of the synthesized sounds. */
   useSamples(urls: { crumple?: string; sheet?: string; tear?: string }): void;
-  play(name: 'crumple' | 'uncrumple' | 'flip' | 'tear' | 'seal' | 'fire' | 'grain', duration?: number, delay?: number): void;
+  tune(options?: SoundTuneOptions | string | number): { freq: number; q: number; gain: number };
+  play(name: 'crumple' | 'uncrumple' | 'flip' | 'tear' | 'seal' | 'fire' | 'grain', duration?: number | SoundTuneOptions | string, delay?: number | SoundTuneOptions | string, options?: SoundTuneOptions | string | number): void;
 };
 
 declare global {
