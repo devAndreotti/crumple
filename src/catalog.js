@@ -3,6 +3,8 @@
 // Text markup: "# " at the start of a line = heading; ~~word~~{fix} = struck out and corrected by hand;
 // [[passage]] = redaction bar that fades a little more on every opening.
 
+import { parseColor } from './util.js';
+
 // w, h in world units (0.84 x 1.1 is a letter sheet); color = paper RGB 0..1; size/lineHeight/x/y in print pixels
 export const TYPES = {
   typed: { name: 'Typewritten sheet', w: 0.84, h: 1.1, color: [0.945, 0.92, 0.865], shape: 'ball', font: 'Special Elite', size: 42, lineHeight: 62, x: 96, y: 190, ink: [31, 29, 28], typewriter: true },
@@ -25,7 +27,7 @@ export const TYPES = {
   carbon: { name: 'Carbon duplicate copy', w: 0.84, h: 1.1, color: [0.15, 0.14, 0.21], shape: 'quarters', font: 'Special Elite', size: 34, lineHeight: 48, x: 74, y: 290, ink: [155, 170, 255], typewriter: true, carbon: true },
 };
 export const SHAPES = { ball: 'Crumpled ball', flat: 'Flattened crumple', quarters: 'Folded in quarters', half: 'Folded in half', thirds: 'Folded in thirds (letter)', roll: 'Rolled up', twist: 'Twisted (candy wrapper)', accordion: 'Accordion fold', triangle: 'Triangle fold' };
-export const STATES = { torn: 'Torn', burnt: 'Burnt', coffee: 'Coffee stain', water: 'Water stain', prints: 'Dirty fingerprints', aged: 'Aged', scribbled: 'Scribbled', singed: 'Singed', wine: 'Wine stain', ink: 'Ink blot', foxing: 'Foxing', tape: 'Tape', stamp: 'Rubber stamp', faded: 'Sun-faded', staple: 'Metal staple', grease: 'Grease stain', dogear: 'Dog-eared corner', damp: 'Damp wrinkled relief', creased: 'Pocket-creased grid' };
+export const STATES = { torn: 'Torn', burnt: 'Burnt', coffee: 'Coffee stain', water: 'Water stain', prints: 'Dirty fingerprints', aged: 'Aged', scribbled: 'Scribbled', singed: 'Singed', wine: 'Wine stain', ink: 'Ink blot', foxing: 'Foxing', tape: 'Tape', stamp: 'Rubber stamp', faded: 'Sun-faded', staple: 'Metal staple', grease: 'Grease stain', dogear: 'Dog-eared corner', damp: 'Damp wrinkled relief', creased: 'Pocket-creased grid', clip: 'Paper clip' };
 // where a burn starts: from a corner (default), along one side, a hole from inside, or a few embers
 export const BURNS = ['corner', 'edge', 'center', 'spots'];
 export const TEXTS = {
@@ -71,6 +73,17 @@ const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 export function normalize(c = {}) {
   const type = has(TYPES, c.type) ? c.type : 'typed';
   const T = TYPES[type];
+  const stampVal = typeof c.stamp === 'string' && c.stamp.trim()
+    ? c.stamp.trim()
+    : (c.stamp && typeof c.stamp === 'object')
+      ? {
+          text: typeof c.stamp.text === 'string' && c.stamp.text.trim() ? c.stamp.text.trim() : 'RECEIVED',
+          ...(typeof c.stamp.color === 'string' && c.stamp.color.trim() ? { color: c.stamp.color.trim() } : {}),
+          ...(typeof c.stamp.angle === 'number' && Number.isFinite(c.stamp.angle) ? { angle: c.stamp.angle } : {}),
+          ...(['center', 'left', 'right'].includes(c.stamp.align) ? { align: c.stamp.align } : {}),
+        }
+      : 'RECEIVED';
+
   const res = {
     id: c.id || type,
     type,
@@ -87,8 +100,30 @@ export function normalize(c = {}) {
     address: typeof c.address === 'string' ? c.address : ADDRESS,
     letter: has(TYPES, c.letter) && c.letter !== 'envelope' ? c.letter : 'typed',
     // the word of the 'stamp' state (drawn in capitals)
-    stamp: typeof c.stamp === 'string' && c.stamp.trim() ? c.stamp.trim() : 'RECEIVED',
+    stamp: stampVal,
   };
+  if (c.color !== undefined && parseColor(c.color)) res.color = c.color;
+  if (typeof c.watermark === 'string' && c.watermark.trim()) {
+    res.watermark = c.watermark.trim();
+  } else if (c.watermark && typeof c.watermark === 'object') {
+    const wm = {};
+    if (typeof c.watermark.text === 'string' && c.watermark.text.trim()) wm.text = c.watermark.text.trim();
+    if (typeof c.watermark.symbol === 'string' && c.watermark.symbol.trim()) wm.symbol = c.watermark.symbol.trim();
+    if (wm.text || wm.symbol) res.watermark = wm;
+  }
+  if (c.seal && typeof c.seal === 'object') {
+    const s = {};
+    if (typeof c.seal.symbol === 'string' && c.seal.symbol.trim()) s.symbol = c.seal.symbol.trim();
+    if (typeof c.seal.color === 'string' && c.seal.color.trim()) {
+      s.color = c.seal.color.trim();
+    } else if (Array.isArray(c.seal.color) && c.seal.color.length === 3 && c.seal.color.every((v) => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1)) {
+      s.color = [c.seal.color[0], c.seal.color[1], c.seal.color[2]];
+    }
+    if (s.symbol !== undefined || s.color !== undefined) res.seal = s;
+  }
+  if (typeof c.wearIntensity === 'number' && Number.isFinite(c.wearIntensity)) {
+    res.wearIntensity = Math.max(0, Math.min(2, c.wearIntensity));
+  }
   if (c.rich && typeof c.rich === 'object') res.rich = c.rich;
   return res;
 }

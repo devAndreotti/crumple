@@ -162,7 +162,7 @@ test('new paper types, shapes, and wear states are registered and normalize corr
     const c = normalize({ shape: sh });
     assert.equal(c.shape, sh);
   }
-  const newStates = ['staple', 'grease', 'dogear', 'damp', 'creased'];
+  const newStates = ['staple', 'grease', 'dogear', 'damp', 'creased', 'clip'];
   for (const st of newStates) {
     assert.ok(STATES[st]);
     const c = normalize({ states: [st] });
@@ -177,3 +177,38 @@ test('creaseField handles new shapes and wear states (accordion, triangle, damp,
     assert.ok(cf.every(Number.isFinite));
   }
 });
+
+test('procedural customization options normalize correctly (color, stamp, watermark, seal, wearIntensity, clip)', () => {
+  assert.ok(STATES.clip);
+  assert.deepEqual(normalize({ states: ['clip'] }).states, ['clip']);
+
+  // color override
+  assert.deepEqual(normalize({ color: [0.1, 0.2, 0.3] }).color, [0.1, 0.2, 0.3]);
+  assert.equal(normalize({ color: '#ff2200' }).color, '#ff2200');
+  assert.equal(normalize({ color: 'invalid-color' }).color, undefined);
+  assert.equal(normalize({ color: [1, 2, 3] }).color, undefined);
+
+  // advanced stamp
+  assert.equal(normalize({ stamp: 'APPROVED' }).stamp, 'APPROVED');
+  assert.deepEqual(normalize({ stamp: { text: 'PAID', color: 'red', angle: -0.2, align: 'left' } }).stamp, {
+    text: 'PAID', color: 'red', angle: -0.2, align: 'left',
+  });
+  assert.deepEqual(normalize({ stamp: { color: 'blue' } }).stamp, { text: 'RECEIVED', color: 'blue' });
+
+  // watermark
+  assert.equal(normalize({ watermark: 'CONFIDENTIAL' }).watermark, 'CONFIDENTIAL');
+  assert.deepEqual(normalize({ watermark: { text: 'TOP SECRET', symbol: '★' } }).watermark, {
+    text: 'TOP SECRET', symbol: '★',
+  });
+
+  // seal
+  assert.deepEqual(normalize({ seal: { symbol: 'X', color: 'gold' } }).seal, { symbol: 'X', color: 'gold' });
+  assert.deepEqual(normalize({ seal: { color: [0.8, 0.1, 0.2] } }).seal, { color: [0.8, 0.1, 0.2] });
+
+  // wearIntensity
+  assert.equal(normalize({ wearIntensity: 1.5 }).wearIntensity, 1.5);
+  assert.equal(normalize({ wearIntensity: 3.0 }).wearIntensity, 2);
+  assert.equal(normalize({ wearIntensity: -0.5 }).wearIntensity, 0);
+  assert.equal(normalize({ wearIntensity: 'high' }).wearIntensity, undefined);
+});
+

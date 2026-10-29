@@ -1,6 +1,6 @@
 // What is printed on each side of a paper (2D canvases that become textures), and the cut-out effects
 // (torn edges, punched holes, burn distance) at half resolution.
-import { rng, noise2, clamp, rgba, makeCanvas, loadImage, loadTexture, config } from './util.js';
+import { rng, noise2, clamp, rgba, makeCanvas, loadImage, loadTexture, config, parseColor } from './util.js';
 import { CORRECTIONS, WEAR_APPLIERS } from './catalog.js';
 import { Jobs } from './worker.js';
 
@@ -277,11 +277,13 @@ const BACKGROUNDS = {
     for (let x = -H; x < W + H; x += 14) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + ab, ab); ctx.stroke(); }
     ctx.restore();
   },
-  blueprint(ctx, W, H) {
-    const bg = ctx.createRadialGradient(W / 2, H / 2, W * 0.15, W / 2, H / 2, W * 0.72);
-    bg.addColorStop(0, 'rgba(16, 52, 92, 0.45)');
-    bg.addColorStop(1, 'rgba(6, 18, 34, 0.85)');
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  blueprint(ctx, W, H, T, cfg) {
+    if (!cfg?.color) {
+      const bg = ctx.createRadialGradient(W / 2, H / 2, W * 0.15, W / 2, H / 2, W * 0.72);
+      bg.addColorStop(0, 'rgba(16, 52, 92, 0.45)');
+      bg.addColorStop(1, 'rgba(6, 18, 34, 0.85)');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    }
 
     ctx.strokeStyle = 'rgba(65, 175, 255, 0.13)'; ctx.lineWidth = 1;
     for (let x = 0; x < W; x += 15) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
@@ -474,22 +476,10 @@ const BACKGROUNDS = {
   kraft(ctx, W, H, T, cfg, ex) {
     if (BACKGROUNDS.shipping) BACKGROUNDS.shipping(ctx, W, H, T, cfg, ex);
   },
-  parchment(ctx, W, H) {
-    ctx.save();
-    const sx = W / 2, sy = H - 140;
-    ctx.fillStyle = 'rgba(145, 24, 28, 0.92)';
-    ctx.beginPath();
-    for (let a = 0; a <= Math.PI * 2 + 0.01; a += 0.15) {
-      const q = 48 * (1 + 0.08 * Math.sin(a * 8));
-      if (a === 0) ctx.moveTo(sx + Math.cos(a) * q, sy + Math.sin(a) * q);
-      else ctx.lineTo(sx + Math.cos(a) * q, sy + Math.sin(a) * q);
+  parchment(ctx, W, H, T, cfg) {
+    if (!cfg?.seal) {
+      drawWaxSeal(ctx, W / 2, H - 140, { symbol: 'V', color: 'red' });
     }
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(95, 12, 16, 0.8)'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(sx, sy, 32, 0, Math.PI * 2); ctx.stroke();
-    ctx.fillStyle = 'rgba(85, 10, 14, 0.9)'; ctx.font = 'bold 32px "Caveat", cursive';
-    ctx.textAlign = 'center'; ctx.fillText('V', sx, sy + 11);
-    ctx.restore();
   },
   ledger(ctx, W, H) {
     const m = 30;
@@ -552,12 +542,14 @@ const BACKGROUNDS = {
     ctx.beginPath(); ctx.moveTo(cFol, yEnd - 12); ctx.lineTo(W - m - 6, yEnd - 12); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(cFol, yEnd - 8); ctx.lineTo(W - m - 6, yEnd - 8); ctx.stroke();
   },
-  carbon(ctx, W, H) {
-    const bg = ctx.createLinearGradient(0, 0, W, H);
-    bg.addColorStop(0, 'rgba(26, 24, 36, 0.95)');
-    bg.addColorStop(0.5, 'rgba(22, 20, 32, 0.98)');
-    bg.addColorStop(1, 'rgba(18, 16, 26, 0.95)');
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  carbon(ctx, W, H, T, cfg) {
+    if (!cfg?.color) {
+      const bg = ctx.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, 'rgba(26, 24, 36, 0.95)');
+      bg.addColorStop(0.5, 'rgba(22, 20, 32, 0.98)');
+      bg.addColorStop(1, 'rgba(18, 16, 26, 0.95)');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    }
 
     ctx.save();
     for (let k = 0; k < 6; k++) {
@@ -744,9 +736,13 @@ export async function drawPrint(cfg, T, side, openings) {
   if (cfg.type === 'newspaper' && (front || !cfg.back)) ex.photo = await loadImage(config.assets + 'photos/' + (front ? 'sea' : 'city') + '.webp');
   const bothSides = cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'blueprint' || cfg.type === 'ledger';
   if (BACKGROUNDS[cfg.type] && (front || bothSides)) BACKGROUNDS[cfg.type](ctx, W, H, T, cfg, ex);
+  if (cfg.watermark) drawWatermark(ctx, W, H, cfg.watermark);
   if (cfg.type === 'envelope' && !front) envelopeBack(ctx, W, H, T, cfg, r);
   if (cfg.type === 'postcard' && !front && !cfg.back) postcardBack(ctx, W, H, cfg, r);
   if (cfg.type === 'newspaper' && !front && !cfg.back) newspaperBack(ctx, W, H, ex);
+  if (cfg.type === 'parchment' || cfg.type === 'postcard' || cfg.states.includes('aged')) {
+    deckleEdge(ctx, W, H, cfg, r);
+  }
   const txt = cfg.type === 'envelope' ? '' : (front ? cfg.text : cfg.back);
   // the back has its own area (on the ticket, on the half that folds over: it stays outside, whole, when closed)
   let area = front ? (AREAS[cfg.type] ? AREAS[cfg.type](W, H, T) : { x: 50, y: 50, w: W - 100, h: H - 100 })
@@ -776,6 +772,7 @@ export async function drawPrint(cfg, T, side, openings) {
   if (cfg.states.includes('faded')) fadeWash(ctx, W, H, cfg);
   if (cfg.states.includes('foxing')) foxing(ctx, W, H, cfg);
   if (cfg.states.includes('staple')) staple(ctx, W, H, cfg, front);
+  if (cfg.states.includes('clip')) paperClip(ctx, W, H, cfg, front);
   if (cfg.states.includes('grease')) greaseStain(ctx, W, H, cfg, front);
   if (cfg.states.includes('dogear')) dogear(ctx, W, H, cfg, front);
   if (cfg.states.includes('damp')) dampWrinkle(ctx, W, H, cfg);
@@ -785,6 +782,7 @@ export async function drawPrint(cfg, T, side, openings) {
       try { await WEAR_APPLIERS[s](ctx, c, W, H, cfg, front, rs); } catch (_) {}
     }
   }
+  if (front && cfg.seal) drawWaxSeal(ctx, W / 2, H - 140, cfg.seal);
   // the stamp sits over the text, the tape over everything; both are only on the front
   if (front && cfg.states.includes('stamp')) rubberStamp(ctx, W, H, cfg, textEnd);
   if (front && cfg.states.includes('tape')) tape(ctx, W, H, cfg);
@@ -808,18 +806,22 @@ async function waterStain(ctx, W, H, cfg, front) {
 }
 // dirty fingerprints of whoever held the sheet: near the bottom edges
 async function fingerprints(ctx, W, H, cfg, front) {
+  const intensity = typeof cfg.wearIntensity === 'number' ? cfg.wearIntensity : 1.0;
+  if (intensity <= 0) return;
   const img = await loadTexture('prints');
   if (!img) return;
   const r = rng(cfg.seed * 29 + 6);
   for (let k = 0; k < 2; k++) {
-    const x = W * (k ? 0.86 - 0.08 * r() : 0.1 + 0.12 * r()), cy = H * (0.72 + 0.2 * r()), s = Math.min(W, H) * (0.22 + 0.08 * r()), ang = r() * Math.PI * 2;
-    stamp(ctx, img, front ? x : W - x, cy, s, ang, front ? 0.6 : 0.4, front);
+    const x = W * (k ? 0.86 - 0.08 * r() : 0.1 + 0.12 * r()), cy = H * (0.72 + 0.2 * r()), s = Math.min(W, H) * (0.22 + 0.08 * r()) * intensity, ang = r() * Math.PI * 2;
+    stamp(ctx, img, front ? x : W - x, cy, s, ang, clamp((front ? 0.6 : 0.4) * intensity), front);
   }
 }
 // coffee: cup rings (texture, with a procedural fallback); the ink inside the stain blurs
 async function coffeeStain(c, ctx, W, H, cfg, front) {
+  const intensity = typeof cfg.wearIntensity === 'number' ? cfg.wearIntensity : 1.0;
+  if (intensity <= 0) return;
   const r = rng(cfg.seed * 17 + 1);
-  const x = W * (0.3 + 0.4 * r()), cy = H * (0.35 + 0.35 * r()), R = Math.min(W, H) * (0.13 + 0.07 * r()), ang = r() * Math.PI * 2;
+  const x = W * (0.3 + 0.4 * r()), cy = H * (0.35 + 0.35 * r()), R = Math.min(W, H) * (0.13 + 0.07 * r()) * intensity, ang = r() * Math.PI * 2;
   const cx = front ? x : W - x;
   const img = await loadTexture('coffee');
   if (front) {
@@ -828,16 +830,16 @@ async function coffeeStain(c, ctx, W, H, cfg, front) {
     ctx.save();
     ctx.beginPath(); ctx.arc(cx, cy, R * 1.02, 0, Math.PI * 2); ctx.clip();
     ctx.clearRect(cx - R * 1.1, cy - R * 1.1, R * 2.2, R * 2.2);
-    ctx.filter = 'blur(2.5px)'; ctx.globalAlpha = 0.85; ctx.drawImage(copy, 0, 0);
+    ctx.filter = 'blur(2.5px)'; ctx.globalAlpha = clamp(0.85 * intensity); ctx.drawImage(copy, 0, 0);
     ctx.restore();
   }
-  if (img) { stamp(ctx, img, cx, cy, R * 3.4, ang, front ? 0.95 : 0.55, front); return; }
+  if (img) { stamp(ctx, img, cx, cy, R * 3.4, ang, clamp((front ? 0.95 : 0.55) * intensity), front); return; }
   ctx.save();
   const g = ctx.createRadialGradient(cx, cy, R * 0.1, cx, cy, R);
-  g.addColorStop(0, 'rgba(140,95,45,0.10)'); g.addColorStop(0.82, 'rgba(125,82,36,0.17)'); g.addColorStop(1, 'rgba(110,70,30,0)');
+  g.addColorStop(0, `rgba(140,95,45,${0.10 * intensity})`); g.addColorStop(0.82, `rgba(125,82,36,${0.17 * intensity})`); g.addColorStop(1, 'rgba(110,70,30,0)');
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
   for (let k = 0; k < 3; k++) {
-    ctx.strokeStyle = `rgba(100,62,26,${0.2 + 0.12 * r()})`; ctx.lineWidth = R * (0.03 + 0.03 * r());
+    ctx.strokeStyle = `rgba(100,62,26,${(0.2 + 0.12 * r()) * intensity})`; ctx.lineWidth = R * (0.03 + 0.03 * r());
     ctx.beginPath();
     const ph = r() * 6.28, rr = R * (0.9 + 0.05 * k);
     for (let a = 0; a <= Math.PI * 2 + 0.01; a += 0.05) {
@@ -849,7 +851,7 @@ async function coffeeStain(c, ctx, W, H, cfg, front) {
   for (let k = 0; k < 3; k++) {
     const dx = cx + (r() - 0.5) * R * 1.2, len = R * (0.6 + r() * 1.2);
     const gg = ctx.createLinearGradient(0, cy + R * 0.6, 0, cy + R * 0.6 + len);
-    gg.addColorStop(0, 'rgba(115,75,32,0.16)'); gg.addColorStop(1, 'rgba(115,75,32,0)');
+    gg.addColorStop(0, `rgba(115,75,32,${0.16 * intensity})`); gg.addColorStop(1, 'rgba(115,75,32,0)');
     ctx.fillStyle = gg; ctx.fillRect(dx - 5, cy + R * 0.6, 9 + r() * 6, len);
   }
   ctx.restore();
@@ -872,16 +874,18 @@ function age(ctx, W, H, r) {
 
 // wine: one or two partial rings of a glass (dark rim, lighter band inside), a few drops and a dribble; the ink inside bleeds like coffee
 async function wineStain(c, ctx, W, H, cfg, front) {
+  const intensity = typeof cfg.wearIntensity === 'number' ? cfg.wearIntensity : 1.0;
+  if (intensity <= 0) return;
   const r = rng(cfg.seed * 43 + 3);
-  const x = W * (0.3 + 0.4 * r()), cy = H * (0.4 + 0.3 * r()), R = Math.min(W, H) * (0.1 + 0.04 * r());
-  const cx = front ? x : W - x, al = front ? 1 : 0.5;
+  const x = W * (0.3 + 0.4 * r()), cy = H * (0.4 + 0.3 * r()), R = Math.min(W, H) * (0.1 + 0.04 * r()) * intensity;
+  const cx = front ? x : W - x, al = (front ? 1 : 0.5) * intensity;
   if (front) {
     const copy = makeCanvas(W, H);
     copy.getContext('2d').drawImage(c, 0, 0);
     ctx.save();
     ctx.beginPath(); ctx.arc(cx, cy, R * 1.04, 0, Math.PI * 2); ctx.clip();
     ctx.clearRect(cx - R * 1.1, cy - R * 1.1, R * 2.2, R * 2.2);
-    ctx.filter = 'blur(2px)'; ctx.globalAlpha = 0.8; ctx.drawImage(copy, 0, 0);
+    ctx.filter = 'blur(2px)'; ctx.globalAlpha = clamp(0.8 * intensity); ctx.drawImage(copy, 0, 0);
     ctx.restore();
   }
   ctx.save();
@@ -931,9 +935,11 @@ function fillPts(ctx, pts, cx, cy, s) {
   ctx.closePath(); ctx.fill();
 }
 function inkBlot(ctx, W, H, cfg, front) {
+  const intensity = typeof cfg.wearIntensity === 'number' ? cfg.wearIntensity : 1.0;
+  if (intensity <= 0) return;
   const r = rng(cfg.seed * 47 + 5), u = Math.min(W, H);
-  const x0 = W * (0.2 + 0.6 * r()), y = H * (0.2 + 0.6 * r()), R = u * (0.03 + 0.015 * r());
-  const x = front ? x0 : W - x0, al = front ? 1 : 0.5, col = [16, 22, 58];
+  const x0 = W * (0.2 + 0.6 * r()), y = H * (0.2 + 0.6 * r()), R = u * (0.03 + 0.015 * r()) * intensity;
+  const x = front ? x0 : W - x0, al = (front ? 1 : 0.5) * intensity, col = [16, 22, 58];
   const pts = blotShape(r, R);
   ctx.save();
   // feathering: fainter rings just outside the edge, where the ink soaked into the fibers
@@ -981,6 +987,8 @@ function fadeWash(ctx, W, H, cfg) {
 
 // foxing: rust-brown age spots, soft or crisp, mostly small; they gather toward the edges
 function foxing(ctx, W, H, cfg) {
+  const intensity = typeof cfg.wearIntensity === 'number' ? cfg.wearIntensity : 1.0;
+  if (intensity <= 0) return;
   const r = rng(cfg.seed * 61 + 11), u = Math.min(W, H) / 900;
   const colors = [[150, 78, 30], [170, 96, 40], [128, 62, 24]];
   ctx.save();
@@ -991,7 +999,7 @@ function foxing(ctx, W, H, cfg) {
     if (r() > 0.15 + 0.85 * edge * edge * edge) continue;
     k++;
     // most spots are small and crisp; the rest are soft, squashed blotches of varied size
-    const soft = r() < 0.4, rad = u * (soft ? 4 + Math.pow(r(), 1.5) * 15 : 1 + Math.pow(r(), 2) * 5), c = colors[Math.floor(r() * 3)], a = 0.34 + 0.4 * r();
+    const soft = r() < 0.4, rad = u * (soft ? 4 + Math.pow(r(), 1.5) * 15 : 1 + Math.pow(r(), 2) * 5) * intensity, c = colors[Math.floor(r() * 3)], a = (0.34 + 0.4 * r()) * intensity;
     const g = ctx.createRadialGradient(0, 0, rad * (soft ? 0 : 0.55), 0, 0, rad);
     if (soft) { g.addColorStop(0, rgba(c, a * 0.6)); g.addColorStop(0.55, rgba(c, a * 0.4)); g.addColorStop(1, rgba(c, 0)); }
     else { g.addColorStop(0, rgba(c, a * 0.7)); g.addColorStop(0.85, rgba(c, a * 0.8)); g.addColorStop(0.97, rgba(c, a * 1.15)); g.addColorStop(1, rgba(c, 0)); }
@@ -1006,13 +1014,34 @@ function foxing(ctx, W, H, cfg) {
 // the ink is denser in the middle, skips in patches, and the border is doubled as if pressed twice
 function rubberStamp(ctx, W, H, cfg, below) {
   const r = rng(cfg.seed * 59 + 9), n = noise2(cfg.seed + 23);
-  const word = String(cfg.stamp).toUpperCase(), ink = r() < 0.6 ? [176, 26, 36] : [34, 64, 150];
+  const stampCfg = typeof cfg.stamp === 'object' && cfg.stamp ? cfg.stamp : { text: String(cfg.stamp || 'RECEIVED') };
+  const word = String(stampCfg.text || 'RECEIVED').toUpperCase();
+
+  let ink = r() < 0.6 ? [176, 26, 36] : [34, 64, 150];
+  if (stampCfg.color) {
+    const cname = stampCfg.color.toLowerCase().trim();
+    if (cname === 'red') ink = [176, 26, 36];
+    else if (cname === 'blue') ink = [34, 64, 150];
+    else if (cname === 'purple') ink = [128, 32, 140];
+    else if (cname === 'green') ink = [34, 128, 50];
+    else {
+      const parsed = parseColor(stampCfg.color);
+      if (parsed) ink = parsed.map((v) => Math.round(v * 255));
+    }
+  }
+
   // letter spacing grows with the size, so the word is measured at 100 px and scaled to the target width
   const m = makeCanvas(1, 1).getContext('2d');
   m.font = `bold 100px "Courier Prime", monospace`; m.letterSpacing = '12px';
   const kw = m.measureText(word).width / 100;
   const bw = W * 0.44, fs = bw / (kw + 1.2), bh = fs * 2.1;
-  const ang = -(0.14 + 0.17 * r()), cx = W * (0.46 + 0.1 * r());
+  let ang = -(0.14 + 0.17 * r());
+  if (typeof stampCfg.angle === 'number' && Number.isFinite(stampCfg.angle)) ang = stampCfg.angle;
+
+  let cx = W * (0.46 + 0.1 * r());
+  if (stampCfg.align === 'left') cx = bw / 2 + W * 0.08;
+  else if (stampCfg.align === 'right') cx = W - bw / 2 - W * 0.08;
+  else if (stampCfg.align === 'center') cx = W / 2;
   const cy = Math.min(H - bh / 2 - 30, Math.max(H * 0.55, below + bh / 2 + 24));
   const size = Math.ceil(Math.hypot(bw, bh) + fs * 0.8);
   const oc = makeCanvas(size, size, true), sc = oc.getContext('2d');
@@ -1101,6 +1130,221 @@ function staple(ctx, W, H, cfg, front) {
     ctx.fillStyle = '#7a828e';
     ctx.fillRect(-18, -2, 12, 4);
     ctx.fillRect(6, -2, 12, 4);
+  }
+  ctx.restore();
+}
+
+function paperClip(ctx, W, H, cfg, front) {
+  const r = rng(cfg.seed * 79 + 5);
+  const x = W * (0.68 + 0.12 * r());
+  const ang = (r() - 0.5) * 0.08;
+  const L = Math.min(W, H) * 0.08 + 20;
+  const wOuter = 22, wInner = 14;
+  const radO = wOuter / 2, radI = wInner / 2;
+
+  ctx.save();
+  ctx.translate(front ? x : W - x, 0);
+  ctx.rotate(front ? ang : -ang);
+
+  const drawWire = (pathFn) => {
+    ctx.save();
+    ctx.translate(1.5, 2);
+    ctx.strokeStyle = 'rgba(20, 15, 10, 0.28)';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    pathFn();
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.strokeStyle = '#5a626d';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    pathFn();
+    ctx.stroke();
+
+    ctx.strokeStyle = '#c5cbd3';
+    ctx.lineWidth = 2.8;
+    pathFn();
+    ctx.stroke();
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    pathFn();
+    ctx.stroke();
+  };
+
+  if (front) {
+    drawWire(() => {
+      ctx.beginPath();
+      ctx.moveTo(radO, 0);
+      ctx.lineTo(radO, L - radO);
+      ctx.arc(0, L - radO, radO, 0, Math.PI, false);
+      ctx.lineTo(-radO, 0);
+    });
+  } else {
+    drawWire(() => {
+      ctx.beginPath();
+      ctx.moveTo(radI, 0);
+      const innerL = L * 0.72;
+      ctx.lineTo(radI, innerL - radI);
+      ctx.arc(0, innerL - radI, radI, 0, Math.PI, false);
+      ctx.lineTo(-radI, 0);
+    });
+  }
+  ctx.restore();
+}
+
+function drawWatermark(ctx, W, H, wm) {
+  if (!wm) return;
+  const text = typeof wm === 'string' ? wm : (wm.text || '');
+  const symbol = typeof wm === 'object' ? (wm.symbol || '') : '';
+  if (!text && !symbol) return;
+
+  const cx = W / 2, cy = H / 2;
+  const R = Math.min(W, H) * 0.22;
+
+  const drawPass = (ox, oy, fill, stroke) => {
+    ctx.save();
+    ctx.translate(cx + ox, cy + oy);
+    ctx.fillStyle = fill;
+    ctx.strokeStyle = stroke;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, R, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(0, 0, R - 12, 0, Math.PI * 2);
+    ctx.stroke();
+
+    if (symbol && text) {
+      ctx.font = `${Math.round(R * 0.55)}px serif`;
+      ctx.fillText(symbol, 0, -R * 0.2);
+      ctx.font = `bold ${Math.round(R * 0.18)}px "Courier Prime", monospace`;
+      ctx.letterSpacing = '6px';
+      ctx.fillText(text.toUpperCase(), 0, R * 0.45);
+    } else if (symbol) {
+      ctx.font = `${Math.round(R * 0.85)}px serif`;
+      ctx.fillText(symbol, 0, 0);
+    } else {
+      ctx.font = `bold ${Math.max(22, Math.round(R * 0.22))}px "Courier Prime", monospace`;
+      ctx.letterSpacing = '8px';
+      ctx.fillText(text.toUpperCase(), 0, 0);
+    }
+    ctx.restore();
+  };
+
+  ctx.save();
+  drawPass(-1.5, -1.5, 'rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.12)');
+  drawPass(1.5, 1.5, 'rgba(40, 30, 20, 0.06)', 'rgba(40, 30, 20, 0.09)');
+  drawPass(0, 0, 'rgba(120, 110, 100, 0.05)', 'rgba(120, 110, 100, 0.07)');
+  ctx.restore();
+}
+
+function drawWaxSeal(ctx, cx, cy, seal) {
+  const symbol = (seal && typeof seal.symbol === 'string' && seal.symbol) ? seal.symbol : 'V';
+  let fillCol = 'rgba(145, 24, 28, 0.95)';
+  let strokeCol = 'rgba(95, 12, 16, 0.85)';
+  let symbolCol = 'rgba(85, 10, 14, 0.95)';
+
+  const col = seal?.color;
+  if (Array.isArray(col) && col.length === 3) {
+    const [cr, cg, cb] = col.map((v) => Math.round(v * 255));
+    fillCol = `rgba(${cr}, ${cg}, ${cb}, 0.95)`;
+    strokeCol = `rgba(${Math.round(cr * 0.65)}, ${Math.round(cg * 0.65)}, ${Math.round(cb * 0.65)}, 0.85)`;
+    symbolCol = `rgba(${Math.round(cr * 0.55)}, ${Math.round(cg * 0.55)}, ${Math.round(cb * 0.55)}, 0.95)`;
+  } else if (typeof col === 'string') {
+    const s = col.toLowerCase().trim();
+    if (s === 'gold') {
+      fillCol = 'rgba(212, 165, 45, 0.95)';
+      strokeCol = 'rgba(150, 110, 25, 0.85)';
+      symbolCol = 'rgba(120, 85, 18, 0.95)';
+    } else if (s === 'burgundy') {
+      fillCol = 'rgba(108, 16, 38, 0.95)';
+      strokeCol = 'rgba(70, 8, 22, 0.85)';
+      symbolCol = 'rgba(58, 6, 18, 0.95)';
+    } else if (s === 'red') {
+      fillCol = 'rgba(155, 24, 28, 0.95)';
+      strokeCol = 'rgba(98, 12, 16, 0.85)';
+      symbolCol = 'rgba(85, 10, 14, 0.95)';
+    } else {
+      const parsed = parseColor(col);
+      if (parsed) {
+        const [cr, cg, cb] = parsed.map((v) => Math.round(v * 255));
+        fillCol = `rgba(${cr}, ${cg}, ${cb}, 0.95)`;
+        strokeCol = `rgba(${Math.round(cr * 0.65)}, ${Math.round(cg * 0.65)}, ${Math.round(cb * 0.65)}, 0.85)`;
+        symbolCol = `rgba(${Math.round(cr * 0.55)}, ${Math.round(cg * 0.55)}, ${Math.round(cb * 0.55)}, 0.95)`;
+      }
+    }
+  }
+
+  ctx.save();
+  ctx.save();
+  ctx.translate(cx + 2, cy + 3);
+  ctx.fillStyle = 'rgba(20, 10, 5, 0.3)';
+  ctx.beginPath();
+  for (let a = 0; a <= Math.PI * 2 + 0.01; a += 0.15) {
+    const q = 50 * (1 + 0.08 * Math.sin(a * 8));
+    if (a === 0) ctx.moveTo(Math.cos(a) * q, Math.sin(a) * q);
+    else ctx.lineTo(Math.cos(a) * q, Math.sin(a) * q);
+  }
+  ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.fillStyle = fillCol;
+  ctx.beginPath();
+  for (let a = 0; a <= Math.PI * 2 + 0.01; a += 0.15) {
+    const q = 48 * (1 + 0.08 * Math.sin(a * 8));
+    if (a === 0) ctx.moveTo(Math.cos(a) * q, Math.sin(a) * q);
+    else ctx.lineTo(Math.cos(a) * q, Math.sin(a) * q);
+  }
+  ctx.fill();
+
+  ctx.strokeStyle = strokeCol;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(0, 0, 32, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(-1, -1, 31, Math.PI * 0.8, Math.PI * 1.7);
+  ctx.stroke();
+
+  ctx.fillStyle = symbolCol;
+  ctx.font = 'bold 32px "Caveat", cursive';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(symbol, 0, 2);
+  ctx.restore();
+  ctx.restore();
+}
+
+function deckleEdge(ctx, W, H, cfg, r) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255, 252, 240, 0.45)';
+  ctx.lineWidth = 1.2;
+  const strand = (x, y, dx, dy, len) => {
+    ctx.beginPath(); ctx.moveTo(x, y);
+    ctx.lineTo(x + dx * len + (r() - 0.5) * 3, y + dy * len + (r() - 0.5) * 3);
+    ctx.stroke();
+  };
+  for (let x = 4; x < W - 4; x += 4 + r() * 6) {
+    strand(x, 2, (r() - 0.5) * 0.5, 1, 3 + r() * 7);
+    strand(x, H - 2, (r() - 0.5) * 0.5, -1, 3 + r() * 7);
+  }
+  for (let y = 4; y < H - 4; y += 4 + r() * 6) {
+    strand(2, y, 1, (r() - 0.5) * 0.5, 3 + r() * 7);
+    strand(W - 2, y, -1, (r() - 0.5) * 0.5, 3 + r() * 7);
   }
   ctx.restore();
 }
@@ -1250,15 +1494,30 @@ export async function drawEffects(cfg, T, kind = null) {
       }
     }
   }
-  if (cfg.type === 'parchment') {
-    const ptsT = jagged([-2, 3], [MW + 2, 3], r, 5, 0.1);
-    const ptsB = jagged([-2, MH - 3], [MW + 2, MH - 3], r, 5, 0.1);
-    const ptsL = jagged([3, -2], [3, MH + 2], r, 5, 0.1);
-    const ptsR = jagged([MW - 3, -2], [MW - 3, MH + 2], r, 5, 0.1);
-    fc.lineWidth = 2.5;
+  const isDeckle = cfg.type === 'parchment' || cfg.type === 'postcard' || cfg.states.includes('aged');
+  if (isDeckle) {
+    const ptsT = jagged([-2, 3], [MW + 2, 3], r, 5, 0.12);
+    const ptsB = jagged([-2, MH - 3], [MW + 2, MH - 3], r, 5, 0.12);
+    const ptsL = jagged([3, -2], [3, MH + 2], r, 5, 0.12);
+    const ptsR = jagged([MW - 3, -2], [MW - 3, MH + 2], r, 5, 0.12);
+    fc.lineWidth = 2.2;
     [ptsT, ptsB, ptsL, ptsR].forEach((pts) => {
       fc.beginPath(); pts.forEach((p, i) => (i ? fc.lineTo(p[0], p[1]) : fc.moveTo(p[0], p[1]))); fc.stroke();
     });
+    fc.lineWidth = 1.0;
+    const strand = (x, y, dx, dy, len) => {
+      fc.beginPath(); fc.moveTo(x, y);
+      fc.lineTo(x + dx * len + (r() - 0.5) * 2, y + dy * len + (r() - 0.5) * 2);
+      fc.stroke();
+    };
+    for (let x = 2; x < MW - 2; x += 3 + r() * 4) {
+      strand(x, 2, (r() - 0.5) * 0.6, 1, 2 + r() * 4);
+      strand(x, MH - 2, (r() - 0.5) * 0.6, -1, 2 + r() * 4);
+    }
+    for (let y = 2; y < MH - 2; y += 3 + r() * 4) {
+      strand(2, y, 1, (r() - 0.5) * 0.6, 2 + r() * 4);
+      strand(MW - 2, y, -1, (r() - 0.5) * 0.6, 2 + r() * 4);
+    }
   }
   if (cfg.states.includes('torn')) {
     const v = Math.floor(r() * 3);

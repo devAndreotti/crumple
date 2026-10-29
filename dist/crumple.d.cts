@@ -4,7 +4,7 @@ export type PaperType = 'typed' | 'notebook' | 'form' | 'receipt' | 'ticket' | '
   | 'blueprint' | 'postcard' | 'punchcard' | 'shipping' | 'kraft' | 'parchment' | 'ledger' | 'carbon';
 export type PaperShape = 'ball' | 'flat' | 'quarters' | 'half' | 'thirds' | 'roll' | 'twist' | 'accordion' | 'triangle';
 export type PaperState = 'torn' | 'burnt' | 'coffee' | 'water' | 'prints' | 'aged' | 'scribbled' | 'singed' | 'wine' | 'ink' | 'foxing' | 'tape' | 'stamp' | 'faded'
-  | 'staple' | 'grease' | 'dogear' | 'damp' | 'creased';
+  | 'staple' | 'grease' | 'dogear' | 'damp' | 'creased' | 'clip';
 /** Where a burn starts: from one corner (default), along one whole side, a hole burnt from inside, or a few embers. */
 export type BurnForm = 'corner' | 'edge' | 'center' | 'spots';
 
@@ -34,8 +34,16 @@ export interface PaperConfig {
   address?: string;
   /** Type of the letter inside an envelope. */
   letter?: Exclude<PaperType, 'envelope'>;
-  /** Word printed by the 'stamp' state, drawn in capitals (default 'RECEIVED'). */
-  stamp?: string;
+  /** Word printed by the 'stamp' state, drawn in capitals (default 'RECEIVED'), or an object with text, color, angle and align. */
+  stamp?: string | { text: string; color?: string; angle?: number; align?: 'center' | 'left' | 'right' };
+  /** Custom background color override (RGB array [r, g, b] 0..1 or hex string "#rrggbb"). */
+  color?: [number, number, number] | string;
+  /** Watermark rendered as a faint embossed-style translucent insignia centered on the sheet. */
+  watermark?: string | { text: string; symbol?: string };
+  /** Wax seal placed on the paper. */
+  seal?: { symbol?: string; color?: string | [number, number, number] };
+  /** Numeric multiplier (0..2, default 1.0) scaling stain radius and opacity in coffee, wine, ink, prints, foxing. */
+  wearIntensity?: number;
   /** Rich HTML or custom canvas content rendered onto the sheet. */
   rich?: {
     mode?: 'html' | 'canvas';

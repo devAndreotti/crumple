@@ -58,6 +58,20 @@ export const store = {
 export const makeCanvas = (w, h, readBack) => { const c = document.createElement('canvas'); c.width = w; c.height = h; if (readBack) c.getContext('2d', { willReadFrequently: true }); return c; };
 export const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
+export function parseColor(c) {
+  if (Array.isArray(c) && c.length === 3 && c.every((v) => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1)) {
+    return [c[0], c[1], c[2]];
+  }
+  if (typeof c === 'string') {
+    const s = c.trim();
+    const m6 = /^#?([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/.exec(s);
+    if (m6) return [parseInt(m6[1], 16) / 255, parseInt(m6[2], 16) / 255, parseInt(m6[3], 16) / 255];
+    const m3 = /^#?([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/.exec(s);
+    if (m3) return [parseInt(m3[1] + m3[1], 16) / 255, parseInt(m3[2] + m3[2], 16) / 255, parseInt(m3[3] + m3[3], 16) / 255];
+  }
+  return null;
+}
+
 // events go out on the trigger element (they bubble), e.g. crumple:open, crumple:close, crumple:flip, crumple:tear, crumple:burn
 export function emitEvent(el, name, detail) {
   try { (el || document).dispatchEvent(new CustomEvent('crumple:' + name, { bubbles: true, detail })); } catch (e) { /* old browsers */ }

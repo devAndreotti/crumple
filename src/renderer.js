@@ -1,5 +1,5 @@
 // WebGL2 renderer: one context per canvas. Builds papers (meshes + textures) and draws scenes of them.
-import { clamp, smooth, easeIO, rng, store, ensureFonts, loadTexture, makeCanvas } from './util.js';
+import { clamp, smooth, easeIO, rng, store, ensureFonts, loadTexture, makeCanvas, parseColor } from './util.js';
 import { TYPES, normalize } from './catalog.js';
 import { drawPrint, drawEffects, hiddenInkField } from './print.js';
 import { Jobs } from './worker.js';
@@ -155,10 +155,28 @@ export function Renderer(canvas, options = {}) {
 
   async function build(cfgIn) {
     const cfg = normalize(cfgIn);
-    const T = TYPES[cfg.type];
+    const T = { ...TYPES[cfg.type] };
+    if (cfg.color) {
+      const col = parseColor(cfg.color);
+      if (col) T.color = col;
+    }
     grain();
     // the letter lives inside the envelope: same text, back, states and hidden ink; folded in thirds. Built alongside the envelope
-    const letterP = cfg.type === 'envelope' ? build({ id: cfg.id + '-letter', type: cfg.letter, shape: 'thirds', text: cfg.text, back: cfg.back, states: cfg.states.filter((e) => e !== 'torn'), seed: cfg.seed + 1, hiddenInk: cfg.hiddenInk, burn: cfg.burn, burnAfterReading: cfg.burnAfterReading, stamp: cfg.stamp }) : null;
+    const letterP = cfg.type === 'envelope' ? build({
+      id: cfg.id + '-letter',
+      type: cfg.letter,
+      shape: 'thirds',
+      text: cfg.text,
+      back: cfg.back,
+      states: cfg.states.filter((e) => e !== 'torn'),
+      seed: cfg.seed + 1,
+      hiddenInk: cfg.hiddenInk,
+      burn: cfg.burn,
+      burnAfterReading: cfg.burnAfterReading,
+      stamp: cfg.stamp,
+      ...(cfg.color ? { color: cfg.color } : {}),
+      ...(cfg.wearIntensity !== undefined ? { wearIntensity: cfg.wearIntensity } : {}),
+    }) : null;
     await ensureFonts([T.font, 'Caveat', 'Courier Prime', 'Special Elite']);
     const hw = T.w / 2, hh = T.h / 2;
     const F = shapeParams(cfg.shape, T);
@@ -177,9 +195,9 @@ export function Renderer(canvas, options = {}) {
       meshes.push(mesh(stubX, hw, hh, nx - nMain, ny, exX, exY));
     } else meshes.push(mesh(-hw, hw, hh, nx, ny, exX, exY));
     // an empty back and a paper without cut-outs use the shared 1x1 textures (saves ~6 MB of texture per paper)
-    const backEmpty = !(cfg.back || cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'newspaper' || cfg.type === 'postcard' || cfg.type === 'blueprint' || ['coffee', 'water', 'prints', 'aged', 'wine', 'ink', 'foxing', 'faded', 'staple', 'grease', 'dogear', 'damp'].some((e) => cfg.states.includes(e)));
+    const backEmpty = !(cfg.back || cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'newspaper' || cfg.type === 'postcard' || cfg.type === 'blueprint' || ['coffee', 'water', 'prints', 'aged', 'wine', 'ink', 'foxing', 'faded', 'staple', 'clip', 'grease', 'dogear', 'damp'].some((e) => cfg.states.includes(e)));
     const kind = burnKind(cfg);
-    const noEffects = !(cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'punchcard' || cfg.type === 'parchment' || cfg.states.includes('torn') || kind);
+    const noEffects = !(cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'punchcard' || cfg.type === 'parchment' || cfg.type === 'postcard' || cfg.states.includes('aged') || cfg.states.includes('torn') || kind);
     const [creases, printF, printB, fx] = await Promise.all([
       Jobs.run('creases', [{ seed: cfg.seed, shape: cfg.shape, w: T.w, h: T.h, card: !!T.card, foldY, states: cfg.states }, W, H]),
       drawPrint(cfg, T, 'front', openings),
