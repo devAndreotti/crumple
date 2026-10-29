@@ -776,6 +776,7 @@ export async function drawPrint(cfg, T, side, openings) {
   if (cfg.states.includes('faded')) fadeWash(ctx, W, H, cfg);
   if (cfg.states.includes('foxing')) foxing(ctx, W, H, cfg);
   if (cfg.states.includes('staple')) staple(ctx, W, H, cfg, front);
+  if (cfg.states.includes('clip')) paperClip(ctx, W, H, cfg, front);
   if (cfg.states.includes('grease')) greaseStain(ctx, W, H, cfg, front);
   if (cfg.states.includes('dogear')) dogear(ctx, W, H, cfg, front);
   if (cfg.states.includes('damp')) dampWrinkle(ctx, W, H, cfg);
@@ -1102,6 +1103,66 @@ function staple(ctx, W, H, cfg, front) {
     ctx.fillRect(-18, -2, 12, 4);
     ctx.fillRect(6, -2, 12, 4);
   }
+  ctx.restore();
+}
+
+function paperClip(ctx, W, H, cfg, front) {
+  const r = rng(cfg.seed * 73 + 5);
+  const x = W * (0.68 + (r() - 0.5) * 0.2);
+  const y = 30 + r() * 12;
+  const ang = -0.06 + (r() - 0.5) * 0.12;
+  const w = 18, h = 60;
+  ctx.save();
+  ctx.translate(front ? x : W - x, y);
+  ctx.rotate(front ? ang : -ang);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  // drop shadow
+  ctx.strokeStyle = 'rgba(20, 20, 25, 0.3)';
+  ctx.lineWidth = 3.6;
+  ctx.beginPath();
+  if (front) {
+    ctx.moveTo(-w / 2 + 1, -12);
+    ctx.lineTo(-w / 2 + 1, h / 2 - w / 2);
+    ctx.arc(1, h / 2 - w / 2, w / 2, Math.PI, 0, true);
+    ctx.lineTo(w / 2 + 1, -h / 2 + w / 2);
+    ctx.arc(1, -h / 2 + w / 2, w / 2, 0, Math.PI, true);
+  } else {
+    ctx.moveTo(-w / 4 + 1, -12);
+    ctx.lineTo(-w / 4 + 1, h / 3);
+    ctx.arc(1, h / 3, w / 4, Math.PI, 0, true);
+    ctx.lineTo(w / 4 + 1, -12);
+  }
+  ctx.stroke();
+
+  // metal wire
+  const grad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+  grad.addColorStop(0, '#858d99');
+  grad.addColorStop(0.3, '#f5f8fb');
+  grad.addColorStop(0.65, '#c0c6cf');
+  grad.addColorStop(1, '#606670');
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 2.6;
+  ctx.beginPath();
+  if (front) {
+    ctx.moveTo(-w / 2, -14);
+    ctx.lineTo(-w / 2, h / 2 - w / 2);
+    ctx.arc(0, h / 2 - w / 2, w / 2, Math.PI, 0, true);
+    ctx.lineTo(w / 2, -h / 2 + w / 2);
+    ctx.arc(0, -h / 2 + w / 2, w / 2, 0, Math.PI, true);
+  } else {
+    ctx.moveTo(-w / 4, -14);
+    ctx.lineTo(-w / 4, h / 3);
+    ctx.arc(0, h / 3, w / 4, Math.PI, 0, true);
+    ctx.lineTo(w / 4, -14);
+  }
+  ctx.stroke();
+
+  // sheen highlight
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+  ctx.lineWidth = 0.9;
+  ctx.stroke();
   ctx.restore();
 }
 

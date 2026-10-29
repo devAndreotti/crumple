@@ -4,7 +4,7 @@ export type PaperType = 'typed' | 'notebook' | 'form' | 'receipt' | 'ticket' | '
   | 'blueprint' | 'postcard' | 'punchcard' | 'shipping' | 'kraft' | 'parchment' | 'ledger' | 'carbon';
 export type PaperShape = 'ball' | 'flat' | 'quarters' | 'half' | 'thirds' | 'roll' | 'twist' | 'accordion' | 'triangle';
 export type PaperState = 'torn' | 'burnt' | 'coffee' | 'water' | 'prints' | 'aged' | 'scribbled' | 'singed' | 'wine' | 'ink' | 'foxing' | 'tape' | 'stamp' | 'faded'
-  | 'staple' | 'grease' | 'dogear' | 'damp' | 'creased';
+  | 'staple' | 'grease' | 'dogear' | 'damp' | 'creased' | 'clip';
 /** Where a burn starts: from one corner (default), along one whole side, a hole burnt from inside, or a few embers. */
 export type BurnForm = 'corner' | 'edge' | 'center' | 'spots';
 
@@ -36,6 +36,12 @@ export interface PaperConfig {
   letter?: Exclude<PaperType, 'envelope'>;
   /** Word printed by the 'stamp' state, drawn in capitals (default 'RECEIVED'). */
   stamp?: string;
+  /** Paper weight in grams per square meter (gsm) or physical thickness. Affects fold radii and curling stiffness. */
+  gsm?: number;
+  weight?: number;
+  thickness?: number;
+  /** Custom translucency factor (0 = opaque card, 0.18 = thin carbon/receipt). */
+  thru?: number;
   /** Rich HTML or custom canvas content rendered onto the sheet. */
   rich?: {
     mode?: 'html' | 'canvas';
@@ -46,7 +52,7 @@ export interface PaperConfig {
   gsm?: number;
 }
 
-export interface TypeInfo { name: string; w: number; h: number; color: [number, number, number]; shape: PaperShape | 'envelope'; font: string; [key: string]: unknown }
+export interface TypeInfo { name: string; w: number; h: number; color: [number, number, number]; shape: PaperShape | 'envelope'; font: string; gsm?: number; weight?: number; thickness?: number; thru?: number; [key: string]: unknown }
 
 export const TYPES: Record<PaperType, TypeInfo>;
 export const SHAPES: Record<PaperShape, string>;

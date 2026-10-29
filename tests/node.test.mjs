@@ -162,7 +162,7 @@ test('new paper types, shapes, and wear states are registered and normalize corr
     const c = normalize({ shape: sh });
     assert.equal(c.shape, sh);
   }
-  const newStates = ['staple', 'grease', 'dogear', 'damp', 'creased'];
+  const newStates = ['staple', 'grease', 'dogear', 'damp', 'creased', 'clip'];
   for (const st of newStates) {
     assert.ok(STATES[st]);
     const c = normalize({ states: [st] });
