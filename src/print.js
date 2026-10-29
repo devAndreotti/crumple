@@ -88,6 +88,22 @@ function drawWord(ctx, T, t, x, y, color, r, nz) {
     ctx.restore();
     return;
   }
+  if (T.carbon) {
+    let cx = x;
+    for (const ch of t.t) {
+      const jx = (r() - 0.5) * 1.5, jy = (r() - 0.5) * 1.8;
+      // mechanical impact bloom around character
+      ctx.fillStyle = 'rgba(100, 115, 240, 0.28)';
+      ctx.fillText(ch, cx + jx - 1, y + jy);
+      ctx.fillText(ch, cx + jx + 1, y + jy);
+      ctx.fillText(ch, cx + jx, y + jy + 1);
+      // typewriter core strike
+      ctx.fillStyle = rgba(color, 0.82 + r() * 0.18);
+      ctx.fillText(ch, cx + jx, y + jy);
+      cx += ctx.measureText(ch).width;
+    }
+    return;
+  }
   if (T.typewriter) {
     // uneven strikes, letter by letter; thermal paper fades in patches
     let cx = x;
@@ -145,6 +161,23 @@ function wrapLines(ctx, txt, w) {
   txt.split(' ').forEach((p) => { const t = l ? l + ' ' + p : p; if (ctx.measureText(t).width > w && l) { lines.push(l); l = p; } else l = t; });
   if (l) lines.push(l);
   return lines;
+}
+
+function hollerithRows(ch) {
+  const c = String(ch || '').toUpperCase();
+  if (c >= '0' && c <= '9') return [c.charCodeAt(0) - 48 + 2];
+  if (c >= 'A' && c <= 'I') return [0, c.charCodeAt(0) - 65 + 3];
+  if (c >= 'J' && c <= 'R') return [1, c.charCodeAt(0) - 74 + 3];
+  if (c >= 'S' && c <= 'Z') return [2, c.charCodeAt(0) - 83 + 4];
+  if (c === '-') return [1];
+  if (c === '&' || c === '+') return [0];
+  if (c === '/') return [2, 3];
+  if (c === '.') return [0, 5, 10];
+  if (c === ',') return [2, 5, 10];
+  if (c === '=') return [5, 10];
+  if (c === '$') return [1, 5, 10];
+  if (c === '*') return [1, 6, 10];
+  return [];
 }
 
 // what comes pre-printed on each type; receives (ctx, W, H, T, cfg, extras)
@@ -245,36 +278,179 @@ const BACKGROUNDS = {
     ctx.restore();
   },
   blueprint(ctx, W, H) {
-    ctx.strokeStyle = 'rgba(70, 180, 255, 0.16)'; ctx.lineWidth = 1;
-    for (let x = 0; x < W; x += 20) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-    for (let y = 0; y < H; y += 20) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-    ctx.strokeStyle = 'rgba(120, 220, 255, 0.35)'; ctx.lineWidth = 1.5;
-    for (let x = 0; x < W; x += 100) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-    for (let y = 0; y < H; y += 100) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-    ctx.strokeStyle = 'rgba(160, 230, 255, 0.6)'; ctx.lineWidth = 3;
-    ctx.strokeRect(30, 30, W - 60, H - 60);
-    ctx.lineWidth = 1; ctx.strokeRect(36, 36, W - 72, H - 72);
-    const tbW = 280, tbH = 90, tbx = W - 36 - tbW, tby = H - 36 - tbH;
-    ctx.fillStyle = 'rgba(10, 35, 60, 0.85)'; ctx.fillRect(tbx, tby, tbW, tbH);
-    ctx.strokeStyle = 'rgba(160, 230, 255, 0.6)'; ctx.strokeRect(tbx, tby, tbW, tbH);
-    ctx.fillStyle = 'rgba(200, 240, 255, 0.9)'; ctx.font = 'bold 16px "Courier Prime", monospace';
-    ctx.fillText('AQUILA ENGINEERING', tbx + 14, tby + 26);
-    ctx.font = '12px "Courier Prime", monospace';
-    ctx.fillText('DWG NO: 9042-B | SHT 1 OF 1', tbx + 14, tby + 52);
-    ctx.fillText('APPROVED FOR RELEASE', tbx + 14, tby + 74);
+    const bg = ctx.createRadialGradient(W / 2, H / 2, W * 0.15, W / 2, H / 2, W * 0.72);
+    bg.addColorStop(0, 'rgba(16, 52, 92, 0.45)');
+    bg.addColorStop(1, 'rgba(6, 18, 34, 0.85)');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+    ctx.strokeStyle = 'rgba(65, 175, 255, 0.13)'; ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 15) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 15) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(95, 200, 255, 0.32)'; ctx.lineWidth = 1.4;
+    for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(140, 225, 255, 0.52)'; ctx.lineWidth = 2.2;
+    for (let x = 0; x < W; x += 180) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 180) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    const m = 26;
+    ctx.strokeStyle = 'rgba(170, 235, 255, 0.75)'; ctx.lineWidth = 3;
+    ctx.strokeRect(m, m, W - 2 * m, H - 2 * m);
+    ctx.lineWidth = 1.2; ctx.strokeRect(m + 6, m + 6, W - 2 * m - 12, H - 2 * m - 12);
+
+    ctx.fillStyle = 'rgba(180, 235, 255, 0.75)'; ctx.font = 'bold 12px "Courier Prime", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ['A', 'B', 'C', 'D', 'E', 'F'].forEach((ch, i) => {
+      const zx = m + (i + 0.5) * ((W - 2 * m) / 6);
+      ctx.fillText(ch, zx, m - 12);
+      ctx.fillText(ch, zx, H - m + 12);
+    });
+    ['1', '2', '3', '4'].forEach((num, j) => {
+      const zy = m + (j + 0.5) * ((H - 2 * m) / 4);
+      ctx.fillText(num, m - 12, zy);
+      ctx.fillText(num, W - m + 12, zy);
+    });
+    [[m, m], [W - m, m], [m, H - m], [W - m, H - m]].forEach(([cx, cy]) => {
+      ctx.beginPath();
+      ctx.moveTo(cx - 10, cy); ctx.lineTo(cx + 10, cy);
+      ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 10);
+      ctx.stroke();
+    });
+
+    const sx = W * 0.72, sy = H * 0.40;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(130, 215, 255, 0.55)'; ctx.lineWidth = 1.5; ctx.setLineDash([12, 4, 3, 4]);
+    ctx.beginPath(); ctx.moveTo(sx - 170, sy); ctx.lineTo(sx + 170, sy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sx, sy - 150); ctx.lineTo(sx, sy + 150); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle = 'rgba(200, 240, 255, 0.85)'; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.arc(sx, sy, 130, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.arc(sx, sy, 85, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(sx, sy, 42, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(110, 205, 255, 0.6)'; ctx.lineWidth = 1.2; ctx.setLineDash([6, 4]);
+    ctx.beginPath(); ctx.arc(sx, sy, 108, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(8, 25, 45, 0.9)';
+    ctx.strokeStyle = 'rgba(210, 245, 255, 0.9)'; ctx.lineWidth = 1.5;
+    for (let k = 0; k < 8; k++) {
+      const a = k * Math.PI / 4;
+      const bx = sx + Math.cos(a) * 108, by = sy + Math.sin(a) * 108;
+      ctx.beginPath(); ctx.arc(bx, by, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+    ctx.save();
+    ctx.beginPath(); ctx.arc(sx, sy, 130, Math.PI, Math.PI * 1.5);
+    ctx.lineTo(sx, sy); ctx.closePath(); ctx.clip();
+    ctx.strokeStyle = 'rgba(100, 190, 255, 0.35)'; ctx.lineWidth = 1.2;
+    for (let d = -150; d < 150; d += 8) {
+      ctx.beginPath(); ctx.moveTo(sx + d - 150, sy - 150); ctx.lineTo(sx + d + 150, sy + 150); ctx.stroke();
+    }
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(170, 230, 255, 0.7)'; ctx.lineWidth = 1.5;
+    ctx.fillStyle = 'rgba(215, 245, 255, 0.9)'; ctx.font = 'bold 12px "Courier Prime", monospace';
+    ctx.beginPath();
+    ctx.moveTo(sx - 130, sy + 145); ctx.lineTo(sx + 130, sy + 145);
+    ctx.moveTo(sx - 130, sy + 135); ctx.lineTo(sx - 130, sy + 155);
+    ctx.moveTo(sx + 130, sy + 135); ctx.lineTo(sx + 130, sy + 155);
+    ctx.stroke();
+    ctx.fillText('<-- Ø 260.00 mm -->', sx, sy + 158);
+    ctx.beginPath(); ctx.moveTo(sx + 30, sy - 30); ctx.lineTo(sx + 80, sy - 80); ctx.lineTo(sx + 140, sy - 80); ctx.stroke();
+    ctx.textAlign = 'left';
+    ctx.fillText('BORE Ø 42.0 H7', sx + 85, sy - 86);
+    const px = sx + 80, py = sy - 130;
+    ctx.strokeStyle = 'rgba(160, 225, 255, 0.6)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(px + 40, py, 10, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(px + 40, py, 4, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px, py - 10); ctx.lineTo(px + 20, py - 5); ctx.lineTo(px + 20, py + 5); ctx.lineTo(px, py + 10); ctx.closePath(); ctx.stroke();
+    ctx.restore();
+
+    const tbW = 390, tbH = 135, tbx = W - m - 6 - tbW, tby = H - m - 6 - tbH;
+    ctx.fillStyle = 'rgba(8, 26, 48, 0.92)'; ctx.fillRect(tbx, tby, tbW, tbH);
+    ctx.strokeStyle = 'rgba(170, 235, 255, 0.8)'; ctx.lineWidth = 2; ctx.strokeRect(tbx, tby, tbW, tbH);
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(tbx, tby + 38); ctx.lineTo(tbx + tbW, tby + 38);
+    ctx.moveTo(tbx, tby + 86); ctx.lineTo(tbx + tbW, tby + 86);
+    ctx.moveTo(tbx + 240, tby + 38); ctx.lineTo(tbx + 240, tby + tbH);
+    ctx.moveTo(tbx + 120, tby + 86); ctx.lineTo(tbx + 120, tby + tbH);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(215, 245, 255, 0.95)'; ctx.textAlign = 'left';
+    ctx.font = 'bold 15px "Courier Prime", monospace';
+    ctx.fillText('AQUILA DYNAMICS · DEFENSE & NAVAL', tbx + 14, tby + 24);
+    ctx.font = 'bold 13px "Courier Prime", monospace';
+    ctx.fillText('VALVE ASSEMBLY · HIGH PRESSURE', tbx + 14, tby + 58);
+    ctx.font = '11px "Courier Prime", monospace'; ctx.fillStyle = 'rgba(165, 220, 255, 0.85)';
+    ctx.fillText('DWG NO: AQ-9042-REV-D', tbx + 14, tby + 76);
+    ctx.fillText('SCALE: 1:25', tbx + 14, tby + 110);
+    ctx.fillText('SHT 1 OF 1', tbx + 134, tby + 110);
+    ctx.fillText('DRN: E.M.', tbx + 252, tby + 58);
+    ctx.fillText('CHK: R.A.', tbx + 252, tby + 76);
+    ctx.fillStyle = 'rgba(100, 255, 180, 0.9)'; ctx.font = 'bold 11px "Courier Prime", monospace';
+    ctx.fillText('APPROVED', tbx + 252, tby + 110);
+
+    ctx.strokeStyle = 'rgba(230, 248, 255, 0.22)'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(W / 2, m); ctx.lineTo(W / 2, H - m); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(m, H / 2); ctx.lineTo(W - m, H / 2); ctx.stroke();
   },
   postcard(ctx, W, H) {
     ctx.strokeStyle = 'rgba(180, 160, 130, 0.4)'; ctx.lineWidth = 2;
     ctx.strokeRect(24, 24, W - 48, H - 48);
   },
-  punchcard(ctx, W, H) {
-    ctx.strokeStyle = 'rgba(120, 100, 80, 0.25)'; ctx.lineWidth = 1;
-    ctx.fillStyle = 'rgba(100, 90, 80, 0.7)'; ctx.font = '9px "VT323", monospace';
-    for (let col = 1; col <= 80; col += 2) {
-      const x = 30 + (col - 1) * ((W - 60) / 79);
-      ctx.fillText(String(col % 10), x, 24);
-      ctx.fillText(String(col % 10), x, H - 14);
+  punchcard(ctx, W, H, T, cfg) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(100, 85, 70, 0.45)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, 50); ctx.lineTo(50, 0); ctx.stroke();
+
+    ctx.fillStyle = 'rgba(40, 85, 130, 0.25)';
+    ctx.fillRect(0, 0, W, H * 0.16);
+    ctx.strokeStyle = 'rgba(40, 85, 130, 0.55)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, H * 0.16); ctx.lineTo(W, H * 0.16); ctx.stroke();
+
+    const x0 = 34, x1 = W - 34;
+    const colW = (x1 - x0) / 79;
+    const rowY0 = H * 0.23, rowStep = (H * 0.94 - rowY0) / 11;
+
+    const line = (cfg.text.split('\n')[0] || '').slice(0, 80);
+    ctx.fillStyle = 'rgba(25, 25, 25, 0.92)';
+    ctx.font = 'bold 15px "Courier Prime", monospace'; ctx.textAlign = 'center';
+    for (let c = 0; c < line.length; c++) {
+      if (line[c] !== ' ') ctx.fillText(line[c], x0 + c * colW, 24);
     }
+
+    ctx.fillStyle = 'rgba(70, 60, 50, 0.65)';
+    ctx.font = '9px "VT323", monospace';
+    for (let c = 1; c <= 80; c++) {
+      const cx = x0 + (c - 1) * colW;
+      if (c === 1 || c % 5 === 0) {
+        ctx.fillText(String(c), cx, H * 0.14);
+        ctx.fillText(String(c), cx, H - 12);
+      }
+    }
+
+    ctx.font = '11px "VT323", monospace';
+    ctx.fillStyle = 'rgba(90, 80, 70, 0.45)';
+    for (let r = 0; r < 10; r++) {
+      const y = rowY0 + (r + 2) * rowStep;
+      for (let c = 1; c <= 80; c++) {
+        const cx = x0 + (c - 1) * colW;
+        ctx.fillText(String(r), cx, y);
+      }
+    }
+
+    ctx.fillStyle = 'rgba(80, 70, 60, 0.7)';
+    ctx.font = 'bold 11px "Courier Prime", monospace';
+    ctx.fillText('IBM 5081', W - 80, H - 28);
+
+    ctx.fillStyle = 'rgba(15, 12, 10, 0.45)';
+    for (let c = 0; c < line.length; c++) {
+      const rows = hollerithRows(line[c]);
+      const cx = x0 + c * colW;
+      for (const r of rows) {
+        const cy = rowY0 + r * rowStep;
+        ctx.fillRect(cx - 5, cy - 10, 10, 20);
+      }
+    }
+    ctx.restore();
   },
   shipping(ctx, W, H) {
     ctx.strokeStyle = 'rgba(70, 50, 30, 0.35)'; ctx.lineWidth = 2;
@@ -316,27 +492,123 @@ const BACKGROUNDS = {
     ctx.restore();
   },
   ledger(ctx, W, H) {
-    ctx.strokeStyle = 'rgba(130, 180, 150, 0.4)'; ctx.lineWidth = 1;
-    for (let y = 160; y < H - 40; y += 42) {
-      ctx.beginPath(); ctx.moveTo(30, y); ctx.lineTo(W - 30, y); ctx.stroke();
+    const m = 30;
+    ctx.strokeStyle = 'rgba(60, 110, 85, 0.6)'; ctx.lineWidth = 2.5;
+    ctx.strokeRect(m, m, W - 2 * m, H - 2 * m);
+    ctx.lineWidth = 1; ctx.strokeRect(m + 4, m + 4, W - 2 * m - 8, H - 2 * m - 8);
+
+    ctx.fillStyle = 'rgba(235, 246, 238, 0.9)'; ctx.fillRect(m + 6, m + 6, W - 2 * m - 12, 110);
+    ctx.strokeStyle = 'rgba(60, 110, 85, 0.4)'; ctx.strokeRect(m + 6, m + 6, W - 2 * m - 12, 110);
+    ctx.fillStyle = 'rgba(25, 55, 40, 0.92)'; ctx.textAlign = 'center';
+    ctx.font = 'bold 28px "Courier Prime", monospace';
+    ctx.fillText('CONTINENTAL MERCANTILE CO. · GENERAL LEDGER', W / 2, m + 42);
+    ctx.font = 'italic 16px "Libre Baskerville", serif'; ctx.fillStyle = 'rgba(35, 75, 55, 0.85)';
+    ctx.fillText('FOLIO NO. 142 — ACCOUNT OF RECEIPTS & DISBURSEMENTS — ANNO 1928', W / 2, m + 72);
+    ctx.fillRect(m + 40, m + 88, W - 2 * m - 80, 2);
+
+    const yHeader = m + 116, yEnd = H - m - 6;
+    const cDate = 210, cPart = W - 430, cFol = W - 370, cDeb = W - 250, cCred = W - 130;
+
+    const rowH = 42;
+    for (let y = yHeader + rowH, idx = 0; y < yEnd; y += rowH, idx++) {
+      if (idx % 2 === 1) {
+        ctx.fillStyle = 'rgba(180, 220, 200, 0.15)';
+        ctx.fillRect(m + 6, y, W - 2 * m - 12, rowH);
+      }
+      ctx.strokeStyle = 'rgba(90, 160, 130, 0.35)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(m + 6, y); ctx.lineTo(W - m - 6, y); ctx.stroke();
     }
-    ctx.strokeStyle = 'rgba(215, 65, 65, 0.55)'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(96, 30); ctx.lineTo(96, H - 30); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(102, 30); ctx.lineTo(102, H - 30); ctx.stroke();
-    ctx.strokeStyle = 'rgba(70, 100, 170, 0.5)'; ctx.lineWidth = 1.5;
-    const c1 = W - 280, c2 = W - 140;
-    ctx.beginPath(); ctx.moveTo(c1, 80); ctx.lineTo(c1, H - 30); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(c1 + 4, 80); ctx.lineTo(c1 + 4, H - 30); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(c2, 80); ctx.lineTo(c2, H - 30); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(c2 + 4, 80); ctx.lineTo(c2 + 4, H - 30); ctx.stroke();
-    ctx.fillStyle = 'rgba(40, 70, 120, 0.85)'; ctx.font = 'bold 15px "Courier Prime", monospace';
-    ctx.fillText('DEBIT', c1 - 70, 130); ctx.fillText('CREDIT', c2 - 70, 130);
+
+    ctx.fillStyle = 'rgba(40, 90, 65, 0.88)'; ctx.fillRect(m + 6, yHeader, W - 2 * m - 12, rowH);
+    ctx.fillStyle = '#f0f8f2'; ctx.font = 'bold 14px "Courier Prime", monospace'; ctx.textAlign = 'center';
+    ctx.fillText('DATE', (m + 6 + cDate) / 2, yHeader + 26);
+    ctx.fillText('PARTICULARS / DESCRIPTION', (cDate + cPart) / 2, yHeader + 26);
+    ctx.fillText('FOL', (cPart + cFol) / 2, yHeader + 26);
+    ctx.fillText('DEBITS ($ | ¢)', (cFol + cDeb) / 2, yHeader + 26);
+    ctx.fillText('CREDITS ($ | ¢)', (cDeb + cCred) / 2, yHeader + 26);
+    ctx.fillText('BALANCE', (cCred + W - m - 6) / 2, yHeader + 26);
+
+    ctx.strokeStyle = 'rgba(215, 45, 45, 0.65)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(m + 6, yHeader); ctx.lineTo(m + 6, yEnd); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(m + 10, yHeader); ctx.lineTo(m + 10, yEnd); ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(70, 120, 160, 0.45)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(cDate, yHeader); ctx.lineTo(cDate, yEnd); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cPart, yHeader); ctx.lineTo(cPart, yEnd); ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(215, 45, 45, 0.65)'; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(cFol, yHeader); ctx.lineTo(cFol, yEnd); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cDeb, yHeader); ctx.lineTo(cDeb, yEnd); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cCred, yHeader); ctx.lineTo(cCred, yEnd); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cCred + 3, yHeader); ctx.lineTo(cCred + 3, yEnd); ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(60, 110, 190, 0.45)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cDeb - 35, yHeader + rowH); ctx.lineTo(cDeb - 35, yEnd); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cCred - 35, yHeader + rowH); ctx.lineTo(cCred - 35, yEnd); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W - m - 41, yHeader + rowH); ctx.lineTo(W - m - 41, yEnd); ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(215, 45, 45, 0.85)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cFol, yEnd - 48); ctx.lineTo(W - m - 6, yEnd - 48); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cFol, yEnd - 12); ctx.lineTo(W - m - 6, yEnd - 12); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cFol, yEnd - 8); ctx.lineTo(W - m - 6, yEnd - 8); ctx.stroke();
   },
   carbon(ctx, W, H) {
-    ctx.strokeStyle = 'rgba(150, 160, 255, 0.45)'; ctx.lineWidth = 2;
-    ctx.strokeRect(30, 30, W - 60, H - 60);
-    ctx.fillStyle = 'rgba(160, 170, 255, 0.7)'; ctx.font = 'bold 16px "Courier Prime", monospace';
-    ctx.fillText('DUPLICATE · DO NOT DESTROY', 50, 60);
+    const bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, 'rgba(26, 24, 36, 0.95)');
+    bg.addColorStop(0.5, 'rgba(22, 20, 32, 0.98)');
+    bg.addColorStop(1, 'rgba(18, 16, 26, 0.95)');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+    ctx.save();
+    for (let k = 0; k < 6; k++) {
+      const gx = (k % 2 ? W - 60 : 60), gy = H * (0.15 + k * 0.15);
+      const sm = ctx.createRadialGradient(gx, gy, 10, gx, gy, 90);
+      sm.addColorStop(0, 'rgba(90, 80, 150, 0.18)');
+      sm.addColorStop(1, 'rgba(20, 18, 30, 0)');
+      ctx.fillStyle = sm; ctx.beginPath(); ctx.arc(gx, gy, 90, 0, Math.PI * 2); ctx.fill();
+    }
+
+    ctx.strokeStyle = 'rgba(160, 170, 240, 0.35)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 6]);
+    ctx.beginPath(); ctx.moveTo(30, 40); ctx.lineTo(W - 30, 40); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(150, 160, 220, 0.55)'; ctx.font = '11px "Courier Prime", monospace';
+    ctx.textAlign = 'center'; ctx.fillText('· · · · · · · · · ·  TEAR ALONG PERFORATION  · · · · · · · · · ·', W / 2, 34);
+
+    ctx.strokeStyle = 'rgba(140, 150, 235, 0.45)'; ctx.lineWidth = 2.2;
+    ctx.strokeRect(36, 56, W - 72, H - 96);
+    ctx.lineWidth = 1; ctx.strokeRect(42, 62, W - 84, H - 108);
+
+    ctx.fillStyle = 'rgba(225, 60, 75, 0.88)';
+    ctx.font = 'bold 20px "Special Elite", monospace'; ctx.textAlign = 'right';
+    ctx.fillText('№ 049182', W - 60, 95);
+
+    ctx.fillStyle = 'rgba(180, 190, 255, 0.9)'; ctx.textAlign = 'left';
+    ctx.font = 'bold 22px "Courier Prime", monospace';
+    ctx.fillText('CUSTOMER DUPLICATE RECEIPT', 64, 98);
+    ctx.font = '12px "Courier Prime", monospace'; ctx.fillStyle = 'rgba(140, 155, 230, 0.7)';
+    ctx.fillText('INTER-OFFICE TRANSFER VOUCHER · SECOND VIA', 64, 118);
+    ctx.fillRect(64, 130, W - 128, 2);
+
+    ctx.font = '13px "Courier Prime", monospace';
+    ctx.fillStyle = 'rgba(135, 145, 220, 0.65)';
+    const fields = [
+      ['DATE OF RECORD: ____________________________', 64, 168],
+      ['TRANSACTION REF: __________________________', W / 2 + 20, 168],
+      ['RECEIVED FROM: __________________________________________________________________', 64, 210],
+      ['SUM AMOUNT: ____________________________________________________________________', 64, 252],
+    ];
+    fields.forEach(([f, fx, fy]) => ctx.fillText(f, fx, fy));
+
+    ctx.save();
+    ctx.translate(W - 220, H - 140);
+    ctx.rotate(-0.16);
+    ctx.strokeStyle = 'rgba(150, 160, 255, 0.65)'; ctx.lineWidth = 4;
+    ctx.strokeRect(-110, -32, 220, 64);
+    ctx.lineWidth = 1.5; ctx.strokeRect(-104, -26, 208, 52);
+    ctx.fillStyle = 'rgba(150, 160, 255, 0.75)'; ctx.font = 'bold 28px "Courier Prime", monospace';
+    ctx.textAlign = 'center'; ctx.fillText('DUPLICATE', 0, 10);
+    ctx.restore();
+    ctx.restore();
   },
 };
 function postcardBack(ctx, W, H, cfg, r) {
@@ -432,14 +704,14 @@ const AREAS = {
   sticky: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 30 }),
   polaroid: (W, H) => ({ x: 40, y: Math.round(W * 0.935 + (H - W * 0.935) * 0.55), w: W - 80, h: 120, center: true }),
   envelope: () => null,
-  blueprint: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 120 }),
+  blueprint: (W, H, T) => ({ x: 64, y: 140, w: Math.round(W * 0.44), h: H - 280, headK: 1.15 }),
   postcard: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 80 }),
-  punchcard: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 60 }),
+  punchcard: (W, H, T) => ({ x: 34, y: 18, w: W - 68, h: 26 }),
   shipping: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 180 }),
   kraft: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 180 }),
   parchment: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 160, centerHead: true }),
-  ledger: (W, H, T) => ({ x: 120, y: T.y, w: W - 260, h: H - T.y - 60 }),
-  carbon: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 80 }),
+  ledger: (W, H, T) => ({ x: 88, y: 198, w: W - 176, h: H - 260, headK: 1.1 }),
+  carbon: (W, H, T) => ({ x: 74, y: 300, w: W - 148, h: H - 420, headK: 1.15 }),
 };
 
 export async function renderForeignObject(html, w, h, css = '') {
@@ -965,13 +1237,16 @@ export async function drawEffects(cfg, T, kind = null) {
   }
   if (cfg.type === 'punchcard') {
     pc.beginPath(); pc.moveTo(-2, -2); pc.lineTo(26, -2); pc.lineTo(-2, 26); pc.closePath(); pc.fill();
-    const pr = rng(cfg.seed * 37 + 5);
-    for (let col = 0; col < 28; col++) {
-      const cx = 36 + col * Math.round((MW - 72) / 27);
-      const punches = 1 + Math.floor(pr() * 3);
-      for (let p = 0; p < punches; p++) {
-        const cy = 24 + Math.floor(pr() * 10) * Math.round((MH - 48) / 10);
-        pc.fillRect(cx - 3, cy - 6, 7, 13);
+    const str = (cfg.text.split('\n')[0] || '').slice(0, 80);
+    const x0 = 17, x1 = MW - 17;
+    const colW = (x1 - x0) / 79;
+    const rowY0 = MH * 0.23, rowStep = (MH * 0.94 - rowY0) / 11;
+    for (let i = 0; i < str.length; i++) {
+      const rows = hollerithRows(str[i]);
+      const cx = x0 + i * colW;
+      for (const r of rows) {
+        const cy = rowY0 + r * rowStep;
+        pc.fillRect(cx - 2.5, cy - 5, 5, 10);
       }
     }
   }
