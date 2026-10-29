@@ -4,6 +4,23 @@ All notable changes to this project are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-10-29
+
+### Added
+
+- Universal Web Component `<crumple-paper>` (`CrumplePaper`): declaratively attach paper configs with zero boilerplate in HTML, React, Vue, Svelte, and Astro.
+- Extensibility plugin API: `registerPaperType()` and `registerWearState()` to register custom paper textures, shaders, and wear patterns.
+- Rich content rasterization via `renderForeignObject` in `print.js` supporting HTML/SVG elements (QR codes, vector graphics, custom markup).
+- Mobile gestures: swipe-to-flip (`|vx| > 0.20 px/ms`) and vertical flick-to-close on touch screens.
+- Smooth transition between 2-finger pinch and 1-finger drag in `dragControl`.
+- Tactile haptic feedback via `navigator.vibrate` on unfold snap, stub tear, and burning embers (honors `prefers-reduced-motion`).
+- Pink noise 1-pole recursive filtering and 420Hz biquad body resonance in procedural `Sound`.
+
+### Changed
+
+- Screen reader accessibility: moved `.crumple-sr` container inside `.crumple-bar` dialog, wired `aria-describedby="crumple-content"`, and preserved semantic tags (`<del>`, `<ins>`, `.crumple-h`).
+- Vertex shader performance: refactored deformation helper `place()` to compute surface normals analytically, eliminating 2 redundant deformation evaluations per vertex (~66% ALU overhead reduction).
+
 ## [1.0.0] - 2026-10-24
 
 ### Added

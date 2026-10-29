@@ -1894,7 +1894,7 @@ var Mt = class extends (typeof HTMLElement < "u" ? HTMLElement : class {
 typeof customElements < "u" && !customElements.get("crumple-paper") && customElements.define("crumple-paper", Mt);
 
 // .build/index.js
-var _o = "1.1.0";
+var _o = "1.1.1";
 export {
   Mt as CrumplePaper,
   nt as Renderer,

@@ -1929,5 +1929,5 @@ var at = class extends (typeof HTMLElement < "u" ? HTMLElement : class {
 typeof customElements < "u" && !customElements.get("crumple-paper") && customElements.define("crumple-paper", at);
 
 // .build/index.js
-var eo = "1.1.0";
+var eo = "1.1.1";
 //# sourceMappingURL=crumple.cjs.map

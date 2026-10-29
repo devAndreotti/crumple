@@ -6,4 +6,4 @@ export { Sound } from './sound.js';
 export { Scene } from './scene.js';
 export { Stage } from './stage.js';
 export { CrumplePaper } from './element.js';
-export const version = '1.1.0';
+export const version = '1.1.1';

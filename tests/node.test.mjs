@@ -20,7 +20,7 @@ test('no window in Node: the ESM build and the sources import without throwing',
   assert.equal(typeof globalThis.document, 'undefined');
   const esm = await import(path.join(root, 'dist/crumple.esm.js'));
   assert.deepEqual(Object.keys(esm).sort(), RUNTIME);
-  assert.equal(esm.version, '1.1.0');
+  assert.equal(esm.version, '1.1.1');
   assert.equal(typeof esm.Scene.attach, 'function');
   assert.deepEqual(Object.keys(src).sort(), RUNTIME);
 });
@@ -28,15 +28,15 @@ test('no window in Node: the ESM build and the sources import without throwing',
 test('CJS build: require() gives the same surface', () => {
   const cjs = require(path.join(root, 'dist/crumple.cjs'));
   assert.deepEqual(Object.keys(cjs).sort(), RUNTIME);
-  assert.equal(cjs.version, '1.1.0');
+  assert.equal(cjs.version, '1.1.1');
   assert.equal(typeof cjs.normalize, 'function');
 });
 
 test('package self-reference: exports map resolves for import, require and package.json', async () => {
   const pkg = require('@devandreotti/crumple/package.json');
   assert.equal(pkg.name, '@devandreotti/crumple');
-  assert.equal(require('@devandreotti/crumple').version, '1.1.0');
-  assert.equal((await import('@devandreotti/crumple')).version, '1.1.0');
+  assert.equal(require('@devandreotti/crumple').version, '1.1.1');
+  assert.equal((await import('@devandreotti/crumple')).version, '1.1.1');
 });
 
 test('normalize(): defaults for an empty config', () => {
