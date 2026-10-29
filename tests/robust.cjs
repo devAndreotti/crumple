@@ -248,6 +248,7 @@ const EXPECTED = /CONTEXT_LOST|forced 2d failure|could not be built/;
       el.setAttribute('text', '# Custom Receipt');
       document.getElementById('row').appendChild(el);
       const isRegistered = !!customElements.get('crumple-paper');
+      await window.waitFor(() => Crumple.Scene.entries.some((e) => e.cfg.id === 'test-wc'));
       const entry = Crumple.Scene.entries.find((e) => e.cfg.id === 'test-wc');
       el.btn.click();
       await window.waitFor(() => Crumple.Scene.isOpen);

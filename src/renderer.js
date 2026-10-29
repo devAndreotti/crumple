@@ -30,6 +30,8 @@ function shapeParams(shape, T) {
   if (shape === 'half') return { shape: 4, k0: 0, squash: 1, roll: 0, A0: 0.007, Ares: 0.0035, ext: [hw * 1.05, T.h * 1.02] };
   if (shape === 'thirds') return { shape: 5, k0: 0, squash: 1, roll: 0, A0: 0.007, Ares: 0.0035, ext: [T.w * 1.02, T.h / 3 * 1.05] };
   if (shape === 'envelope') return { shape: 6, k0: 0, squash: 1, roll: 0, A0: 0.005, Ares: 0.003, ext: [T.w * 1.02, T.body * 1.04] };
+  if (shape === 'accordion') return { shape: 7, k0: 0, squash: 1, roll: 0, A0: 0.008, Ares: 0.0035, ext: [T.w / 4 * 1.08, T.h * 1.02] };
+  if (shape === 'triangle') return { shape: 8, k0: 0, squash: 1, roll: 0, A0: 0.008, Ares: 0.0035, ext: [hw * 1.08, hh * 1.08] };
   const k0 = 0.95 * Math.PI / smax, R = 1 / k0;
   return { shape: 0, k0, squash: 1, roll: 0, A0: T.card ? 0.07 : 0.12, Ares: 0.0045, ext: [2 * (R + 0.06), 2 * (R + 0.06)] };
 }
@@ -167,6 +169,7 @@ export function Renderer(canvas, options = {}) {
     const foldY = T.body ? -hh + T.body : 0;
     const nx = Math.max(16, Math.round(Math.sqrt(15000 * T.w / T.h))), ny = Math.max(16, Math.round(nx * T.h / T.w));
     const exX = [0], exY = [0, -T.h / 6 * 1.08, T.h / 6, foldY];
+    if (cfg.shape === 'accordion') exX.push(-T.w / 6, T.w / 6);
     const meshes = [];
     if (stubX !== null) {
       const nMain = Math.round(nx * (stubX + hw) / T.w);
@@ -174,11 +177,11 @@ export function Renderer(canvas, options = {}) {
       meshes.push(mesh(stubX, hw, hh, nx - nMain, ny, exX, exY));
     } else meshes.push(mesh(-hw, hw, hh, nx, ny, exX, exY));
     // an empty back and a paper without cut-outs use the shared 1x1 textures (saves ~6 MB of texture per paper)
-    const backEmpty = !(cfg.back || cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'newspaper' || ['coffee', 'water', 'prints', 'aged', 'wine', 'ink', 'foxing', 'faded'].some((e) => cfg.states.includes(e)));
+    const backEmpty = !(cfg.back || cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'newspaper' || cfg.type === 'postcard' || cfg.type === 'blueprint' || ['coffee', 'water', 'prints', 'aged', 'wine', 'ink', 'foxing', 'faded', 'staple', 'grease', 'dogear', 'damp'].some((e) => cfg.states.includes(e)));
     const kind = burnKind(cfg);
-    const noEffects = !(cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.states.includes('torn') || kind);
+    const noEffects = !(cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'punchcard' || cfg.type === 'parchment' || cfg.states.includes('torn') || kind);
     const [creases, printF, printB, fx] = await Promise.all([
-      Jobs.run('creases', [{ seed: cfg.seed, shape: cfg.shape, w: T.w, h: T.h, card: !!T.card, foldY }, W, H]),
+      Jobs.run('creases', [{ seed: cfg.seed, shape: cfg.shape, w: T.w, h: T.h, card: !!T.card, foldY, states: cfg.states }, W, H]),
       drawPrint(cfg, T, 'front', openings),
       backEmpty ? null : drawPrint(cfg, T, 'back', openings),
       noEffects ? null : drawEffects(cfg, T, kind),

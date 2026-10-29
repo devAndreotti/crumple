@@ -1,8 +1,10 @@
 // Type definitions for @devandreotti/crumple
 
-export type PaperType = 'typed' | 'notebook' | 'form' | 'receipt' | 'ticket' | 'memo' | 'newspaper' | 'sticky' | 'polaroid' | 'envelope';
-export type PaperShape = 'ball' | 'flat' | 'quarters' | 'half' | 'thirds' | 'roll' | 'twist';
-export type PaperState = 'torn' | 'burnt' | 'coffee' | 'water' | 'prints' | 'aged' | 'scribbled' | 'singed' | 'wine' | 'ink' | 'foxing' | 'tape' | 'stamp' | 'faded';
+export type PaperType = 'typed' | 'notebook' | 'form' | 'receipt' | 'ticket' | 'memo' | 'newspaper' | 'sticky' | 'polaroid' | 'envelope'
+  | 'blueprint' | 'postcard' | 'punchcard' | 'shipping' | 'kraft' | 'parchment' | 'ledger' | 'carbon';
+export type PaperShape = 'ball' | 'flat' | 'quarters' | 'half' | 'thirds' | 'roll' | 'twist' | 'accordion' | 'triangle';
+export type PaperState = 'torn' | 'burnt' | 'coffee' | 'water' | 'prints' | 'aged' | 'scribbled' | 'singed' | 'wine' | 'ink' | 'foxing' | 'tape' | 'stamp' | 'faded'
+  | 'staple' | 'grease' | 'dogear' | 'damp' | 'creased';
 /** Where a burn starts: from one corner (default), along one whole side, a hole burnt from inside, or a few embers. */
 export type BurnForm = 'corner' | 'edge' | 'center' | 'spots';
 

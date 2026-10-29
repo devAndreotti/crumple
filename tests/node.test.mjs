@@ -20,7 +20,7 @@ test('no window in Node: the ESM build and the sources import without throwing',
   assert.equal(typeof globalThis.document, 'undefined');
   const esm = await import(path.join(root, 'dist/crumple.esm.js'));
   assert.deepEqual(Object.keys(esm).sort(), RUNTIME);
-  assert.equal(esm.version, '1.1.1');
+  assert.equal(esm.version, '1.2.0');
   assert.equal(typeof esm.Scene.attach, 'function');
   assert.deepEqual(Object.keys(src).sort(), RUNTIME);
 });
@@ -28,15 +28,15 @@ test('no window in Node: the ESM build and the sources import without throwing',
 test('CJS build: require() gives the same surface', () => {
   const cjs = require(path.join(root, 'dist/crumple.cjs'));
   assert.deepEqual(Object.keys(cjs).sort(), RUNTIME);
-  assert.equal(cjs.version, '1.1.1');
+  assert.equal(cjs.version, '1.2.0');
   assert.equal(typeof cjs.normalize, 'function');
 });
 
 test('package self-reference: exports map resolves for import, require and package.json', async () => {
   const pkg = require('@devandreotti/crumple/package.json');
   assert.equal(pkg.name, '@devandreotti/crumple');
-  assert.equal(require('@devandreotti/crumple').version, '1.1.1');
-  assert.equal((await import('@devandreotti/crumple')).version, '1.1.1');
+  assert.equal(require('@devandreotti/crumple').version, '1.2.0');
+  assert.equal((await import('@devandreotti/crumple')).version, '1.2.0');
 });
 
 test('normalize(): defaults for an empty config', () => {
@@ -125,9 +125,9 @@ test('catalog tables: every paper type has a text and a shape; every state has a
 
 test('registerPaperType and registerWearState extend the catalog', () => {
   const { registerPaperType, registerWearState, normalize } = src;
-  registerPaperType('parchment', { name: 'Parchment', w: 0.8, h: 1.0, color: [0.9, 0.85, 0.7], shape: 'roll', font: 'Caveat', size: 40, lineHeight: 50, x: 50, y: 50, ink: [20, 20, 20] });
-  assert.equal(normalize({ type: 'parchment' }).type, 'parchment');
-  assert.equal(normalize({ type: 'parchment' }).shape, 'roll');
+  registerPaperType('custom_scroll', { name: 'Custom scroll', w: 0.8, h: 1.0, color: [0.9, 0.85, 0.7], shape: 'roll', font: 'Caveat', size: 40, lineHeight: 50, x: 50, y: 50, ink: [20, 20, 20] });
+  assert.equal(normalize({ type: 'custom_scroll' }).type, 'custom_scroll');
+  assert.equal(normalize({ type: 'custom_scroll' }).shape, 'roll');
   registerWearState('gilded', { name: 'Gold leaf' });
   assert.deepEqual(normalize({ states: ['gilded'] }).states, ['gilded']);
 });
@@ -145,4 +145,35 @@ test('haptic utility safely interacts with navigator.vibrate', async () => {
   if (original) globalThis.navigator.vibrate = original;
   else delete globalThis.navigator.vibrate;
   assert.doesNotThrow(() => haptic(12));
+});
+
+test('new paper types, shapes, and wear states are registered and normalize correctly', () => {
+  const newTypes = ['blueprint', 'postcard', 'punchcard', 'shipping', 'kraft', 'parchment', 'ledger', 'carbon'];
+  for (const t of newTypes) {
+    const c = normalize({ type: t });
+    assert.equal(c.type, t);
+    assert.ok(TYPES[t]);
+    assert.ok(TEXTS[t]);
+    assert.ok(c.shape === 'envelope' || SHAPES[c.shape]);
+  }
+  const newShapes = ['accordion', 'triangle'];
+  for (const sh of newShapes) {
+    assert.ok(SHAPES[sh]);
+    const c = normalize({ shape: sh });
+    assert.equal(c.shape, sh);
+  }
+  const newStates = ['staple', 'grease', 'dogear', 'damp', 'creased'];
+  for (const st of newStates) {
+    assert.ok(STATES[st]);
+    const c = normalize({ states: [st] });
+    assert.deepEqual(c.states, [st]);
+  }
+});
+
+test('creaseField handles new shapes and wear states (accordion, triangle, damp, creased)', () => {
+  for (const shape of ['accordion', 'triangle']) {
+    const cf = creaseField({ seed: 10, shape, w: 0.9, h: 0.7, card: false, states: ['creased', 'damp'] }, 32, 32);
+    assert.equal(cf.length, 32 * 32);
+    assert.ok(cf.every(Number.isFinite));
+  }
 });

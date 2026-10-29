@@ -63,7 +63,12 @@ export const Scene = /* @__PURE__ */ (() => {
 .crumple-fallback ins{text-decoration:none;color:#1d3a8c;font-family:Caveat,'Comic Sans MS',cursive;font-size:1.12em;padding:0 .12em}
 .crumple-fallback .crumple-h{display:block;font-weight:700;font-size:1.15em;margin:.2em 0}
 .crumple-fallback .crumple-redact{display:inline-block;height:.85em;vertical-align:-.08em;background:#1b1713;border-radius:2px;margin:0 .1em}
-@media (prefers-reduced-motion:reduce){.crumple-trigger.recrumple img,.crumple-trigger:hover img{animation:none}}`;
+body.crumple-open{overflow:hidden;touch-action:none}
+@media (prefers-reduced-motion:reduce){.crumple-trigger.recrumple img,.crumple-trigger:hover img{animation:none}}
+@media print{
+  canvas.crumple-scene,.crumple-backdrop,.crumple-bar,.crumple-hint,.crumple-fallback{display:none !important}
+  .crumple-sr{position:static !important;width:auto !important;height:auto !important;overflow:visible !important;clip:auto !important;white-space:pre-wrap !important;color:#000;font-family:monospace}
+}`;
     document.head.appendChild(css);
     styleEl = css;
     const L = opts.labels;
@@ -219,6 +224,7 @@ export const Scene = /* @__PURE__ */ (() => {
     A = { P, ent, from: ent.btn.getBoundingClientRect(), tf: 0, p: p0, ext0: extentAt(P, p0), f: 0, tear: 0, tw: [], phase: 'opening', dragging: false, lampPos: null, lampGoal: null, lamp: 0, lampOn: 0, burnOpen: 0 };
     parts.clear();
     ent.btn.classList.add('active');
+    document.body.classList.add('crumple-open');
     cv.style.display = 'block';
     cv.style.pointerEvents = 'auto';
     backdrop.classList.add('on');
@@ -323,6 +329,7 @@ export const Scene = /* @__PURE__ */ (() => {
     A = null;
     parts.clear();
     backdrop.classList.remove('on');
+    document.body?.classList.remove('crumple-open');
     const hide = () => {
       if (!A) { cv.style.display = 'none'; cv.style.opacity = ''; }
       if (destroyed) { ent.btn.hidden = true; ent.btn.classList.remove('active'); }
@@ -532,6 +539,7 @@ export const Scene = /* @__PURE__ */ (() => {
     fallback.setAttribute('aria-label', T.name);
     fallback.replaceChildren(sheet, b);
     fallback.classList.add('on');
+    document.body?.classList.add('crumple-open');
     b.focus();
     fallback.onclick = (e) => { if (e.target === fallback) closeFallback(); };
     fallback._ent = ent;
@@ -539,6 +547,7 @@ export const Scene = /* @__PURE__ */ (() => {
   }
   function closeFallback() {
     fallback.classList.remove('on');
+    document.body?.classList.remove('crumple-open');
     if (fallback._ent) fallback._ent.btn.focus({ preventScroll: true });
   }
 
@@ -565,6 +574,7 @@ export const Scene = /* @__PURE__ */ (() => {
     if (R) R.destroy();
     R = null; tried = false;
     styleEl.remove();
+    document.body?.classList.remove('crumple-open');
     [backdrop, cv, bar, hint, srEl, fallback].forEach((el) => el.remove());
     backdrop = cv = bar = hint = srEl = fallback = null;
     parts.clear();

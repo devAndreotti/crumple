@@ -244,7 +244,119 @@ const BACKGROUNDS = {
     for (let x = -H; x < W + H; x += 14) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + ab, ab); ctx.stroke(); }
     ctx.restore();
   },
+  blueprint(ctx, W, H) {
+    ctx.strokeStyle = 'rgba(70, 180, 255, 0.16)'; ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 20) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 20) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(120, 220, 255, 0.35)'; ctx.lineWidth = 1.5;
+    for (let x = 0; x < W; x += 100) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 100) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(160, 230, 255, 0.6)'; ctx.lineWidth = 3;
+    ctx.strokeRect(30, 30, W - 60, H - 60);
+    ctx.lineWidth = 1; ctx.strokeRect(36, 36, W - 72, H - 72);
+    const tbW = 280, tbH = 90, tbx = W - 36 - tbW, tby = H - 36 - tbH;
+    ctx.fillStyle = 'rgba(10, 35, 60, 0.85)'; ctx.fillRect(tbx, tby, tbW, tbH);
+    ctx.strokeStyle = 'rgba(160, 230, 255, 0.6)'; ctx.strokeRect(tbx, tby, tbW, tbH);
+    ctx.fillStyle = 'rgba(200, 240, 255, 0.9)'; ctx.font = 'bold 16px "Courier Prime", monospace';
+    ctx.fillText('AQUILA ENGINEERING', tbx + 14, tby + 26);
+    ctx.font = '12px "Courier Prime", monospace';
+    ctx.fillText('DWG NO: 9042-B | SHT 1 OF 1', tbx + 14, tby + 52);
+    ctx.fillText('APPROVED FOR RELEASE', tbx + 14, tby + 74);
+  },
+  postcard(ctx, W, H) {
+    ctx.strokeStyle = 'rgba(180, 160, 130, 0.4)'; ctx.lineWidth = 2;
+    ctx.strokeRect(24, 24, W - 48, H - 48);
+  },
+  punchcard(ctx, W, H) {
+    ctx.strokeStyle = 'rgba(120, 100, 80, 0.25)'; ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(100, 90, 80, 0.7)'; ctx.font = '9px "VT323", monospace';
+    for (let col = 1; col <= 80; col += 2) {
+      const x = 30 + (col - 1) * ((W - 60) / 79);
+      ctx.fillText(String(col % 10), x, 24);
+      ctx.fillText(String(col % 10), x, H - 14);
+    }
+  },
+  shipping(ctx, W, H) {
+    ctx.strokeStyle = 'rgba(70, 50, 30, 0.35)'; ctx.lineWidth = 2;
+    ctx.strokeRect(30, 30, W - 60, H - 60);
+    const by = H - 180, bw = W - 140, bx = 70;
+    ctx.fillStyle = '#1c1612';
+    for (let x = bx; x < bx + bw;) {
+      const bar = 2 + ((x * 17) % 7), gap = 3 + ((x * 31) % 6);
+      ctx.fillRect(x, by, bar, 70);
+      x += bar + gap;
+    }
+    ctx.font = 'bold 18px "Courier Prime", monospace'; ctx.textAlign = 'center';
+    ctx.fillText('* EXP-9042-CRUMPLE *', W / 2, by + 100);
+    ctx.textAlign = 'left';
+    ctx.save();
+    ctx.fillStyle = 'rgba(50, 35, 20, 0.85)';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillText('↑ ↑  THIS SIDE UP', 60, 80);
+    ctx.restore();
+  },
+  kraft(ctx, W, H, T, cfg, ex) {
+    if (BACKGROUNDS.shipping) BACKGROUNDS.shipping(ctx, W, H, T, cfg, ex);
+  },
+  parchment(ctx, W, H) {
+    ctx.save();
+    const sx = W / 2, sy = H - 140;
+    ctx.fillStyle = 'rgba(145, 24, 28, 0.92)';
+    ctx.beginPath();
+    for (let a = 0; a <= Math.PI * 2 + 0.01; a += 0.15) {
+      const q = 48 * (1 + 0.08 * Math.sin(a * 8));
+      if (a === 0) ctx.moveTo(sx + Math.cos(a) * q, sy + Math.sin(a) * q);
+      else ctx.lineTo(sx + Math.cos(a) * q, sy + Math.sin(a) * q);
+    }
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(95, 12, 16, 0.8)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(sx, sy, 32, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = 'rgba(85, 10, 14, 0.9)'; ctx.font = 'bold 32px "Caveat", cursive';
+    ctx.textAlign = 'center'; ctx.fillText('V', sx, sy + 11);
+    ctx.restore();
+  },
+  ledger(ctx, W, H) {
+    ctx.strokeStyle = 'rgba(130, 180, 150, 0.4)'; ctx.lineWidth = 1;
+    for (let y = 160; y < H - 40; y += 42) {
+      ctx.beginPath(); ctx.moveTo(30, y); ctx.lineTo(W - 30, y); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(215, 65, 65, 0.55)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(96, 30); ctx.lineTo(96, H - 30); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(102, 30); ctx.lineTo(102, H - 30); ctx.stroke();
+    ctx.strokeStyle = 'rgba(70, 100, 170, 0.5)'; ctx.lineWidth = 1.5;
+    const c1 = W - 280, c2 = W - 140;
+    ctx.beginPath(); ctx.moveTo(c1, 80); ctx.lineTo(c1, H - 30); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(c1 + 4, 80); ctx.lineTo(c1 + 4, H - 30); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(c2, 80); ctx.lineTo(c2, H - 30); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(c2 + 4, 80); ctx.lineTo(c2 + 4, H - 30); ctx.stroke();
+    ctx.fillStyle = 'rgba(40, 70, 120, 0.85)'; ctx.font = 'bold 15px "Courier Prime", monospace';
+    ctx.fillText('DEBIT', c1 - 70, 130); ctx.fillText('CREDIT', c2 - 70, 130);
+  },
+  carbon(ctx, W, H) {
+    ctx.strokeStyle = 'rgba(150, 160, 255, 0.45)'; ctx.lineWidth = 2;
+    ctx.strokeRect(30, 30, W - 60, H - 60);
+    ctx.fillStyle = 'rgba(160, 170, 255, 0.7)'; ctx.font = 'bold 16px "Courier Prime", monospace';
+    ctx.fillText('DUPLICATE · DO NOT DESTROY', 50, 60);
+  },
 };
+function postcardBack(ctx, W, H, cfg, r) {
+  ctx.strokeStyle = 'rgba(100, 90, 75, 0.4)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(W / 2, 40); ctx.lineTo(W / 2, H - 40); ctx.stroke();
+  const sx = W - 140, sy = 50;
+  ctx.strokeStyle = 'rgba(100, 90, 75, 0.5)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+  ctx.strokeRect(sx, sy, 90, 110); ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(120, 100, 80, 0.5)'; ctx.font = '12px "Courier Prime", monospace'; ctx.textAlign = 'center';
+  ctx.fillText('AFFIX', sx + 45, sy + 50); ctx.fillText('STAMP', sx + 45, sy + 68);
+  ctx.strokeStyle = 'rgba(40, 50, 80, 0.55)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(sx - 30, sy + 60, 44, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = 'rgba(40, 50, 80, 0.6)'; ctx.font = 'bold 13px "Courier Prime", monospace';
+  ctx.fillText('POST', sx - 30, sy + 64);
+  ctx.textAlign = 'left';
+  ctx.strokeStyle = 'rgba(120, 110, 95, 0.4)'; ctx.lineWidth = 1.5;
+  for (let y = H * 0.45; y < H - 60; y += 44) {
+    ctx.beginPath(); ctx.moveTo(W / 2 + 40, y); ctx.lineTo(W - 40, y); ctx.stroke();
+  }
+}
 // back of the envelope: the front with the address, stamp and postmark; the wax seal sits outside the flap
 function envelopeBack(ctx, W, H, T, cfg, r) {
   const ab = Math.round(T.flap / T.h * H);
@@ -320,6 +432,14 @@ const AREAS = {
   sticky: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 30 }),
   polaroid: (W, H) => ({ x: 40, y: Math.round(W * 0.935 + (H - W * 0.935) * 0.55), w: W - 80, h: 120, center: true }),
   envelope: () => null,
+  blueprint: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 120 }),
+  postcard: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 80 }),
+  punchcard: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 60 }),
+  shipping: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 180 }),
+  kraft: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 180 }),
+  parchment: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 160, centerHead: true }),
+  ledger: (W, H, T) => ({ x: 120, y: T.y, w: W - 260, h: H - T.y - 60 }),
+  carbon: (W, H, T) => ({ x: T.x, y: T.y, w: W - T.x * 2, h: H - T.y - 80 }),
 };
 
 export async function renderForeignObject(html, w, h, css = '') {
@@ -350,15 +470,17 @@ export async function drawPrint(cfg, T, side, openings) {
   const ex = {};
   if (T.photo && front) ex.img = await loadImage(cfg.image || config.assets + 'photos/sunset.webp');
   if (cfg.type === 'newspaper' && (front || !cfg.back)) ex.photo = await loadImage(config.assets + 'photos/' + (front ? 'sea' : 'city') + '.webp');
-  const bothSides = cfg.type === 'notebook' || cfg.type === 'form';
+  const bothSides = cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'blueprint' || cfg.type === 'ledger';
   if (BACKGROUNDS[cfg.type] && (front || bothSides)) BACKGROUNDS[cfg.type](ctx, W, H, T, cfg, ex);
   if (cfg.type === 'envelope' && !front) envelopeBack(ctx, W, H, T, cfg, r);
+  if (cfg.type === 'postcard' && !front && !cfg.back) postcardBack(ctx, W, H, cfg, r);
   if (cfg.type === 'newspaper' && !front && !cfg.back) newspaperBack(ctx, W, H, ex);
   const txt = cfg.type === 'envelope' ? '' : (front ? cfg.text : cfg.back);
   // the back has its own area (on the ticket, on the half that folds over: it stays outside, whole, when closed)
   let area = front ? (AREAS[cfg.type] ? AREAS[cfg.type](W, H, T) : { x: 50, y: 50, w: W - 100, h: H - 100 })
     : { x: Math.round(T.x * 0.8), y: Math.min(T.y, Math.round(H * 0.28)), w: W - Math.round(T.x * 1.6), h: H - Math.min(T.y, Math.round(H * 0.28)) - 40, center: cfg.type === 'ticket' };
   if (cfg.type === 'ticket' && !front) { area.x = Math.round(W * 0.55); area.w = Math.round(W * 0.4); }
+  if (cfg.type === 'postcard' && !front) { area.x = Math.round(W * 0.54); area.w = Math.round(W * 0.42); }
   if (cfg.type === 'polaroid' && !front) area = { x: 60, y: Math.round(H * 0.3), w: W - 120, h: H * 0.6, center: true };
   const textEnd = txt && area ? writeText(ctx, cfg, T, txt, area, openings, r) : 0;
   if (front && cfg.rich && area) {
@@ -381,6 +503,11 @@ export async function drawPrint(cfg, T, side, openings) {
   if (cfg.states.includes('aged')) age(ctx, W, H, rs);
   if (cfg.states.includes('faded')) fadeWash(ctx, W, H, cfg);
   if (cfg.states.includes('foxing')) foxing(ctx, W, H, cfg);
+  if (cfg.states.includes('staple')) staple(ctx, W, H, cfg, front);
+  if (cfg.states.includes('grease')) greaseStain(ctx, W, H, cfg, front);
+  if (cfg.states.includes('dogear')) dogear(ctx, W, H, cfg, front);
+  if (cfg.states.includes('damp')) dampWrinkle(ctx, W, H, cfg);
+  if (cfg.states.includes('creased')) pocketCreases(ctx, W, H, cfg);
   for (const s of cfg.states) {
     if (WEAR_APPLIERS[s]) {
       try { await WEAR_APPLIERS[s](ctx, c, W, H, cfg, front, rs); } catch (_) {}
@@ -673,6 +800,111 @@ function tape(ctx, W, H, cfg) {
   });
 }
 
+function staple(ctx, W, H, cfg, front) {
+  const r = rng(cfg.seed * 71 + 3);
+  const x = 54 + r() * 16, y = 48 + r() * 16;
+  const ang = -0.52 + (r() - 0.5) * 0.15;
+  ctx.save();
+  ctx.translate(front ? x : W - x, y);
+  ctx.rotate(front ? ang : -ang);
+  if (front) {
+    ctx.fillStyle = 'rgba(30, 20, 10, 0.7)';
+    ctx.fillRect(-22, -3, 5, 6);
+    ctx.fillRect(17, -3, 5, 6);
+    ctx.fillStyle = 'rgba(10, 10, 10, 0.35)';
+    ctx.fillRect(-20, 1, 40, 5);
+    const grad = ctx.createLinearGradient(0, -3, 0, 3);
+    grad.addColorStop(0, '#c8cdd4');
+    grad.addColorStop(0.3, '#ffffff');
+    grad.addColorStop(0.7, '#858d99');
+    grad.addColorStop(1, '#535b66');
+    ctx.fillStyle = grad;
+    ctx.fillRect(-20, -3, 40, 5);
+    ctx.fillStyle = 'rgba(140, 70, 30, 0.35)';
+    ctx.fillRect(-8, -2, 6, 3);
+  } else {
+    ctx.fillStyle = 'rgba(30, 20, 10, 0.7)';
+    ctx.fillRect(-22, -3, 5, 6);
+    ctx.fillRect(17, -3, 5, 6);
+    ctx.fillStyle = '#7a828e';
+    ctx.fillRect(-18, -2, 12, 4);
+    ctx.fillRect(6, -2, 12, 4);
+  }
+  ctx.restore();
+}
+
+function greaseStain(ctx, W, H, cfg, front) {
+  const r = rng(cfg.seed * 67 + 13);
+  const cx = W * (0.25 + 0.5 * r()), cy = H * (0.3 + 0.45 * r());
+  const rad = Math.min(W, H) * (0.12 + 0.08 * r());
+  const x = front ? cx : W - cx;
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  const g = ctx.createRadialGradient(x, cy, rad * 0.2, x, cy, rad);
+  g.addColorStop(0, 'rgba(140, 120, 70, 0.45)');
+  g.addColorStop(0.65, 'rgba(150, 130, 80, 0.30)');
+  g.addColorStop(1, 'rgba(150, 130, 80, 0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  for (let a = 0; a <= Math.PI * 2 + 0.01; a += 0.1) {
+    const q = rad * (1 + 0.12 * Math.sin(a * 5 + r() * 3));
+    if (a === 0) ctx.moveTo(x + Math.cos(a) * q, cy + Math.sin(a) * q);
+    else ctx.lineTo(x + Math.cos(a) * q, cy + Math.sin(a) * q);
+  }
+  ctx.fill();
+  ctx.restore();
+}
+
+function dogear(ctx, W, H, cfg, front) {
+  const s = Math.min(W, H) * 0.15;
+  ctx.save();
+  if (front) {
+    ctx.fillStyle = 'rgba(10, 10, 15, 0.3)';
+    ctx.beginPath();
+    ctx.moveTo(W - s - 8, 0); ctx.lineTo(W, s + 8); ctx.lineTo(W - s, s); ctx.closePath();
+    ctx.fill();
+    const grad = ctx.createLinearGradient(W - s, 0, W, s);
+    grad.addColorStop(0, 'rgba(235, 225, 210, 0.95)');
+    grad.addColorStop(1, 'rgba(195, 185, 170, 0.95)');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.moveTo(W - s, 0); ctx.lineTo(W, s); ctx.lineTo(W - s, s); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(60, 50, 40, 0.4)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(W - s, 0); ctx.lineTo(W, s); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function dampWrinkle(ctx, W, H, cfg) {
+  const r = rng(cfg.seed * 83 + 7);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(120, 140, 170, 0.12)';
+  ctx.lineWidth = 3;
+  for (let k = 0; k < 6; k++) {
+    const y0 = H * (0.2 + 0.12 * k + 0.04 * r());
+    ctx.beginPath();
+    ctx.moveTo(0, y0);
+    ctx.bezierCurveTo(W * 0.33, y0 + 18 * (r() - 0.5), W * 0.66, y0 + 18 * (r() - 0.5), W, y0);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function pocketCreases(ctx, W, H, cfg) {
+  const r = rng(cfg.seed * 89 + 11);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+  ctx.lineWidth = 1;
+  for (let k = 0; k < 14; k++) {
+    const x0 = r() * W, y0 = r() * H;
+    const a = r() * Math.PI, len = 60 + r() * 120;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x0 + Math.cos(a) * len, y0 + Math.sin(a) * len);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 // hidden ink (indented writing): the pen groove, visible only under grazing light. Rows bottom-up, like the crease field
 export function hiddenInkField(cfg, W, H) {
   if (!cfg.hiddenInk) return null;
@@ -730,6 +962,28 @@ export async function drawEffects(cfg, T, kind = null) {
     const ab = T.flap / T.h * MH;
     pc.beginPath(); pc.moveTo(-2, -2); pc.lineTo(MW / 2, -2); pc.lineTo(MW / 2, 3); pc.lineTo(-2, ab); pc.closePath(); pc.fill();
     pc.beginPath(); pc.moveTo(MW + 2, -2); pc.lineTo(MW / 2, -2); pc.lineTo(MW / 2, 3); pc.lineTo(MW + 2, ab); pc.closePath(); pc.fill();
+  }
+  if (cfg.type === 'punchcard') {
+    pc.beginPath(); pc.moveTo(-2, -2); pc.lineTo(26, -2); pc.lineTo(-2, 26); pc.closePath(); pc.fill();
+    const pr = rng(cfg.seed * 37 + 5);
+    for (let col = 0; col < 28; col++) {
+      const cx = 36 + col * Math.round((MW - 72) / 27);
+      const punches = 1 + Math.floor(pr() * 3);
+      for (let p = 0; p < punches; p++) {
+        const cy = 24 + Math.floor(pr() * 10) * Math.round((MH - 48) / 10);
+        pc.fillRect(cx - 3, cy - 6, 7, 13);
+      }
+    }
+  }
+  if (cfg.type === 'parchment') {
+    const ptsT = jagged([-2, 3], [MW + 2, 3], r, 5, 0.1);
+    const ptsB = jagged([-2, MH - 3], [MW + 2, MH - 3], r, 5, 0.1);
+    const ptsL = jagged([3, -2], [3, MH + 2], r, 5, 0.1);
+    const ptsR = jagged([MW - 3, -2], [MW - 3, MH + 2], r, 5, 0.1);
+    fc.lineWidth = 2.5;
+    [ptsT, ptsB, ptsL, ptsR].forEach((pts) => {
+      fc.beginPath(); pts.forEach((p, i) => (i ? fc.lineTo(p[0], p[1]) : fc.moveTo(p[0], p[1]))); fc.stroke();
+    });
   }
   if (cfg.states.includes('torn')) {
     const v = Math.floor(r() * 3);

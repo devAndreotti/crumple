@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-10-29
+
+### Added
+
+- Native scroll-lock in `Scene`: automatically applies `.crumple-open` to `document.body` on open and removes on close to prevent background scroll leaks on mobile/iOS Safari.
+- Clean print styles (`@media print`): hides WebGL canvas, overlay bar, and backdrop; prints legible monospace text from `.crumple-sr` cleanly onto real A4 paper.
+- Performance optimization in `<crumple-paper>`: deferred `Scene.attach()` via `IntersectionObserver` with `rootMargin: '200px'`, keeping initial LCP and TBT minimal until scrolled into view.
+- 7 new paper types: `blueprint` (cobalt blue millimetric schematic), `postcard` (vintage double-sided card with stamp and postmark), `punchcard` (IBM 80-col punched card with corner chamfer and cutout holes), `shipping` / `kraft` (brown fibrous parcel with procedural 1D barcode), `parchment` (ancient papyrus with frayed cellulose edges and wax seal), `ledger` (accounting journal with double ledger rules), and `carbon` (duplicate copy with violet-blue mechanical ink).
+- 2 new closed shapes: `accordion` (horizontal z-fold leaflet) and `triangle` (military triangular corner tuck).
+- 5 new physical wear states: `staple` (galvanized metal staple), `grease` (translucent soaked oil spot), `dogear` (folded corner mark), `damp` (wavy dried water ripple deformation), and `creased` (dense pocket-fold grid).
+
 ## [1.1.1] - 2026-10-29
 
 ### Added

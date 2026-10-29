@@ -101,6 +101,26 @@ vec3 place(vec2 xy, out float e, out float amp, out vec3 n){
     foldY(p, n, uFoldY, 1.0, mix(3.12, -1.1, smoothstep(0.0, 1.0, e)), uFoldBw);
     p.y -= (uFoldY - uHalf.y) * 0.5;
     amp = mix(uA0, uAres, e);
+  } else if (uShape == 7) {
+    // accordion: z-folds along X axis
+    e = uP;
+    float em = smoothstep(0.0, 1.0, e);
+    float a = 3.12 * (1.0 - em);
+    float x3 = uHalf.x * 0.333;
+    foldX(p, n, -x3, -1.0, a, uFoldBw);
+    foldX(p, n, 0.0, 1.0, -a, uFoldBw * 1.5);
+    foldX(p, n, x3, 1.0, a, uFoldBw * 2.0);
+    p.x *= mix(0.28, 1.0, em);
+    amp = mix(uA0, uAres, e);
+  } else if (uShape == 8) {
+    // triangle fold: corner tuck
+    e = uP;
+    float em = smoothstep(0.0, 1.0, e);
+    float a = 3.12 * (1.0 - em);
+    foldX(p, n, 0.0, 1.0, a, uFoldBw);
+    foldY(p, n, 0.0, -1.0, a, uFoldBw * 1.5);
+    p.xy *= mix(0.58, 1.0, em);
+    amp = mix(uA0, uAres, e);
   } else {
     // folded with rounded bends: 3 = quarters, 4 = half, 5 = thirds (letter)
     e = uP;

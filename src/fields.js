@@ -29,7 +29,7 @@ export function creaseField(o, W, H) {
       }
     }
   };
-  const folded = o.shape === 'quarters' || o.shape === 'half' || o.shape === 'thirds';
+  const folded = o.shape === 'quarters' || o.shape === 'half' || o.shape === 'thirds' || o.shape === 'accordion' || o.shape === 'triangle';
   let k = folded ? 0.18 : o.shape === 'roll' ? 0.45 : o.shape === 'twist' ? 0.55 : 1;
   let ka = folded ? 0.35 : o.shape === 'roll' ? 0.6 : o.shape === 'twist' ? 0.6 : 1;
   if (o.card) { k *= 0.5; ka *= 0.5; }
@@ -44,7 +44,31 @@ export function creaseField(o, W, H) {
   if (o.shape === 'half' || o.shape === 'quarters') add(2, 0.022, 0.6, 0, 0, Math.PI / 2);
   if (o.shape === 'quarters') add(2, 0.022, -0.55, 0, 0, 0);
   if (o.shape === 'thirds') { add(2, 0.02, 0.55, 0, -o.h / 6 * 1.08, 0); add(2, 0.02, -0.55, 0, o.h / 6, 0); }
+  if (o.shape === 'accordion') {
+    const x3 = o.w / 6;
+    add(2, 0.02, 0.55, -x3, 0, Math.PI / 2);
+    add(2, 0.02, -0.55, 0, 0, Math.PI / 2);
+    add(2, 0.02, 0.55, x3, 0, Math.PI / 2);
+  }
+  if (o.shape === 'triangle') {
+    add(2, 0.022, 0.6, 0, 0, Math.PI / 4);
+    add(2, 0.022, -0.55, 0, 0, -Math.PI / 4);
+  }
   if (o.shape === 'envelope') add(2, 0.02, 0.5, 0, o.foldY, 0);
+  const st = Array.isArray(o.states) ? o.states : [];
+  if (st.includes('creased')) {
+    for (let i = 0; i < 90; i++) add(0.04 + r() * 0.12, 0.008 + r() * 0.015, sgn() * (0.3 + r() * 0.35));
+  }
+  if (st.includes('damp')) {
+    const nz = noise2(o.seed * 3 + 17);
+    for (let j = 0; j < H; j++) {
+      const py = (j + 0.5) / sy - hh;
+      for (let i = 0; i < W; i++) {
+        const px = (i + 0.5) / sx - hw;
+        f[j * W + i] += Math.sin((px * 2.2 + py) * 18.0) * 0.18 + (nz(px * 8.0, py * 8.0) - 0.5) * 0.22;
+      }
+    }
+  }
   let mx = 1e-6;
   for (let i = 0; i < f.length; i++) if (Math.abs(f[i]) > mx) mx = Math.abs(f[i]);
   for (let i = 0; i < f.length; i++) f[i] /= mx;
