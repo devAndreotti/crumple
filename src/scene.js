@@ -1,6 +1,6 @@
 // Scene: a crumpled paper sits on the page (a button with a still image); on click it flies to the center of the
 // screen, unfolds into a readable sheet, and on close crumples and flies back to its spot.
-import { clamp, smooth, linear, easeIO, easeOut, easeFly, easeReturn, easeSoft, easeOpen, easeCrumple, store, emitEvent, listen, motionQuery, wantsReduce, haptic } from './util.js';
+import { clamp, smooth, linear, easeIO, easeOut, easeFly, easeReturn, easeSoft, easeOpen, easeCrumple, store, emitEvent, listen, motionQuery, wantsReduce, haptic, parseColor } from './util.js';
 import { TYPES, normalize } from './catalog.js';
 import { Renderer, FOV, D, LIGHT } from './renderer.js';
 import { Sound } from './sound.js';
@@ -63,7 +63,12 @@ export const Scene = /* @__PURE__ */ (() => {
 .crumple-fallback ins{text-decoration:none;color:#1d3a8c;font-family:Caveat,'Comic Sans MS',cursive;font-size:1.12em;padding:0 .12em}
 .crumple-fallback .crumple-h{display:block;font-weight:700;font-size:1.15em;margin:.2em 0}
 .crumple-fallback .crumple-redact{display:inline-block;height:.85em;vertical-align:-.08em;background:#1b1713;border-radius:2px;margin:0 .1em}
-@media (prefers-reduced-motion:reduce){.crumple-trigger.recrumple img,.crumple-trigger:hover img{animation:none}}`;
+body.crumple-open{overflow:hidden;touch-action:none}
+@media (prefers-reduced-motion:reduce){.crumple-trigger.recrumple img,.crumple-trigger:hover img{animation:none}}
+@media print{
+  canvas.crumple-scene,.crumple-backdrop,.crumple-bar,.crumple-hint,.crumple-fallback{display:none !important}
+  .crumple-sr{position:static !important;width:auto !important;height:auto !important;overflow:visible !important;clip:auto !important;white-space:pre-wrap !important;color:#000;font-family:monospace}
+}`;
     document.head.appendChild(css);
     styleEl = css;
     const L = opts.labels;
@@ -219,6 +224,7 @@ export const Scene = /* @__PURE__ */ (() => {
     A = { P, ent, from: ent.btn.getBoundingClientRect(), tf: 0, p: p0, ext0: extentAt(P, p0), f: 0, tear: 0, tw: [], phase: 'opening', dragging: false, lampPos: null, lampGoal: null, lamp: 0, lampOn: 0, burnOpen: 0 };
     parts.clear();
     ent.btn.classList.add('active');
+    document.body.classList.add('crumple-open');
     cv.style.display = 'block';
     cv.style.pointerEvents = 'auto';
     backdrop.classList.add('on');
@@ -238,7 +244,7 @@ export const Scene = /* @__PURE__ */ (() => {
     if (reduce) {
       cv.style.opacity = '0'; requestAnimationFrame(() => { cv.style.opacity = '1'; });
       A.tf = 1; A.phase = 'open';
-      if (!manual) { tween(A, 'p', 1, T_RED * (env ? 1.6 : 1), easeOut); Sound.play('uncrumple', T_RED); } else hint.classList.add('on');
+      if (!manual) { tween(A, 'p', 1, T_RED * (env ? 1.6 : 1), easeOut); Sound.play('uncrumple', T_RED, 0, { type: P.cfg.type, gsm: P.cfg.gsm }); } else hint.classList.add('on');
     } else {
       // a little hop in place, the arc flight, and the unfolding starting mid-air; at the end the sheet settles
       A.pre = 0; A.arc = 0.24;
@@ -248,7 +254,7 @@ export const Scene = /* @__PURE__ */ (() => {
       if (!manual) {
         const settle = () => { if (A && A.phase !== 'closing') { A.settle = 0; tween(A, 'settle', 1, 0.9, linear); kick(); } };
         tween(A, 'p', 1, dur, env ? easeSoft : easeOpen(P), t0 + T_UNF0, settle);
-        Sound.play(env ? 'seal' : 'uncrumple', dur, t0 + T_UNF0);
+        Sound.play(env ? 'seal' : 'uncrumple', dur, t0 + T_UNF0, { type: P.cfg.type, gsm: P.cfg.gsm });
       }
     }
     if (P.front0 > -0.5) Sound.play('fire', 2.5, 0.6);
@@ -281,7 +287,7 @@ export const Scene = /* @__PURE__ */ (() => {
     if (A.tf > 0.999) A.ext0 = extentAt(A.P, pEnd);
     const tp = reduce ? 0.6 : env ? 1.9 : 0.85, dur = tp * Math.max(0.35, A.p - pEnd);
     if (A.f > 0) tween(A, 'f', 0, 0.45, easeIO);
-    if (A.p > pEnd + 0.02) Sound.play('crumple', dur);
+    if (A.p > pEnd + 0.02) Sound.play('crumple', dur, 0, { type: A.P.cfg.type, gsm: A.P.cfg.gsm });
     tween(A, 'p', pEnd, dur, env ? easeSoft : easeCrumple(A.P));
     if (reduce) tween(A, 'tf', 1, tp, linear, 0, finish);
     else {
@@ -323,6 +329,7 @@ export const Scene = /* @__PURE__ */ (() => {
     A = null;
     parts.clear();
     backdrop.classList.remove('on');
+    document.body?.classList.remove('crumple-open');
     const hide = () => {
       if (!A) { cv.style.display = 'none'; cv.style.opacity = ''; }
       if (destroyed) { ent.btn.hidden = true; ent.btn.classList.remove('active'); }
@@ -337,7 +344,7 @@ export const Scene = /* @__PURE__ */ (() => {
   // any time but while closing or burning away (the flip turns the whole model, so it works at any opening)
   function flip() {
     if (!A || A.phase === 'closing' || A.destroy !== undefined) return;
-    Sound.play('flip');
+    Sound.play('flip', 1, 0, { type: A.P.cfg.type, gsm: A.P.cfg.gsm });
     haptic(10);
     tween(A, 'f', A.f < 0.5 ? 1 : 0, 0.8, linear);
     emitEvent(A.ent.btn, 'flip', { id: A.P.cfg.id, back: A.f < 0.5 });
@@ -520,7 +527,9 @@ export const Scene = /* @__PURE__ */ (() => {
   function openFallback(ent) {
     dom();
     const T = TYPES[ent.cfg.type];
-    const c = (k) => Math.round(T.color[k] * 255);
+    const col = ent.cfg.color ? parseColor(ent.cfg.color) : null;
+    const color = col || T.color;
+    const c = (k) => Math.round(color[k] * 255);
     const sheet = document.createElement('div');
     sheet.className = 'sheet';
     sheet.style.background = `rgb(${c(0)},${c(1)},${c(2)})`;
@@ -532,6 +541,7 @@ export const Scene = /* @__PURE__ */ (() => {
     fallback.setAttribute('aria-label', T.name);
     fallback.replaceChildren(sheet, b);
     fallback.classList.add('on');
+    document.body?.classList.add('crumple-open');
     b.focus();
     fallback.onclick = (e) => { if (e.target === fallback) closeFallback(); };
     fallback._ent = ent;
@@ -539,6 +549,7 @@ export const Scene = /* @__PURE__ */ (() => {
   }
   function closeFallback() {
     fallback.classList.remove('on');
+    document.body?.classList.remove('crumple-open');
     if (fallback._ent) fallback._ent.btn.focus({ preventScroll: true });
   }
 
@@ -565,6 +576,7 @@ export const Scene = /* @__PURE__ */ (() => {
     if (R) R.destroy();
     R = null; tried = false;
     styleEl.remove();
+    document.body?.classList.remove('crumple-open');
     [backdrop, cv, bar, hint, srEl, fallback].forEach((el) => el.remove());
     backdrop = cv = bar = hint = srEl = fallback = null;
     parts.clear();

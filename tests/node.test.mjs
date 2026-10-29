@@ -20,7 +20,7 @@ test('no window in Node: the ESM build and the sources import without throwing',
   assert.equal(typeof globalThis.document, 'undefined');
   const esm = await import(path.join(root, 'dist/crumple.esm.js'));
   assert.deepEqual(Object.keys(esm).sort(), RUNTIME);
-  assert.equal(esm.version, '1.1.1');
+  assert.equal(esm.version, '1.2.0');
   assert.equal(typeof esm.Scene.attach, 'function');
   assert.deepEqual(Object.keys(src).sort(), RUNTIME);
 });
@@ -28,15 +28,15 @@ test('no window in Node: the ESM build and the sources import without throwing',
 test('CJS build: require() gives the same surface', () => {
   const cjs = require(path.join(root, 'dist/crumple.cjs'));
   assert.deepEqual(Object.keys(cjs).sort(), RUNTIME);
-  assert.equal(cjs.version, '1.1.1');
+  assert.equal(cjs.version, '1.2.0');
   assert.equal(typeof cjs.normalize, 'function');
 });
 
 test('package self-reference: exports map resolves for import, require and package.json', async () => {
   const pkg = require('@devandreotti/crumple/package.json');
   assert.equal(pkg.name, '@devandreotti/crumple');
-  assert.equal(require('@devandreotti/crumple').version, '1.1.1');
-  assert.equal((await import('@devandreotti/crumple')).version, '1.1.1');
+  assert.equal(require('@devandreotti/crumple').version, '1.2.0');
+  assert.equal((await import('@devandreotti/crumple')).version, '1.2.0');
 });
 
 test('normalize(): defaults for an empty config', () => {
@@ -125,9 +125,9 @@ test('catalog tables: every paper type has a text and a shape; every state has a
 
 test('registerPaperType and registerWearState extend the catalog', () => {
   const { registerPaperType, registerWearState, normalize } = src;
-  registerPaperType('parchment', { name: 'Parchment', w: 0.8, h: 1.0, color: [0.9, 0.85, 0.7], shape: 'roll', font: 'Caveat', size: 40, lineHeight: 50, x: 50, y: 50, ink: [20, 20, 20] });
-  assert.equal(normalize({ type: 'parchment' }).type, 'parchment');
-  assert.equal(normalize({ type: 'parchment' }).shape, 'roll');
+  registerPaperType('custom_scroll', { name: 'Custom scroll', w: 0.8, h: 1.0, color: [0.9, 0.85, 0.7], shape: 'roll', font: 'Caveat', size: 40, lineHeight: 50, x: 50, y: 50, ink: [20, 20, 20] });
+  assert.equal(normalize({ type: 'custom_scroll' }).type, 'custom_scroll');
+  assert.equal(normalize({ type: 'custom_scroll' }).shape, 'roll');
   registerWearState('gilded', { name: 'Gold leaf' });
   assert.deepEqual(normalize({ states: ['gilded'] }).states, ['gilded']);
 });
@@ -145,4 +145,127 @@ test('haptic utility safely interacts with navigator.vibrate', async () => {
   if (original) globalThis.navigator.vibrate = original;
   else delete globalThis.navigator.vibrate;
   assert.doesNotThrow(() => haptic(12));
+});
+
+test('new paper types, shapes, and wear states are registered and normalize correctly', () => {
+  const newTypes = ['blueprint', 'postcard', 'punchcard', 'shipping', 'kraft', 'parchment', 'ledger', 'carbon'];
+  for (const t of newTypes) {
+    const c = normalize({ type: t });
+    assert.equal(c.type, t);
+    assert.ok(TYPES[t]);
+    assert.ok(TEXTS[t]);
+    assert.ok(c.shape === 'envelope' || SHAPES[c.shape]);
+  }
+  const newShapes = ['accordion', 'triangle'];
+  for (const sh of newShapes) {
+    assert.ok(SHAPES[sh]);
+    const c = normalize({ shape: sh });
+    assert.equal(c.shape, sh);
+  }
+  const newStates = ['staple', 'grease', 'dogear', 'damp', 'creased', 'clip'];
+  for (const st of newStates) {
+    assert.ok(STATES[st]);
+    const c = normalize({ states: [st] });
+    assert.deepEqual(c.states, [st]);
+  }
+});
+
+test('creaseField handles new shapes and wear states (accordion, triangle, damp, creased)', () => {
+  for (const shape of ['accordion', 'triangle']) {
+    const cf = creaseField({ seed: 10, shape, w: 0.9, h: 0.7, card: false, states: ['creased', 'damp'] }, 32, 32);
+    assert.equal(cf.length, 32 * 32);
+    assert.ok(cf.every(Number.isFinite));
+  }
+});
+
+test('Sound: dynamic acoustic resonance modulated by paper weight and type', () => {
+  const { Sound } = src;
+
+  // default / reset tuning
+  assert.deepEqual(Sound.tune(), { freq: 420, q: 2.4, gain: 3.5 });
+  assert.deepEqual(Sound.tuning, { freq: 420, q: 2.4, gain: 3.5 });
+
+  // Heavy stock: 280Hz - 340Hz, higher Q factor (> 2.4)
+  for (const t of ['postcard', 'shipping', 'punchcard', 'kraft', 'polaroid', 'ticket']) {
+    const tune = Sound.tune({ type: t });
+    assert.ok(tune.freq >= 280 && tune.freq <= 340, `${t} freq ${tune.freq} should be in [280, 340]`);
+    assert.ok(tune.q > 2.4, `${t} Q ${tune.q} should be higher than 2.4`);
+  }
+
+  // Lightweight sheets: 560Hz - 680Hz
+  for (const t of ['carbon', 'receipt', 'newspaper']) {
+    const tune = Sound.tune({ type: t });
+    assert.ok(tune.freq >= 560 && tune.freq <= 680, `${t} freq ${tune.freq} should be in [560, 680]`);
+  }
+
+  // Standard sheets: ~420Hz
+  for (const t of ['typed', 'notebook', 'memo', 'form']) {
+    const tune = Sound.tune({ type: t });
+    assert.equal(tune.freq, 420, `${t} freq should be 420`);
+    assert.equal(tune.q, 2.4);
+  }
+
+  // GSM continuous modulation
+  const heavyGsm = Sound.tune({ gsm: 280 });
+  assert.ok(heavyGsm.freq >= 280 && heavyGsm.freq <= 340);
+  assert.ok(heavyGsm.q > 2.4);
+
+  const lightGsm = Sound.tune({ gsm: 45 });
+  assert.ok(lightGsm.freq >= 560 && lightGsm.freq <= 680);
+
+  const stdGsm = Sound.tune({ gsm: 80 });
+  assert.equal(stdGsm.freq, 420);
+  assert.equal(stdGsm.q, 2.4);
+
+  // Sound.play polymorphic argument handling and backward compatibility
+  Sound.play('uncrumple');
+  assert.doesNotThrow(() => Sound.play('crumple', 0.9));
+  assert.doesNotThrow(() => Sound.play('flip'));
+
+  Sound.play('uncrumple', { type: 'postcard' });
+  assert.equal(Sound.tuning.freq, 290);
+
+  Sound.play('crumple', 0.9, { type: 'carbon' });
+  assert.equal(Sound.tuning.freq, 660);
+
+  Sound.play('flip', 1, 0, { type: 'shipping', gsm: 240 });
+  assert.ok(Sound.tuning.freq >= 280 && Sound.tuning.freq <= 340);
+
+  // normalize preserves gsm when provided
+  const normWithGsm = normalize({ type: 'postcard', gsm: 300 });
+  assert.equal(normWithGsm.gsm, 300);
+});
+
+test('procedural customization options normalize correctly (color, stamp, watermark, seal, wearIntensity, clip)', () => {
+  assert.ok(STATES.clip);
+  assert.deepEqual(normalize({ states: ['clip'] }).states, ['clip']);
+
+  // color override
+  assert.deepEqual(normalize({ color: [0.1, 0.2, 0.3] }).color, [0.1, 0.2, 0.3]);
+  assert.equal(normalize({ color: '#ff2200' }).color, '#ff2200');
+  assert.equal(normalize({ color: 'invalid-color' }).color, undefined);
+  assert.equal(normalize({ color: [1, 2, 3] }).color, undefined);
+
+  // advanced stamp
+  assert.equal(normalize({ stamp: 'APPROVED' }).stamp, 'APPROVED');
+  assert.deepEqual(normalize({ stamp: { text: 'PAID', color: 'red', angle: -0.2, align: 'left' } }).stamp, {
+    text: 'PAID', color: 'red', angle: -0.2, align: 'left',
+  });
+  assert.deepEqual(normalize({ stamp: { color: 'blue' } }).stamp, { text: 'RECEIVED', color: 'blue' });
+
+  // watermark
+  assert.equal(normalize({ watermark: 'CONFIDENTIAL' }).watermark, 'CONFIDENTIAL');
+  assert.deepEqual(normalize({ watermark: { text: 'TOP SECRET', symbol: '★' } }).watermark, {
+    text: 'TOP SECRET', symbol: '★',
+  });
+
+  // seal
+  assert.deepEqual(normalize({ seal: { symbol: 'X', color: 'gold' } }).seal, { symbol: 'X', color: 'gold' });
+  assert.deepEqual(normalize({ seal: { color: [0.8, 0.1, 0.2] } }).seal, { color: [0.8, 0.1, 0.2] });
+
+  // wearIntensity
+  assert.equal(normalize({ wearIntensity: 1.5 }).wearIntensity, 1.5);
+  assert.equal(normalize({ wearIntensity: 3.0 }).wearIntensity, 2);
+  assert.equal(normalize({ wearIntensity: -0.5 }).wearIntensity, 0);
+  assert.equal(normalize({ wearIntensity: 'high' }).wearIntensity, undefined);
 });

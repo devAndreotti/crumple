@@ -1,5 +1,5 @@
 // WebGL2 renderer: one context per canvas. Builds papers (meshes + textures) and draws scenes of them.
-import { clamp, smooth, easeIO, rng, store, ensureFonts, loadTexture, makeCanvas } from './util.js';
+import { clamp, smooth, easeIO, rng, store, ensureFonts, loadTexture, makeCanvas, parseColor } from './util.js';
 import { TYPES, normalize } from './catalog.js';
 import { drawPrint, drawEffects, hiddenInkField } from './print.js';
 import { Jobs } from './worker.js';
@@ -30,6 +30,8 @@ function shapeParams(shape, T) {
   if (shape === 'half') return { shape: 4, k0: 0, squash: 1, roll: 0, A0: 0.007, Ares: 0.0035, ext: [hw * 1.05, T.h * 1.02] };
   if (shape === 'thirds') return { shape: 5, k0: 0, squash: 1, roll: 0, A0: 0.007, Ares: 0.0035, ext: [T.w * 1.02, T.h / 3 * 1.05] };
   if (shape === 'envelope') return { shape: 6, k0: 0, squash: 1, roll: 0, A0: 0.005, Ares: 0.003, ext: [T.w * 1.02, T.body * 1.04] };
+  if (shape === 'accordion') return { shape: 7, k0: 0, squash: 1, roll: 0, A0: 0.008, Ares: 0.0035, ext: [T.w / 4 * 1.08, T.h * 1.02] };
+  if (shape === 'triangle') return { shape: 8, k0: 0, squash: 1, roll: 0, A0: 0.008, Ares: 0.0035, ext: [hw * 1.08, hh * 1.08] };
   const k0 = 0.95 * Math.PI / smax, R = 1 / k0;
   return { shape: 0, k0, squash: 1, roll: 0, A0: T.card ? 0.07 : 0.12, Ares: 0.0045, ext: [2 * (R + 0.06), 2 * (R + 0.06)] };
 }
@@ -153,10 +155,28 @@ export function Renderer(canvas, options = {}) {
 
   async function build(cfgIn) {
     const cfg = normalize(cfgIn);
-    const T = TYPES[cfg.type];
+    const T = { ...TYPES[cfg.type] };
+    if (cfg.color) {
+      const col = parseColor(cfg.color);
+      if (col) T.color = col;
+    }
     grain();
     // the letter lives inside the envelope: same text, back, states and hidden ink; folded in thirds. Built alongside the envelope
-    const letterP = cfg.type === 'envelope' ? build({ id: cfg.id + '-letter', type: cfg.letter, shape: 'thirds', text: cfg.text, back: cfg.back, states: cfg.states.filter((e) => e !== 'torn'), seed: cfg.seed + 1, hiddenInk: cfg.hiddenInk, burn: cfg.burn, burnAfterReading: cfg.burnAfterReading, stamp: cfg.stamp }) : null;
+    const letterP = cfg.type === 'envelope' ? build({
+      id: cfg.id + '-letter',
+      type: cfg.letter,
+      shape: 'thirds',
+      text: cfg.text,
+      back: cfg.back,
+      states: cfg.states.filter((e) => e !== 'torn'),
+      seed: cfg.seed + 1,
+      hiddenInk: cfg.hiddenInk,
+      burn: cfg.burn,
+      burnAfterReading: cfg.burnAfterReading,
+      stamp: cfg.stamp,
+      ...(cfg.color ? { color: cfg.color } : {}),
+      ...(cfg.wearIntensity !== undefined ? { wearIntensity: cfg.wearIntensity } : {}),
+    }) : null;
     await ensureFonts([T.font, 'Caveat', 'Courier Prime', 'Special Elite']);
     const hw = T.w / 2, hh = T.h / 2;
     const F = shapeParams(cfg.shape, T);
@@ -167,6 +187,7 @@ export function Renderer(canvas, options = {}) {
     const foldY = T.body ? -hh + T.body : 0;
     const nx = Math.max(16, Math.round(Math.sqrt(15000 * T.w / T.h))), ny = Math.max(16, Math.round(nx * T.h / T.w));
     const exX = [0], exY = [0, -T.h / 6 * 1.08, T.h / 6, foldY];
+    if (cfg.shape === 'accordion') exX.push(-T.w / 6, T.w / 6);
     const meshes = [];
     if (stubX !== null) {
       const nMain = Math.round(nx * (stubX + hw) / T.w);
@@ -174,11 +195,11 @@ export function Renderer(canvas, options = {}) {
       meshes.push(mesh(stubX, hw, hh, nx - nMain, ny, exX, exY));
     } else meshes.push(mesh(-hw, hw, hh, nx, ny, exX, exY));
     // an empty back and a paper without cut-outs use the shared 1x1 textures (saves ~6 MB of texture per paper)
-    const backEmpty = !(cfg.back || cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'newspaper' || ['coffee', 'water', 'prints', 'aged', 'wine', 'ink', 'foxing', 'faded'].some((e) => cfg.states.includes(e)));
+    const backEmpty = !(cfg.back || cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'newspaper' || cfg.type === 'postcard' || cfg.type === 'blueprint' || ['coffee', 'water', 'prints', 'aged', 'wine', 'ink', 'foxing', 'faded', 'staple', 'grease', 'dogear', 'damp', 'clip'].some((e) => cfg.states.includes(e)));
     const kind = burnKind(cfg);
-    const noEffects = !(cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.states.includes('torn') || kind);
+    const noEffects = !(cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'punchcard' || cfg.type === 'parchment' || cfg.type === 'postcard' || cfg.states.includes('aged') || cfg.states.includes('torn') || kind);
     const [creases, printF, printB, fx] = await Promise.all([
-      Jobs.run('creases', [{ seed: cfg.seed, shape: cfg.shape, w: T.w, h: T.h, card: !!T.card, foldY }, W, H]),
+      Jobs.run('creases', [{ seed: cfg.seed, shape: cfg.shape, w: T.w, h: T.h, card: !!T.card, foldY, states: cfg.states }, W, H]),
       drawPrint(cfg, T, 'front', openings),
       backEmpty ? null : drawPrint(cfg, T, 'back', openings),
       noEffects ? null : drawEffects(cfg, T, kind),
@@ -275,10 +296,12 @@ export function Renderer(canvas, options = {}) {
     gl.uniform1f(u.uSeedA, P.seedA);
     gl.uniform1f(u.uSquash, P.F.squash);
     gl.uniform1f(u.uRoll, P.F.roll || 0.03);
-    gl.uniform1f(u.uCurl, 0.9 * Math.sin(Math.PI * clamp(f)));
+    const gsm = P.cfg.gsm || P.T.gsm || (P.cfg.thickness ? P.cfg.thickness * 800 : (P.T.thickness ? P.T.thickness * 800 : (P.cfg.weight || P.T.weight || (P.T.card ? 260 : (P.T.carbon ? 42 : (P.cfg.type === 'receipt' ? 48 : 80))))));
+    const wScale = clamp(gsm / 80, 0.45, 3.5);
+    gl.uniform1f(u.uCurl, (0.9 / Math.sqrt(wScale)) * Math.sin(Math.PI * clamp(f)));
     gl.uniform1f(u.uStubX, P.stubX ?? 0);
     gl.uniform1f(u.uFoldSide, P.T.stub ? -1 : 1);
-    gl.uniform1f(u.uFoldBw, P.T.card ? 0.03 : 0.016);
+    gl.uniform1f(u.uFoldBw, (P.T.card ? 0.03 : 0.016) * Math.sqrt(wScale / (P.T.card ? 3.25 : 1.0)));
     gl.uniform1f(u.uFoldY, P.foldY || 0);
     gl.uniform1f(u.uThick, f > 0.5 ? -0.006 : 0.006);
     gl.uniform1f(u.uScale, st.sc);
@@ -288,7 +311,8 @@ export function Renderer(canvas, options = {}) {
     gl.uniform3f(u.uColor, P.T.color[0], P.T.color[1], P.T.color[2]);
     gl.uniform3f(u.uL, L[0], L[1], L[2]);
     gl.uniform1f(u.uAge, P.age);
-    gl.uniform1f(u.uThru, P.T.card ? 0 : 0.035);
+    const thru = P.cfg.thru !== undefined ? P.cfg.thru : (P.T.thru !== undefined ? P.T.thru : (P.T.card ? 0 : (P.T.carbon ? 0.18 : (P.cfg.type === 'receipt' ? 0.14 : (P.cfg.type === 'newspaper' ? 0.08 : clamp(0.035 * (80 / gsm), 0.015, 0.2))))));
+    gl.uniform1f(u.uThru, thru);
     gl.uniform1f(u.uTime, st.time || 0);
     gl.uniform1f(u.uFront, st.front ?? -1);
     gl.uniform1f(u.uDestroy, st.destroy ? 1 : 0);

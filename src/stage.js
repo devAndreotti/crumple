@@ -114,11 +114,11 @@ export function Stage(canvas, options = {}) {
       kick();
       return P;
     },
-    crumple() { if (!P) return; Sound.play('crumple', 0.9); tween(A, 'p', 0, isEnv() ? 1.9 : 0.9, isEnv() ? easeSoft : easeCrumple(P)); kick(); },
-    uncrumple() { if (!P) return; Sound.play(isEnv() ? 'seal' : 'uncrumple', 1.5); tween(A, 'p', 1, isEnv() ? T_UNFOLD * 1.85 : T_UNFOLD, isEnv() ? easeSoft : easeOpen(P)); kick(); },
+    crumple() { if (!P) return; Sound.play('crumple', 0.9, 0, { type: P.cfg.type, gsm: P.cfg.gsm }); tween(A, 'p', 0, isEnv() ? 1.9 : 0.9, isEnv() ? easeSoft : easeCrumple(P)); kick(); },
+    uncrumple() { if (!P) return; Sound.play(isEnv() ? 'seal' : 'uncrumple', 1.5, 0, { type: P.cfg.type, gsm: P.cfg.gsm }); tween(A, 'p', 1, isEnv() ? T_UNFOLD * 1.85 : T_UNFOLD, isEnv() ? easeSoft : easeOpen(P)); kick(); },
     toggle() { if (A.p > 0.5) api.crumple(); else api.uncrumple(); },
     // any time, except once the paper burns away; the side it shows is kept through crumple and unfold
-    flip() { if (!P || A.destroy !== undefined) return; Sound.play('flip'); tween(A, 'f', A.f < 0.5 ? 1 : 0, 0.8, linear); kick(); },
+    flip() { if (!P || A.destroy !== undefined) return; Sound.play('flip', 1, 0, { type: P.cfg.type, gsm: P.cfg.gsm }); tween(A, 'f', A.f < 0.5 ? 1 : 0, 0.8, linear); kick(); },
     tear() { if (!P || P.stubX === null || A.tear > 0 || A.p < 0.95) return; Sound.play('tear'); tween(A, 'tear', 1, 1.0, linear, 0, () => { P.torn = true; }); kick(); },
     restoreStub() { if (!P) return; A.tear = 0; P.torn = false; kick(); },
     // resolves once the paper has its burn field (built on demand for any paper); a second call meanwhile does nothing,

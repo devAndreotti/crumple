@@ -17,7 +17,7 @@
   });
 
   // ---- galleries (every card is a trigger button; papers attach once papers.json is read)
-  var TYPE_IDS = ['typed', 'notebook', 'form', 'receipt', 'ticket', 'memo', 'newspaper', 'sticky', 'polaroid', 'envelope'];
+  var TYPE_IDS = ['typed', 'notebook', 'form', 'receipt', 'ticket', 'memo', 'newspaper', 'sticky', 'polaroid', 'envelope', 'blueprint', 'ledger', 'postcard', 'punchcard', 'shipping', 'parchment', 'carbon'];
   var SHAPE_IDS = ['ball', 'flat', 'quarters', 'half', 'thirds', 'roll', 'twist'];
   var STATE_IDS = [
     ['state-torn', 'state.torn'],

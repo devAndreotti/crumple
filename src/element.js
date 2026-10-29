@@ -28,10 +28,29 @@ export class CrumplePaper extends (typeof HTMLElement !== 'undefined' ? HTMLElem
     const snapOpened = this.getAttribute('snapshot-opened') || undefined;
     const opts = (snap || snapOpened) ? { snapshot: snap, snapshotOpened: snapOpened } : undefined;
 
-    this.entry = Scene.attach(btn, cfg, opts);
+    const mount = () => {
+      if (this.entry) return;
+      if (this._io) { this._io.disconnect(); this._io = null; }
+      this.entry = Scene.attach(btn, cfg, opts);
+    };
+
+    btn.addEventListener('click', mount, { once: true, capture: true });
+
+    if (typeof IntersectionObserver !== 'undefined') {
+      this._io = new IntersectionObserver((es) => {
+        for (const e of es) {
+          if (e.isIntersecting) { mount(); break; }
+        }
+      }, { rootMargin: '200px' });
+      this._io.observe(this);
+    } else mount();
   }
 
   disconnectedCallback() {
+    if (this._io) {
+      this._io.disconnect();
+      this._io = null;
+    }
     if (this.btn) Scene.detach(this.btn);
     if (this._madeBtn && this.btn.parentNode) this.btn.remove();
     this.entry = null;

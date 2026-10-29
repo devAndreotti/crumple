@@ -4,6 +4,30 @@ All notable changes to this project are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-10-29
+
+### Added
+
+- Native scroll-lock in `Scene`: automatically applies `.crumple-open` to `document.body` on open and removes on close to prevent background scroll leaks on mobile/iOS Safari.
+- Clean print styles (`@media print`): hides WebGL canvas, overlay bar, and backdrop; prints legible monospace text from `.crumple-sr` cleanly onto real A4 paper.
+- Performance optimization in `<crumple-paper>`: deferred `Scene.attach()` via `IntersectionObserver` with `rootMargin: '200px'`, keeping initial LCP and TBT minimal until scrolled into view.
+- 7 new paper types: `blueprint` (cobalt blue millimetric schematic), `postcard` (vintage double-sided card with stamp and postmark), `punchcard` (IBM 80-col punched card with corner chamfer and cutout holes), `shipping` / `kraft` (brown fibrous parcel with procedural 1D barcode), `parchment` (ancient papyrus with frayed cellulose edges and wax seal), `ledger` (accounting journal with double ledger rules), and `carbon` (duplicate copy with violet-blue mechanical ink).
+- 2 new closed shapes: `accordion` (horizontal z-fold leaflet) and `triangle` (military triangular corner tuck).
+- 5 new physical wear states: `staple` (galvanized metal staple), `grease` (translucent soaked oil spot), `dogear` (folded corner mark), `damp` (wavy dried water ripple deformation), and `creased` (dense pocket-fold grid).
+- Metal paper clip wear state `clip`: renders authentic steel wire paper clip with drop shadow and wire sheen across front and back margins.
+- Procedural customization options in `PaperConfig`:
+  - `color`: override paper base tint with RGB array `[r, g, b]` or `#rrggbb` hex without affecting grids, rules, or text.
+  - `stamp`: object configuration `{ text, color, angle, align }` supporting custom ink colors, rotation angles, and alignments.
+  - `watermark`: translucent embossed-style watermark text or symbol centered on sheet.
+  - `seal`: wax seal on any paper with custom symbol and color (`red`, `gold`, `burgundy`, or RGB).
+  - `wearIntensity`: scalar multiplier (0..2) adjusting stain radii and opacities across physical wear states.
+  - Deckle edge: organic fiber fringing along margins for vintage and parchment sheets.
+- Shader fidelity enhancements (`src/shaders.js`):
+  - Chemical fold whitening: analytical fold stress calculations and micro-ridge Laplacian filtering blend subtle cellulose fiber whitening along crease lines.
+  - Backlight transmission (`uThru`): directional backlight shines through thin sheets, showing transmitted ink silhouettes of the opposite side.
+- Dynamic acoustic resonance (`src/sound.js`):
+  - Peaking filter center frequency and Q factor modulated continuously by paper weight (`gsm`) and paper type presets (heavy stock: 280–340Hz muted thud; thin sheets: 560–680Hz crisp snap).
+
 ## [1.1.1] - 2026-10-29
 
 ### Added

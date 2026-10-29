@@ -8,7 +8,7 @@ uniform int uShape;
 uniform float uP, uK0, uKres, uA0, uAres, uScale, uSeedA, uSquash, uRoll, uCurl, uTear, uStubX, uIsStub, uFoldSide, uFoldBw, uFoldY, uEdge, uThick;
 uniform vec2 uHalf;
 uniform mat4 uModel, uProj;
-out vec3 vPos; out vec3 vNrm; out vec2 vUv; out float vE; out float vAmp;
+out vec3 vPos; out vec3 vNrm; out vec2 vUv; out float vE; out float vAmp; out float vStress;
 float Hf(vec2 xy){ return textureLod(uH, xy / (2.0 * uHalf) + 0.5, 0.0).r; }
 vec3 rotY(vec3 v, float a){ float c = cos(a), s = sin(a); return vec3(c * v.x + s * v.z, v.y, -s * v.x + c * v.z); }
 vec3 rotZ(vec3 v, float a){ float c = cos(a), s = sin(a); return vec3(c * v.x - s * v.y, s * v.x + c * v.y, v.z); }
@@ -18,6 +18,25 @@ vec3 bend(float d, float th, float bw){
   float t = max(abs(th), 1e-4), R = bw / t, L = R * t;
   if (d < L) { float a = d / R; return vec3(R * sin(a), R * (1.0 - cos(a)), a); }
   return vec3(R * sin(t) + (d - L) * cos(t), R * (1.0 - cos(t)) + (d - L) * sin(t), t);
+}
+float foldStress(vec2 xy){
+  float bw = max(uFoldBw, 0.008);
+  if (uShape == 3) {
+    return max(smoothstep(bw * 2.2, 0.0, abs(xy.x)), smoothstep(bw * 3.2, 0.0, abs(xy.y)));
+  } else if (uShape == 4) {
+    return smoothstep(bw * 2.2, 0.0, abs(xy.x));
+  } else if (uShape == 5) {
+    float y3 = uHalf.y / 3.0;
+    return max(smoothstep(bw * 2.2, 0.0, abs(xy.y + y3 * 1.08)), smoothstep(bw * 3.2, 0.0, abs(xy.y - y3)));
+  } else if (uShape == 6) {
+    return smoothstep(bw * 2.2, 0.0, abs(xy.y - uFoldY));
+  } else if (uShape == 7) {
+    float x3 = uHalf.x * 0.333;
+    return max(smoothstep(bw * 2.2, 0.0, abs(xy.x + x3)), max(smoothstep(bw * 2.6, 0.0, abs(xy.x)), smoothstep(bw * 3.2, 0.0, abs(xy.x - x3))));
+  } else if (uShape == 8) {
+    return max(smoothstep(bw * 2.2, 0.0, abs(xy.x)), smoothstep(bw * 2.6, 0.0, abs(xy.y)));
+  }
+  return 0.0;
 }
 void foldX(inout vec3 p, inout vec3 n, float x0, float s, float th, float bw){
   float d = (p.x - x0) * s;
@@ -101,6 +120,26 @@ vec3 place(vec2 xy, out float e, out float amp, out vec3 n){
     foldY(p, n, uFoldY, 1.0, mix(3.12, -1.1, smoothstep(0.0, 1.0, e)), uFoldBw);
     p.y -= (uFoldY - uHalf.y) * 0.5;
     amp = mix(uA0, uAres, e);
+  } else if (uShape == 7) {
+    // accordion: z-folds along X axis
+    e = uP;
+    float em = smoothstep(0.0, 1.0, e);
+    float a = 3.12 * (1.0 - em);
+    float x3 = uHalf.x * 0.333;
+    foldX(p, n, -x3, -1.0, a, uFoldBw);
+    foldX(p, n, 0.0, 1.0, -a, uFoldBw * 1.5);
+    foldX(p, n, x3, 1.0, a, uFoldBw * 2.0);
+    p.x *= mix(0.28, 1.0, em);
+    amp = mix(uA0, uAres, e);
+  } else if (uShape == 8) {
+    // triangle fold: corner tuck
+    e = uP;
+    float em = smoothstep(0.0, 1.0, e);
+    float a = 3.12 * (1.0 - em);
+    foldX(p, n, 0.0, 1.0, a, uFoldBw);
+    foldY(p, n, 0.0, -1.0, a, uFoldBw * 1.5);
+    p.xy *= mix(0.58, 1.0, em);
+    amp = mix(uA0, uAres, e);
   } else {
     // folded with rounded bends: 3 = quarters, 4 = half, 5 = thirds (letter)
     e = uP;
@@ -145,12 +184,13 @@ void main(){
   vUv = aXY / (2.0 * uHalf) + 0.5;
   vE = uShape == 0 ? pow(e, 2.2) : e;
   vAmp = amp * uScale;
+  vStress = foldStress(aXY);
   gl_Position = uProj * w;
 }`;
 
 export const FS = `#version 300 es
 precision highp float;
-in vec3 vPos; in vec3 vNrm; in vec2 vUv; in float vE; in float vAmp;
+in vec3 vPos; in vec3 vNrm; in vec2 vUv; in float vE; in float vAmp; in float vStress;
 uniform sampler2D uH, uPrintF, uPrintB, uFx, uGrain;
 uniform vec2 uGrainK;
 uniform vec3 uCam, uColor, uL, uLampPos;
@@ -186,6 +226,7 @@ void main(){
   vec4 h0 = texture(uH, vUv);
   vec2 du = dFdx(vUv), dv = dFdy(vUv);
   vec4 hx = texture(uH, vUv + du), hy = texture(uH, vUv + dv);
+  vec4 hx2 = texture(uH, vUv - du), hy2 = texture(uH, vUv - dv);
   // flashlight: a low warm light under the cursor with a small pool; outside it the paper darkens a little
   vec3 toP = uLampPos - vPos;
   vec3 Lp = normalize(toP);
@@ -200,6 +241,9 @@ void main(){
   vec3 V = normalize(uCam - vPos);
   float wrap = clamp((dot(n, L) + 0.08) / 1.08, 0.0, 1.0);
   float wrapP = max(dot(n, Lp), 0.0);
+  float backL = max(0.0, -dot(n, L));
+  float backLp = max(0.0, -dot(n, Lp)) * pool;
+  float backlight = backL + backLp * 1.8;
   float ao = mix(1.0, 0.42 + 0.58 * smoothstep(-0.55, 0.35, h0.r), 1.0 - vE);
   float fib = hash(floor(vUv * vec2(900.0, 1180.0)));
   vec2 eu = min(vUv, 1.0 - vUv);
@@ -209,12 +253,24 @@ void main(){
   // paper grain texture, tiled at a physical scale across the sheet
   alb *= 1.0 + (texture(uGrain, vUv * uGrainK).r - 0.94) * 1.8;
   if (!front) alb *= 0.9;
-  // front reads normally; the back is mirrored in u; ink from the other side shows faintly through
+
+  // chemical fold whitening: calculate fold ridge stress and bleach cellulose fibers along sharp ridges
+  float ridgeCurv = max(0.0, -((hx.r + hx2.r - 2.0 * h0.r) + (hy.r + hy2.r - 2.0 * h0.r)));
+  float creaseStress = clamp(ridgeCurv * vAmp * 140.0, 0.0, 1.0);
+  float totalStress = clamp(vStress * 0.75 + creaseStress * 0.6, 0.0, 1.0);
+  float whitening = smoothstep(0.12, 0.82, totalStress) * 0.28;
+  vec3 bleachCol = mix(vec3(0.985, 0.98, 0.96), vec3(1.0), fib * 0.5);
+  alb = mix(alb, max(alb, bleachCol), whitening);
+
+  // front reads normally; the back is mirrored in u; backlight reveals ink silhouette from opposite face
   vec2 uvB = vec2(1.0 - vUv.x, vUv.y);
   vec4 tF = texture(uPrintF, vUv), tB = texture(uPrintB, uvB);
   vec4 pr = front ? tF : tB;
   vec4 th = front ? tB : tF;
-  alb = mix(alb, th.rgb, th.a * uThru);
+  float thruFactor = clamp(uThru * (1.0 + 3.2 * backlight), 0.0, 0.92);
+  vec3 inkSilhouette = mix(th.rgb, th.rgb * 0.3 + vec3(0.02), clamp(backlight * 1.5, 0.0, 0.8));
+  alb = mix(alb, inkSilhouette, th.a * thruFactor);
+  alb += col0 * (uThru * (backL * 0.4 + backLp * 0.7)) * (1.0 - th.a * 0.85);
   alb = mix(alb, pr.rgb, pr.a);
   alb = mix(alb, vec3(0.45, 0.29, 0.13), smoothstep(0.12, 0.55, sc) * 0.85);
   alb = mix(alb, vec3(0.06, 0.045, 0.04), smoothstep(0.55, 0.9, sc));
@@ -222,6 +278,7 @@ void main(){
   vec3 key = vec3(1.0, 0.965, 0.9), amb = vec3(0.62, 0.64, 0.7);
   vec3 warm = vec3(1.0, 0.9, 0.74);
   vec3 base = amb * 0.3 * ao + key * 1.04 * wrap * mix(1.0, ao, 0.7) * mix(1.0, 0.55, uLamp);
+  base += key * 0.45 * backL * uThru * mix(1.0, ao, 0.5);
   // the flashlight adds in "screen" fashion: brightens without blowing out, dark ink stays dark
   float spot = wrapP * pool * mix(1.0, ao, 0.5);
   vec3 col = alb * (base + warm * spot * max(vec3(0.0), vec3(1.15) - base));

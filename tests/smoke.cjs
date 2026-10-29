@@ -16,10 +16,12 @@ fs.mkdirSync(out, { recursive: true });
     await p.waitForFunction('window.__ready === true', { timeout: 180000, polling: 200 });
     const n = await p.evaluate(() => Crumple.Scene.entries.length);
     for (let i = 0; i < n; i++) {
+      const id = await p.evaluate((i) => Crumple.Scene.entries[i].cfg.id, i);
       for (const [tag, pr] of [['closed', 0], ['open', 1]]) {
         await p.evaluate(async (i, pr) => { await Crumple.Scene.frame(i, 1, pr); }, i, pr);
         await sleep(150);
         await p.screenshot({ path: `${out}${String(i).padStart(2, '0')}-${tag}.png` });
+        await p.screenshot({ path: `${out}${id}-${tag}.png` });
       }
     }
     console.log('papers:', n, 'errors:', errs.length ? errs.join(' | ') : 'none');

@@ -1,8 +1,10 @@
 // Type definitions for @devandreotti/crumple
 
-export type PaperType = 'typed' | 'notebook' | 'form' | 'receipt' | 'ticket' | 'memo' | 'newspaper' | 'sticky' | 'polaroid' | 'envelope';
-export type PaperShape = 'ball' | 'flat' | 'quarters' | 'half' | 'thirds' | 'roll' | 'twist';
-export type PaperState = 'torn' | 'burnt' | 'coffee' | 'water' | 'prints' | 'aged' | 'scribbled' | 'singed' | 'wine' | 'ink' | 'foxing' | 'tape' | 'stamp' | 'faded';
+export type PaperType = 'typed' | 'notebook' | 'form' | 'receipt' | 'ticket' | 'memo' | 'newspaper' | 'sticky' | 'polaroid' | 'envelope'
+  | 'blueprint' | 'postcard' | 'punchcard' | 'shipping' | 'kraft' | 'parchment' | 'ledger' | 'carbon';
+export type PaperShape = 'ball' | 'flat' | 'quarters' | 'half' | 'thirds' | 'roll' | 'twist' | 'accordion' | 'triangle';
+export type PaperState = 'torn' | 'burnt' | 'coffee' | 'water' | 'prints' | 'aged' | 'scribbled' | 'singed' | 'wine' | 'ink' | 'foxing' | 'tape' | 'stamp' | 'faded'
+  | 'staple' | 'grease' | 'dogear' | 'damp' | 'creased' | 'clip';
 /** Where a burn starts: from one corner (default), along one whole side, a hole burnt from inside, or a few embers. */
 export type BurnForm = 'corner' | 'edge' | 'center' | 'spots';
 
@@ -32,17 +34,33 @@ export interface PaperConfig {
   address?: string;
   /** Type of the letter inside an envelope. */
   letter?: Exclude<PaperType, 'envelope'>;
-  /** Word printed by the 'stamp' state, drawn in capitals (default 'RECEIVED'). */
-  stamp?: string;
+  /** Word printed by the 'stamp' state, drawn in capitals (default 'RECEIVED'), or an object with text, color, angle and align. */
+  stamp?: string | { text: string; color?: string; angle?: number; align?: 'center' | 'left' | 'right' };
+  /** Custom background color override (RGB array [r, g, b] 0..1 or hex string "#rrggbb"). */
+  color?: [number, number, number] | string;
+  /** Watermark rendered as a faint embossed-style translucent insignia centered on the sheet. */
+  watermark?: string | { text: string; symbol?: string };
+  /** Wax seal placed on the paper. */
+  seal?: { symbol?: string; color?: string | [number, number, number] };
+  /** Numeric multiplier (0..2, default 1.0) scaling stain radius and opacity in coffee, wine, ink, prints, foxing. */
+  wearIntensity?: number;
+  /** Paper weight in grams per square meter (gsm) or physical thickness. Affects fold radii, curling stiffness and acoustic resonance. */
+  gsm?: number;
+  weight?: number;
+  thickness?: number;
+  /** Custom translucency factor (0 = opaque card, 0.18 = thin carbon/receipt). */
+  thru?: number;
   /** Rich HTML or custom canvas content rendered onto the sheet. */
   rich?: {
     mode?: 'html' | 'canvas';
     body: string | ((ctx: CanvasRenderingContext2D, area: { x: number; y: number; w: number; h: number }, w: number, h: number) => void | Promise<void>);
     style?: string;
   };
+  /** Paper weight in grams per square meter (gsm). Modulates acoustic resonance. */
+  gsm?: number;
 }
 
-export interface TypeInfo { name: string; w: number; h: number; color: [number, number, number]; shape: PaperShape | 'envelope'; font: string; [key: string]: unknown }
+export interface TypeInfo { name: string; w: number; h: number; color: [number, number, number]; shape: PaperShape | 'envelope'; font: string; gsm?: number; weight?: number; thickness?: number; thru?: number; [key: string]: unknown }
 
 export const TYPES: Record<PaperType, TypeInfo>;
 export const SHAPES: Record<PaperShape, string>;
@@ -167,12 +185,22 @@ export interface StageApi {
 }
 export function Stage(canvas: HTMLCanvasElement, options?: StageOptions): StageApi | null;
 
+export interface SoundTuneOptions {
+  type?: string;
+  gsm?: number;
+  freq?: number;
+  q?: number;
+  gain?: number;
+}
+
 export const Sound: {
   readonly enabled: boolean;
+  readonly tuning: { freq: number; q: number; gain: number };
   set(enabled: boolean): void;
   /** Optional recordings used instead of the synthesized sounds. */
   useSamples(urls: { crumple?: string; sheet?: string; tear?: string }): void;
-  play(name: 'crumple' | 'uncrumple' | 'flip' | 'tear' | 'seal' | 'fire' | 'grain', duration?: number, delay?: number): void;
+  tune(options?: SoundTuneOptions | string | number): { freq: number; q: number; gain: number };
+  play(name: 'crumple' | 'uncrumple' | 'flip' | 'tear' | 'seal' | 'fire' | 'grain', duration?: number | SoundTuneOptions | string, delay?: number | SoundTuneOptions | string, options?: SoundTuneOptions | string | number): void;
 };
 
 declare global {

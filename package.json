@@ -1,6 +1,6 @@
 {
   "name": "@devandreotti/crumple",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Crumpled paper you can open: a dependency-free WebGL2 library that flies a crumpled note to the center of the screen and unfolds it into a readable sheet.",
   "keywords": [
     "paper",
@@ -61,7 +61,7 @@
     "prerender": "node tools/prerender.cjs docs/papers.json docs/snaps",
     "test": "npm run test:node && npm run test:browser",
     "test:node": "node --test tests/node.test.mjs",
-    "test:browser": "node tests/smoke.cjs && node tests/flow.cjs && node tests/robust.cjs && node tests/burnflip.cjs && node tests/states.cjs"
+    "test:browser": "node tests/smoke.cjs && node tests/flow.cjs && node tests/robust.cjs && node tests/burnflip.cjs && node tests/states.cjs && node tests/shapes.cjs"
   },
   "devDependencies": {
     "esbuild": "0.28.2",

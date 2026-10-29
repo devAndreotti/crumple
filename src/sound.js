@@ -2,22 +2,116 @@
 // registered with Sound.useSamples({ crumple, sheet, tear }) and are used when they load. Off by default.
 import { store } from './util.js';
 
+// Heavy stock: 280Hz - 340Hz, higher Q factor (2.8 - 3.2), deeper muted sound
+// Lightweight translucent sheets: 560Hz - 680Hz, crisper snap (Q 1.8 - 2.0)
+// Standard sheets: ~420Hz (Q 2.4)
+const TYPE_TUNING = {
+  postcard: { freq: 290, q: 3.2, gain: 3.0 },
+  shipping: { freq: 310, q: 3.0, gain: 3.0 },
+  kraft: { freq: 310, q: 3.0, gain: 3.0 },
+  punchcard: { freq: 330, q: 2.8, gain: 3.2 },
+  polaroid: { freq: 290, q: 3.2, gain: 3.0 },
+  ticket: { freq: 330, q: 2.8, gain: 3.2 },
+  carbon: { freq: 660, q: 1.8, gain: 4.0 },
+  receipt: { freq: 590, q: 1.9, gain: 3.8 },
+  newspaper: { freq: 560, q: 2.0, gain: 3.6 },
+  typed: { freq: 420, q: 2.4, gain: 3.5 },
+  notebook: { freq: 420, q: 2.4, gain: 3.5 },
+  memo: { freq: 420, q: 2.4, gain: 3.5 },
+  form: { freq: 420, q: 2.4, gain: 3.5 },
+  sticky: { freq: 420, q: 2.4, gain: 3.5 },
+  envelope: { freq: 420, q: 2.4, gain: 3.5 },
+  blueprint: { freq: 420, q: 2.4, gain: 3.5 },
+  parchment: { freq: 410, q: 2.5, gain: 3.5 },
+  ledger: { freq: 420, q: 2.4, gain: 3.5 },
+};
+
+// ponytail: piecewise linear resonance model covers 30-350 gsm. Upgrade to measured modal synthesis if physical multi-mode simulation needed.
+function tuneFromGsm(gsm) {
+  const g = Math.max(30, Math.min(350, gsm));
+  if (g <= 80) {
+    const t = (80 - g) / (80 - 30);
+    return {
+      freq: Math.round(420 + t * 260),
+      q: +(2.4 - t * 0.6).toFixed(2),
+      gain: +(3.5 + t * 0.5).toFixed(2),
+    };
+  }
+  let freq, q;
+  if (g <= 160) {
+    const t = (g - 80) / (160 - 80);
+    freq = Math.round(420 - t * 80);
+    q = +(2.4 + t * 0.4).toFixed(2);
+  } else {
+    const t = Math.min(1, (g - 160) / (300 - 160));
+    freq = Math.round(340 - t * 60);
+    q = +(2.8 + t * 0.4).toFixed(2);
+  }
+  const gain = +(3.5 - Math.min(1, (g - 80) / 220) * 0.5).toFixed(2);
+  return { freq, q, gain };
+}
+
+function resolveTune(opts) {
+  if (!opts) return { freq: 420, q: 2.4, gain: 3.5 };
+  if (typeof opts === 'string') opts = { type: opts };
+  else if (typeof opts === 'number') opts = { gsm: opts };
+  let base;
+  if (opts.gsm !== undefined && Number.isFinite(opts.gsm)) {
+    base = tuneFromGsm(opts.gsm);
+  } else if (opts.type && TYPE_TUNING[opts.type]) {
+    base = TYPE_TUNING[opts.type];
+  } else {
+    base = { freq: 420, q: 2.4, gain: 3.5 };
+  }
+  return {
+    freq: Number.isFinite(opts.freq) ? opts.freq : base.freq,
+    q: Number.isFinite(opts.q) ? opts.q : base.q,
+    gain: Number.isFinite(opts.gain) ? opts.gain : base.gain,
+  };
+}
+
 export const Sound = /* @__PURE__ */ (() => {
-  let ac = null, master = null, noise = null, loading = null;
+  let ac = null, master = null, res = null, noise = null, loading = null;
+  let currentTune = { freq: 420, q: 2.4, gain: 3.5 };
   let enabled = store.get('sound', false);
   let urls = {};
   const samples = {};
+
+  function applyTune(t, atTime) {
+    currentTune = { ...t };
+    if (res && ac) {
+      const time = atTime !== undefined ? atTime : ac.currentTime;
+      if (time > ac.currentTime) {
+        res.frequency.setValueAtTime(currentTune.freq, time);
+        res.Q.setValueAtTime(currentTune.q, time);
+        res.gain.setValueAtTime(currentTune.gain, time);
+      } else {
+        res.frequency.setValueAtTime(currentTune.freq, ac.currentTime);
+        res.frequency.value = currentTune.freq;
+        res.Q.setValueAtTime(currentTune.q, ac.currentTime);
+        res.Q.value = currentTune.q;
+        res.gain.setValueAtTime(currentTune.gain, ac.currentTime);
+        res.gain.value = currentTune.gain;
+      }
+    }
+    return currentTune;
+  }
+
+  function tune(opts, atTime) {
+    return applyTune(resolveTune(opts), atTime);
+  }
+
   const ctx = () => {
     if (!ac) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       ac = new AC();
       master = ac.createGain(); master.gain.value = 0.6;
-      const res = ac.createBiquadFilter();
+      res = ac.createBiquadFilter();
       res.type = 'peaking';
-      res.frequency.value = 420;
-      res.Q.value = 2.4;
-      res.gain.value = 3.5;
+      res.frequency.value = currentTune.freq;
+      res.Q.value = currentTune.q;
+      res.gain.value = currentTune.gain;
       master.connect(res);
       res.connect(ac.destination);
       noise = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
@@ -80,14 +174,24 @@ export const Sound = /* @__PURE__ */ (() => {
   }
   return {
     get enabled() { return enabled; },
+    get tuning() { return { ...currentTune }; },
     set(v) { enabled = !!v; store.set('sound', enabled); if (enabled && ctx()) load(); },
     // optional real recordings: { crumple, sheet, tear } (URLs)
     useSamples(map) { urls = { ...map }; loading = null; if (enabled && ac) load(); },
+    tune(opts) { return tune(opts); },
     // names: crumple, uncrumple, flip, tear, seal, fire, grain
-    play(name, dur = 1, delay = 0) {
+    play(name, dur = 1, delay = 0, opts) {
+      if (typeof dur === 'object' && dur !== null) { opts = dur; dur = 1; delay = 0; }
+      else if (typeof dur === 'string') { opts = { type: dur }; dur = 1; delay = 0; }
+      else if (typeof delay === 'object' && delay !== null) { opts = delay; delay = 0; }
+      else if (typeof delay === 'string') { opts = { type: delay }; delay = 0; }
+      if (typeof opts === 'string') opts = { type: opts };
+      else if (typeof opts === 'number') opts = { gsm: opts };
+      if (opts) tune(opts);
       if (!enabled || !ctx()) return;
       load();
       const t = ac.currentTime + delay;
+      if (opts && delay > 0) tune(opts, t);
       const has = (n) => !!samples[n];
       if (name === 'crumple') {
         if (has('crumple')) { const n = Math.max(2, Math.round(dur * 4)); for (let i = 0; i < n; i++) sample('crumple', t + (i / n) * dur * 0.85, { gain: 0.6 + Math.random() * 0.35, rate: 0.85 + Math.random() * 0.35 }); crackles(t, dur, 25, 1, 0.1, true); }
