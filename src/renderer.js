@@ -177,7 +177,7 @@ export function Renderer(canvas, options = {}) {
       meshes.push(mesh(stubX, hw, hh, nx - nMain, ny, exX, exY));
     } else meshes.push(mesh(-hw, hw, hh, nx, ny, exX, exY));
     // an empty back and a paper without cut-outs use the shared 1x1 textures (saves ~6 MB of texture per paper)
-    const backEmpty = !(cfg.back || cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'newspaper' || cfg.type === 'postcard' || cfg.type === 'blueprint' || ['coffee', 'water', 'prints', 'aged', 'wine', 'ink', 'foxing', 'faded', 'staple', 'grease', 'dogear', 'damp'].some((e) => cfg.states.includes(e)));
+    const backEmpty = !(cfg.back || cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'newspaper' || cfg.type === 'postcard' || cfg.type === 'blueprint' || ['coffee', 'water', 'prints', 'aged', 'wine', 'ink', 'foxing', 'faded', 'staple', 'grease', 'dogear', 'damp', 'clip'].some((e) => cfg.states.includes(e)));
     const kind = burnKind(cfg);
     const noEffects = !(cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'punchcard' || cfg.type === 'parchment' || cfg.states.includes('torn') || kind);
     const [creases, printF, printB, fx] = await Promise.all([
@@ -278,10 +278,12 @@ export function Renderer(canvas, options = {}) {
     gl.uniform1f(u.uSeedA, P.seedA);
     gl.uniform1f(u.uSquash, P.F.squash);
     gl.uniform1f(u.uRoll, P.F.roll || 0.03);
-    gl.uniform1f(u.uCurl, 0.9 * Math.sin(Math.PI * clamp(f)));
+    const gsm = P.cfg.gsm || P.T.gsm || (P.cfg.thickness ? P.cfg.thickness * 800 : (P.T.thickness ? P.T.thickness * 800 : (P.cfg.weight || P.T.weight || (P.T.card ? 260 : (P.T.carbon ? 42 : (P.cfg.type === 'receipt' ? 48 : 80))))));
+    const wScale = clamp(gsm / 80, 0.45, 3.5);
+    gl.uniform1f(u.uCurl, (0.9 / Math.sqrt(wScale)) * Math.sin(Math.PI * clamp(f)));
     gl.uniform1f(u.uStubX, P.stubX ?? 0);
     gl.uniform1f(u.uFoldSide, P.T.stub ? -1 : 1);
-    gl.uniform1f(u.uFoldBw, P.T.card ? 0.03 : 0.016);
+    gl.uniform1f(u.uFoldBw, (P.T.card ? 0.03 : 0.016) * Math.sqrt(wScale / (P.T.card ? 3.25 : 1.0)));
     gl.uniform1f(u.uFoldY, P.foldY || 0);
     gl.uniform1f(u.uThick, f > 0.5 ? -0.006 : 0.006);
     gl.uniform1f(u.uScale, st.sc);
@@ -291,7 +293,8 @@ export function Renderer(canvas, options = {}) {
     gl.uniform3f(u.uColor, P.T.color[0], P.T.color[1], P.T.color[2]);
     gl.uniform3f(u.uL, L[0], L[1], L[2]);
     gl.uniform1f(u.uAge, P.age);
-    gl.uniform1f(u.uThru, P.T.card ? 0 : 0.035);
+    const thru = P.cfg.thru !== undefined ? P.cfg.thru : (P.T.thru !== undefined ? P.T.thru : (P.T.card ? 0 : (P.T.carbon ? 0.18 : (P.cfg.type === 'receipt' ? 0.14 : (P.cfg.type === 'newspaper' ? 0.08 : clamp(0.035 * (80 / gsm), 0.015, 0.2))))));
+    gl.uniform1f(u.uThru, thru);
     gl.uniform1f(u.uTime, st.time || 0);
     gl.uniform1f(u.uFront, st.front ?? -1);
     gl.uniform1f(u.uDestroy, st.destroy ? 1 : 0);

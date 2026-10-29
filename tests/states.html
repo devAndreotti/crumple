@@ -8,7 +8,7 @@
   // the new paper states on two types, and one combo (aged + foxing + faded + tape) on the typed sheet
   Crumple.config.assets = '../assets/';
   Crumple.Scene.init({ motion: 'full' });
-  const NEW = ['wine', 'ink', 'foxing', 'tape', 'stamp', 'faded', 'staple', 'grease', 'dogear', 'damp', 'creased'];
+  const NEW = ['wine', 'ink', 'foxing', 'tape', 'stamp', 'faded', 'staple', 'grease', 'dogear', 'damp', 'creased', 'clip'];
   const cases = [];
   NEW.forEach((s, i) => ['typed', 'notebook'].forEach((t, j) => cases.push({ id: `st-${s}-${t}`, type: t, states: [s], seed: 31 + i * 2 + j, stamp: 'received' })));
   cases.push({ id: 'st-combo-typed', type: 'typed', states: ['aged', 'foxing', 'faded', 'tape'], seed: 77 });
