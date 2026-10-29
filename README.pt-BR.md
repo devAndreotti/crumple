@@ -286,6 +286,41 @@ O gatilho é um `<button>` comum. Dê tamanho e posição com o seu CSS. A bibli
 
 Clique no papel para abrir. Esc fecha, F vira a folha e Tab passa entre os botões da sobreposição.
 
+### Web Component: `<crumple-paper>`
+
+Custom element universal compatível com HTML puro, React, Vue, Svelte e Astro:
+
+```html
+<script type="module" src="https://cdn.jsdelivr.net/npm/@devandreotti/crumple/dist/crumple.min.js"></script>
+
+<crumple-paper
+  type="notebook"
+  states="coffee,burnt"
+  text="# Bilhete secreto\nLeia com cuidado."
+  back="p.s. embaixo do tapete">
+</crumple-paper>
+```
+
+### React & Next.js
+
+No Next.js App Router, use `'use client'`:
+
+```tsx
+'use client';
+import { useEffect, useRef } from 'react';
+import { Scene } from '@devandreotti/crumple';
+
+export function NoteButton() {
+  const ref = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    Scene.attach(ref.current, { type: 'memo', text: '# Memorando confidencial' });
+    return () => Scene.detach(ref.current!);
+  }, []);
+  return <button ref={ref} aria-label="Abrir bilhete" />;
+}
+```
+
 ### Stage: um papel no seu próprio canvas
 
 O `Stage` desenha o papel dentro de um canvas que você já tem, sem voo. Serve para heróis, galerias e editores. O canvas precisa de tamanho em CSS, porque o stage desenha no tamanho que ele tem na tela.

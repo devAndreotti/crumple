@@ -1,6 +1,6 @@
 // Scene: a crumpled paper sits on the page (a button with a still image); on click it flies to the center of the
 // screen, unfolds into a readable sheet, and on close crumples and flies back to its spot.
-import { clamp, smooth, linear, easeIO, easeOut, easeFly, easeReturn, easeSoft, easeOpen, easeCrumple, store, emitEvent, listen, motionQuery, wantsReduce } from './util.js';
+import { clamp, smooth, linear, easeIO, easeOut, easeFly, easeReturn, easeSoft, easeOpen, easeCrumple, store, emitEvent, listen, motionQuery, wantsReduce, haptic } from './util.js';
 import { TYPES, normalize } from './catalog.js';
 import { Renderer, FOV, D, LIGHT } from './renderer.js';
 import { Sound } from './sound.js';
@@ -69,15 +69,15 @@ export const Scene = /* @__PURE__ */ (() => {
     const L = opts.labels;
     backdrop = document.createElement('div'); backdrop.className = 'crumple-backdrop';
     cv = document.createElement('canvas'); cv.className = 'crumple-scene'; cv.setAttribute('aria-hidden', 'true');
-    bar = document.createElement('div'); bar.className = 'crumple-bar'; bar.setAttribute('role', 'dialog'); bar.setAttribute('aria-modal', 'true'); bar.tabIndex = -1;
+    srEl = document.createElement('div'); srEl.className = 'crumple-sr'; srEl.id = 'crumple-content'; srEl.setAttribute('aria-live', 'polite');
+    bar = document.createElement('div'); bar.className = 'crumple-bar'; bar.setAttribute('role', 'dialog'); bar.setAttribute('aria-modal', 'true'); bar.setAttribute('aria-describedby', 'crumple-content'); bar.tabIndex = -1;
     bFlip = document.createElement('button'); bFlip.type = 'button'; bFlip.textContent = L.flip;
     bTear = document.createElement('button'); bTear.type = 'button'; bTear.textContent = L.tear; bTear.hidden = true;
     bClose = document.createElement('button'); bClose.type = 'button'; bClose.textContent = L.close;
-    bar.append(bTear, bFlip, bClose);
+    bar.append(srEl, bTear, bFlip, bClose);
     hint = document.createElement('div'); hint.className = 'crumple-hint'; hint.textContent = L.hint;
-    srEl = document.createElement('div'); srEl.className = 'crumple-sr'; srEl.setAttribute('aria-live', 'polite');
     fallback = document.createElement('div'); fallback.className = 'crumple-fallback'; fallback.setAttribute('role', 'dialog'); fallback.setAttribute('aria-modal', 'true');
-    document.body.append(backdrop, cv, bar, hint, srEl, fallback);
+    document.body.append(backdrop, cv, bar, hint, fallback);
     listen(offs, bClose, 'click', () => close());
     listen(offs, bFlip, 'click', () => flip());
     listen(offs, bTear, 'click', () => tear());
@@ -107,6 +107,7 @@ export const Scene = /* @__PURE__ */ (() => {
     offs.push(dragControl(cv, {
       active: () => (A && A.phase === 'open' ? A : null),
       box,
+      flip: () => flip(),
       outside: () => close(),
       tap: (e) => { const b = stubBox(); if (b && e.clientX > b.x0 && e.clientX < b.x1 && e.clientY > b.y0 && e.clientY < b.y1) { tear(); return true; } return false; },
       redraw: () => kick(),
@@ -225,7 +226,12 @@ export const Scene = /* @__PURE__ */ (() => {
     bar.setAttribute('aria-label', TYPES[P.cfg.type].name);
     bClose.focus({ preventScroll: true }); // the reader lands on the way out
     bTear.hidden = P.stubX === null || P.torn;
-    srEl.textContent = srText(P.cfg.text) + (P.cfg.back ? ' ' + opts.labels.back + ' ' + srText(P.cfg.back) : '');
+    srEl.replaceChildren();
+    richText(P.cfg.text, srEl);
+    if (P.cfg.back) {
+      srEl.append('\n\n— ' + opts.labels.back + ' —\n');
+      richText(P.cfg.back, srEl);
+    }
     const manual = P.cfg.open === 'drag';
     const env = P.cfg.type === 'envelope';
     const ready = () => { if (!A) return; A.phase = 'open'; if (manual && A.p < 0.5) hint.classList.add('on'); };
@@ -332,6 +338,7 @@ export const Scene = /* @__PURE__ */ (() => {
   function flip() {
     if (!A || A.phase === 'closing' || A.destroy !== undefined) return;
     Sound.play('flip');
+    haptic(10);
     tween(A, 'f', A.f < 0.5 ? 1 : 0, 0.8, linear);
     emitEvent(A.ent.btn, 'flip', { id: A.P.cfg.id, back: A.f < 0.5 });
     kick();
@@ -339,6 +346,7 @@ export const Scene = /* @__PURE__ */ (() => {
   function tear() {
     if (!A || A.P.stubX === null || A.P.torn || A.tear > 0 || A.p < 0.95 || A.f > 0.01) return;
     Sound.play('tear');
+    haptic([15, 20, 15, 20, 30]);
     emitEvent(A.ent.btn, 'tear', { id: A.P.cfg.id });
     bTear.hidden = true;
     tween(A, 'tear', 1, reduce ? 0.3 : 1.0, linear, 0, () => { if (A) A.P.torn = true; });

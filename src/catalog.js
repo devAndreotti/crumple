@@ -36,18 +36,31 @@ export const ADDRESS = 'A. Reader\n12 Paper Lane\nFoldtown';
 // corrections written by hand when the "scribbled" state picks words to strike out
 export const CORRECTIONS = ['never', 'again', 'always', 'not yet', 'once more', 'still'];
 
+export const WEAR_APPLIERS = {};
+
+export function registerPaperType(id, def) {
+  if (TYPES[id]) throw new Error(`Paper type "${id}" already exists`);
+  TYPES[id] = def;
+}
+
+export function registerWearState(id, def) {
+  if (STATES[id]) throw new Error(`Wear state "${id}" already exists`);
+  STATES[id] = def.name;
+  if (def.apply) WEAR_APPLIERS[id] = def.apply;
+}
+
 // own keys only: 'toString' or 'constructor' from the prototype must not pass as a type, shape or state
 const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
 export function normalize(c = {}) {
   const type = has(TYPES, c.type) ? c.type : 'typed';
   const T = TYPES[type];
-  return {
+  const res = {
     id: c.id || type,
     type,
     shape: type === 'envelope' ? 'envelope' : (has(SHAPES, c.shape) ? c.shape : T.shape),
     states: (Array.isArray(c.states) ? c.states : []).filter((e) => has(STATES, e)),
-    text: typeof c.text === 'string' ? c.text : TEXTS[type],
+    text: typeof c.text === 'string' ? c.text : (TEXTS[type] || ''),
     back: typeof c.back === 'string' ? c.back : '',
     seed: Number.isFinite(c.seed) ? Math.trunc(c.seed) : 7, // 0 is a valid seed (rng starts from 1 either way)
     open: c.open === 'drag' ? 'drag' : 'auto',
@@ -60,4 +73,6 @@ export function normalize(c = {}) {
     // the word of the 'stamp' state (drawn in capitals)
     stamp: typeof c.stamp === 'string' && c.stamp.trim() ? c.stamp.trim() : 'RECEIVED',
   };
+  if (c.rich && typeof c.rich === 'object') res.rich = c.rich;
+  return res;
 }

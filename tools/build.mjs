@@ -13,7 +13,7 @@ mkdirSync(tmp, { recursive: true });
 mkdirSync(path.join(root, 'dist'), { recursive: true });
 
 // copy src/ to .build/ with GLSL and CSS minified in place
-for (const f of ['util', 'fields', 'worker', 'catalog', 'print', 'shaders', 'renderer', 'sound', 'particles', 'motion', 'scene', 'stage', 'index']) {
+for (const f of ['util', 'fields', 'worker', 'catalog', 'print', 'shaders', 'renderer', 'sound', 'particles', 'motion', 'scene', 'stage', 'element', 'index']) {
   let src = readFileSync(path.join(root, 'src', f + '.js'), 'utf8');
   src = src.replace(/`(#version 300 es[\s\S]*?)`/g, (m, body) => {
     let out = '';

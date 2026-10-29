@@ -1,6 +1,6 @@
 // Animation pieces shared by the Scene (fly to center) and the Stage (inline preview): tweens, the envelope
 // composition, screen boxes, particle emitters, drag/pinch to unfold and the flashlight.
-import { clamp, smooth, lerp, linear, easeIO, easeOut, easeUnfold, listen } from './util.js';
+import { clamp, smooth, lerp, linear, easeIO, easeOut, easeUnfold, listen, haptic } from './util.js';
 import { Sound } from './sound.js';
 
 // time-based tweens on numeric fields of an animation state A
@@ -119,14 +119,24 @@ export function dragControl(el, api) {
     points.set(e.pointerId, { x: e.clientX, y: e.clientY });
     try { el.setPointerCapture(e.pointerId); } catch (x) { /* no capture */ }
     A.tw = A.tw.filter((t) => t.key !== 'p');
-    if (points.size === 2) d = { pinch: true, d0: dist(), p0: A.p, moved: true, last: A.p, box };
-    else d = { pinch: false, r0: Math.hypot(e.clientX - box.cx, e.clientY - box.cy), p0: A.p, x: e.clientX, y: e.clientY, moved: false, last: A.p, box };
+    const tNow = performance.now();
+    if (points.size === 2) d = { pinch: true, d0: dist(), p0: A.p, moved: true, last: A.p, box, tLast: tNow, lastX: e.clientX, lastY: e.clientY, vx: 0, vy: 0 };
+    else d = { pinch: false, r0: Math.hypot(e.clientX - box.cx, e.clientY - box.cy), p0: A.p, x: e.clientX, y: e.clientY, moved: false, last: A.p, box, tLast: tNow, lastX: e.clientX, lastY: e.clientY, vx: 0, vy: 0 };
   };
   const onMove = (e) => {
     if (!d || !points.has(e.pointerId)) return;
     points.set(e.pointerId, { x: e.clientX, y: e.clientY });
     const A = api.active();
     if (!A) { d = null; points.clear(); return; }
+    const tNow = performance.now();
+    const dt = tNow - d.tLast;
+    if (dt > 8) {
+      d.vx = (e.clientX - d.lastX) / dt;
+      d.vy = (e.clientY - d.lastY) / dt;
+      d.tLast = tNow;
+      d.lastX = e.clientX;
+      d.lastY = e.clientY;
+    }
     const m = 0.42 * Math.min(d.box.w1, d.box.h1);
     if (d.pinch && points.size === 2) A.p = clamp(d.p0 + (dist() - d.d0) / m);
     else if (!d.pinch) {
@@ -141,15 +151,47 @@ export function dragControl(el, api) {
   const release = (e) => {
     if (!points.has(e.pointerId)) return;
     points.delete(e.pointerId);
+    if (points.size === 1 && d) {
+      // smooth transition from 2-finger pinch to 1-finger drag without jumping
+      const remaining = [...points.values()][0];
+      const box = api.box ? api.box() : d.box;
+      d.pinch = false;
+      d.x = remaining.x;
+      d.y = remaining.y;
+      d.r0 = Math.hypot(remaining.x - (box ? box.cx : d.x), remaining.y - (box ? box.cy : d.y));
+      d.p0 = api.active() ? api.active().p : d.p0;
+      return;
+    }
     if (points.size) return;
     const A = api.active();
     const moved = d && d.moved;
+    const p0 = d ? d.p0 : 0;
+    const vx = (d && d.vx) || 0;
+    const vy = (d && d.vy) || 0;
     d = null;
     if (!A) return;
     A.dragging = false;
+
+    // swipe to flip: horizontal swipe when sheet was open
+    if (api.flip && p0 > 0.85 && Math.abs(vx) > 0.2 && Math.abs(vx) > 1.5 * Math.abs(vy)) {
+      A.p = 1;
+      api.flip();
+      return;
+    }
+    // flick to close: fast downward flick
+    if (api.outside && vy > 0.75) {
+      api.outside(e);
+      return;
+    }
+
     if (!moved) return;
-    if (A.p >= 0.3) { Sound.play('uncrumple', 0.4); tween(A, 'p', 1, 0.45 * (1 - A.p) + 0.15, easeOut); }
-    else { Sound.play('crumple', 0.35); tween(A, 'p', 0, 0.35 * A.p + 0.12, easeOut); }
+    if (A.p >= 0.3) {
+      Sound.play('uncrumple', 0.4);
+      tween(A, 'p', 1, 0.45 * (1 - A.p) + 0.15, easeOut, 0, () => haptic(12));
+    } else {
+      Sound.play('crumple', 0.35);
+      tween(A, 'p', 0, 0.35 * A.p + 0.12, easeOut, 0, () => haptic(18));
+    }
     api.redraw();
   };
   [['pointerdown', onDown], ['pointermove', onMove], ['pointerup', release], ['pointercancel', release]].forEach(([t, f]) => listen(offs, el, t, f));

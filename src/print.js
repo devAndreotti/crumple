@@ -1,7 +1,7 @@
 // What is printed on each side of a paper (2D canvases that become textures), and the cut-out effects
 // (torn edges, punched holes, burn distance) at half resolution.
 import { rng, noise2, clamp, rgba, makeCanvas, loadImage, loadTexture, config } from './util.js';
-import { CORRECTIONS } from './catalog.js';
+import { CORRECTIONS, WEAR_APPLIERS } from './catalog.js';
 import { Jobs } from './worker.js';
 
 // print pixels per world unit
@@ -322,6 +322,25 @@ const AREAS = {
   envelope: () => null,
 };
 
+export async function renderForeignObject(html, w, h, css = '') {
+  if (typeof Blob === 'undefined' || typeof URL === 'undefined' || !URL.createObjectURL) return null;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
+    <foreignObject width="100%" height="100%">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%;box-sizing:border-box;margin:0;padding:0;overflow:hidden;${css}">
+        ${html}
+      </div>
+    </foreignObject>
+  </svg>`;
+  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  return new Promise((resolve) => {
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    img.src = url;
+  });
+}
+
 // draws one side ('front' or 'back') of a paper into a canvas
 export async function drawPrint(cfg, T, side, openings) {
   const W = Math.round(T.w * PPU), H = Math.round(T.h * PPU);
@@ -337,11 +356,21 @@ export async function drawPrint(cfg, T, side, openings) {
   if (cfg.type === 'newspaper' && !front && !cfg.back) newspaperBack(ctx, W, H, ex);
   const txt = cfg.type === 'envelope' ? '' : (front ? cfg.text : cfg.back);
   // the back has its own area (on the ticket, on the half that folds over: it stays outside, whole, when closed)
-  let area = front ? AREAS[cfg.type](W, H, T)
+  let area = front ? (AREAS[cfg.type] ? AREAS[cfg.type](W, H, T) : { x: 50, y: 50, w: W - 100, h: H - 100 })
     : { x: Math.round(T.x * 0.8), y: Math.min(T.y, Math.round(H * 0.28)), w: W - Math.round(T.x * 1.6), h: H - Math.min(T.y, Math.round(H * 0.28)) - 40, center: cfg.type === 'ticket' };
   if (cfg.type === 'ticket' && !front) { area.x = Math.round(W * 0.55); area.w = Math.round(W * 0.4); }
   if (cfg.type === 'polaroid' && !front) area = { x: 60, y: Math.round(H * 0.3), w: W - 120, h: H * 0.6, center: true };
   const textEnd = txt && area ? writeText(ctx, cfg, T, txt, area, openings, r) : 0;
+  if (front && cfg.rich && area) {
+    if (cfg.rich.mode === 'canvas' && typeof cfg.rich.body === 'function') {
+      try { await cfg.rich.body(ctx, area, W, H); } catch (_) {}
+    } else if (typeof cfg.rich.body === 'string') {
+      try {
+        const img = await renderForeignObject(cfg.rich.body, area.w, area.h, cfg.rich.style || '');
+        if (img) ctx.drawImage(img, area.x, area.y);
+      } catch (_) {}
+    }
+  }
   const rs = rng(cfg.seed * 17 + (front ? 1 : 2));
   // stains and fingerprints go through the sheet: on the back they sit at the same spot (mirrored) and fainter
   if (cfg.states.includes('coffee')) await coffeeStain(c, ctx, W, H, cfg, front);
@@ -352,6 +381,11 @@ export async function drawPrint(cfg, T, side, openings) {
   if (cfg.states.includes('aged')) age(ctx, W, H, rs);
   if (cfg.states.includes('faded')) fadeWash(ctx, W, H, cfg);
   if (cfg.states.includes('foxing')) foxing(ctx, W, H, cfg);
+  for (const s of cfg.states) {
+    if (WEAR_APPLIERS[s]) {
+      try { await WEAR_APPLIERS[s](ctx, c, W, H, cfg, front, rs); } catch (_) {}
+    }
+  }
   // the stamp sits over the text, the tape over everything; both are only on the front
   if (front && cfg.states.includes('stamp')) rubberStamp(ctx, W, H, cfg, textEnd);
   if (front && cfg.states.includes('tape')) tape(ctx, W, H, cfg);

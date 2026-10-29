@@ -12,10 +12,23 @@ export const Sound = /* @__PURE__ */ (() => {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       ac = new AC();
-      master = ac.createGain(); master.gain.value = 0.6; master.connect(ac.destination);
+      master = ac.createGain(); master.gain.value = 0.6;
+      const res = ac.createBiquadFilter();
+      res.type = 'peaking';
+      res.frequency.value = 420;
+      res.Q.value = 2.4;
+      res.gain.value = 3.5;
+      master.connect(res);
+      res.connect(ac.destination);
       noise = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
       const d = noise.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      let b0 = 0, b1 = 0;
+      for (let i = 0; i < d.length; i++) {
+        const w = Math.random() * 2 - 1;
+        b0 = 0.99 * b0 + w * 0.05;
+        b1 = 0.95 * b1 + w * 0.1;
+        d[i] = (b0 + b1 + w * 0.15) * 1.6;
+      }
     }
     if (ac.state === 'suspended') ac.resume();
     return ac;

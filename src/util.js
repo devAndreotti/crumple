@@ -117,3 +117,11 @@ export function loadImage(src) {
 }
 // stain, fingerprint and grain textures: downloaded only when a paper uses them
 export const loadTexture = (name) => loadImage(config.assets + 'textures/' + name + '.webp');
+
+export function haptic(pattern) {
+  try {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(pattern);
+    }
+  } catch (_) {}
+}

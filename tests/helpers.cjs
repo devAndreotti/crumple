@@ -41,7 +41,12 @@ function serve() {
 // software WebGL (SwiftShader, as on CI runners without a GPU) with --enable-unsafe-swiftshader
 function launch(extra = {}) {
   const exe = chromePath();
-  const opts = { args: ['--no-sandbox', '--hide-scrollbars', '--enable-unsafe-swiftshader'], timeout: 120000, protocolTimeout: 900000, ...extra };
+  const args = ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--hide-scrollbars', '--enable-unsafe-swiftshader'];
+  if (exe && (exe.includes('snap') || fs.existsSync(path.join(process.env.HOME || '', 'snap/chromium')))) {
+    const snapDir = path.join(process.env.HOME || '', 'snap/chromium/common/puppeteer-profile-' + process.pid);
+    args.push('--user-data-dir=' + snapDir);
+  }
+  const opts = { args, timeout: 120000, protocolTimeout: 900000, ...extra };
   if (exe) opts.executablePath = exe; else opts.channel = 'chrome';
   return puppeteer.launch(opts);
 }

@@ -85,9 +85,17 @@ const EXPECTED = /CONTEXT_LOST|forced 2d failure|could not be built/;
     await p.waitForFunction(settle, { timeout: 300000, polling: 200 });
     const dlg = await p.evaluate(() => {
       const bar = document.querySelector('.crumple-bar');
-      return { role: bar.getAttribute('role'), modal: bar.getAttribute('aria-modal'), label: bar.getAttribute('aria-label'), focusInside: !!document.activeElement.closest('.crumple-bar') };
+      const sr = bar.querySelector('.crumple-sr');
+      return {
+        role: bar.getAttribute('role'),
+        modal: bar.getAttribute('aria-modal'),
+        label: bar.getAttribute('aria-label'),
+        describedby: bar.getAttribute('aria-describedby'),
+        hasSrInside: !!sr && sr.id === 'crumple-content',
+        focusInside: !!document.activeElement.closest('.crumple-bar')
+      };
     });
-    check('scene: overlay is a modal dialog with a label', dlg.role === 'dialog' && dlg.modal === 'true' && dlg.label === 'Typewritten sheet', JSON.stringify(dlg));
+    check('scene: overlay is a modal dialog with a label and describedby', dlg.role === 'dialog' && dlg.modal === 'true' && dlg.label === 'Typewritten sheet' && dlg.describedby === 'crumple-content' && dlg.hasSrInside, JSON.stringify(dlg));
     check('scene: focus moves into the dialog on open', dlg.focusInside);
     let trapped = true;
     const steps = [false, false, false, false, false, true, true];
@@ -227,6 +235,30 @@ const EXPECTED = /CONTEXT_LOST|forced 2d failure|could not be built/;
     await sleep(300);
     const bad = unexpected(log);
     check('build failure: only the expected warning', bad.length === 0 && log.warns.some((w) => /could not be built/.test(w)), bad.join(' | '));
+    await p.close();
+  }
+
+  // 6. Custom Element <crumple-paper> and Rich Content
+  {
+    const { p, log } = await open();
+    const wc = await p.evaluate(async () => {
+      const el = document.createElement('crumple-paper');
+      el.id = 'test-wc';
+      el.setAttribute('type', 'receipt');
+      el.setAttribute('text', '# Custom Receipt');
+      document.getElementById('row').appendChild(el);
+      const isRegistered = !!customElements.get('crumple-paper');
+      const entry = Crumple.Scene.entries.find((e) => e.cfg.id === 'test-wc');
+      el.btn.click();
+      await window.waitFor(() => Crumple.Scene.isOpen);
+      const openWhileMounted = Crumple.Scene.isOpen;
+      Crumple.Scene.close();
+      await window.waitFor(() => !Crumple.Scene.isOpen);
+      el.remove();
+      const leftAfterRemove = Crumple.Scene.entries.some((e) => e.cfg.id === 'test-wc');
+      return { isRegistered, attached: !!entry, openWhileMounted, detached: !leftAfterRemove };
+    });
+    check('custom element: <crumple-paper> attaches, opens, closes, detaches', wc.isRegistered && wc.attached && wc.openWhileMounted && wc.detached, JSON.stringify(wc));
     await p.close();
   }
 

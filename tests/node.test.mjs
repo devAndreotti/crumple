@@ -13,14 +13,14 @@ import * as src from '../src/index.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
-const RUNTIME = ['Renderer', 'SHAPES', 'STATES', 'Scene', 'Sound', 'Stage', 'TEXTS', 'TYPES', 'config', 'normalize', 'version'];
+const RUNTIME = ['CrumplePaper', 'Renderer', 'SHAPES', 'STATES', 'Scene', 'Sound', 'Stage', 'TEXTS', 'TYPES', 'config', 'normalize', 'registerPaperType', 'registerWearState', 'version'];
 
 test('no window in Node: the ESM build and the sources import without throwing', async () => {
   assert.equal(typeof globalThis.window, 'undefined');
   assert.equal(typeof globalThis.document, 'undefined');
   const esm = await import(path.join(root, 'dist/crumple.esm.js'));
   assert.deepEqual(Object.keys(esm).sort(), RUNTIME);
-  assert.equal(esm.version, '1.0.0');
+  assert.equal(esm.version, '1.1.0');
   assert.equal(typeof esm.Scene.attach, 'function');
   assert.deepEqual(Object.keys(src).sort(), RUNTIME);
 });
@@ -28,15 +28,15 @@ test('no window in Node: the ESM build and the sources import without throwing',
 test('CJS build: require() gives the same surface', () => {
   const cjs = require(path.join(root, 'dist/crumple.cjs'));
   assert.deepEqual(Object.keys(cjs).sort(), RUNTIME);
-  assert.equal(cjs.version, '1.0.0');
+  assert.equal(cjs.version, '1.1.0');
   assert.equal(typeof cjs.normalize, 'function');
 });
 
 test('package self-reference: exports map resolves for import, require and package.json', async () => {
   const pkg = require('@devandreotti/crumple/package.json');
   assert.equal(pkg.name, '@devandreotti/crumple');
-  assert.equal(require('@devandreotti/crumple').version, '1.0.0');
-  assert.equal((await import('@devandreotti/crumple')).version, '1.0.0');
+  assert.equal(require('@devandreotti/crumple').version, '1.1.0');
+  assert.equal((await import('@devandreotti/crumple')).version, '1.1.0');
 });
 
 test('normalize(): defaults for an empty config', () => {
@@ -121,4 +121,28 @@ test('catalog tables: every paper type has a text and a shape; every state has a
     assert.ok(t.shape === 'envelope' || SHAPES[t.shape], `shape for ${k}`);
   }
   for (const v of Object.values(STATES)) assert.equal(typeof v, 'string');
+});
+
+test('registerPaperType and registerWearState extend the catalog', () => {
+  const { registerPaperType, registerWearState, normalize } = src;
+  registerPaperType('parchment', { name: 'Parchment', w: 0.8, h: 1.0, color: [0.9, 0.85, 0.7], shape: 'roll', font: 'Caveat', size: 40, lineHeight: 50, x: 50, y: 50, ink: [20, 20, 20] });
+  assert.equal(normalize({ type: 'parchment' }).type, 'parchment');
+  assert.equal(normalize({ type: 'parchment' }).shape, 'roll');
+  registerWearState('gilded', { name: 'Gold leaf' });
+  assert.deepEqual(normalize({ states: ['gilded'] }).states, ['gilded']);
+});
+
+test('haptic utility safely interacts with navigator.vibrate', async () => {
+  const { haptic } = await import('../src/util.js');
+  let calledWith = null;
+  const original = globalThis.navigator?.vibrate;
+  if (!globalThis.navigator) globalThis.navigator = {};
+  globalThis.navigator.vibrate = (val) => { calledWith = val; return true; };
+  haptic(12);
+  assert.equal(calledWith, 12);
+  haptic([10, 20, 30]);
+  assert.deepEqual(calledWith, [10, 20, 30]);
+  if (original) globalThis.navigator.vibrate = original;
+  else delete globalThis.navigator.vibrate;
+  assert.doesNotThrow(() => haptic(12));
 });

@@ -34,6 +34,12 @@ export interface PaperConfig {
   letter?: Exclude<PaperType, 'envelope'>;
   /** Word printed by the 'stamp' state, drawn in capitals (default 'RECEIVED'). */
   stamp?: string;
+  /** Rich HTML or custom canvas content rendered onto the sheet. */
+  rich?: {
+    mode?: 'html' | 'canvas';
+    body: string | ((ctx: CanvasRenderingContext2D, area: { x: number; y: number; w: number; h: number }, w: number, h: number) => void | Promise<void>);
+    style?: string;
+  };
 }
 
 export interface TypeInfo { name: string; w: number; h: number; color: [number, number, number]; shape: PaperShape | 'envelope'; font: string; [key: string]: unknown }
@@ -43,7 +49,14 @@ export const SHAPES: Record<PaperShape, string>;
 export const STATES: Record<PaperState, string>;
 export const TEXTS: Record<PaperType, string>;
 export function normalize(config?: PaperConfig): Required<PaperConfig>;
+export function registerPaperType(id: string, def: TypeInfo): void;
+export function registerWearState(id: string, def: { name: string; apply?: (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, w: number, h: number, cfg: PaperConfig, front: boolean, rs: () => number) => Promise<void> | void }): void;
 export const version: string;
+
+export class CrumplePaper extends HTMLElement {
+  btn: HTMLButtonElement;
+  entry: SceneEntry | null;
+}
 
 export const config: {
   /** Base URL of the assets folder (textures and demo photos). */

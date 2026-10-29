@@ -286,6 +286,41 @@ The trigger is a normal `<button>`. Size and place it with your CSS. The library
 
 Click the paper to open it. Press Escape to close it, F to flip it and Tab to move between the overlay buttons.
 
+### Web Component: `<crumple-paper>`
+
+Universal custom element working in vanilla HTML, React, Vue, Svelte, and Astro:
+
+```html
+<script type="module" src="https://cdn.jsdelivr.net/npm/@devandreotti/crumple/dist/crumple.min.js"></script>
+
+<crumple-paper
+  type="notebook"
+  states="coffee,burnt"
+  text="# Secret note\nRead carefully."
+  back="p.s. under the rug">
+</crumple-paper>
+```
+
+### React & Next.js
+
+In Next.js App Router, mark with `'use client'`:
+
+```tsx
+'use client';
+import { useEffect, useRef } from 'react';
+import { Scene } from '@devandreotti/crumple';
+
+export function NoteButton() {
+  const ref = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    Scene.attach(ref.current, { type: 'memo', text: '# Confidential memo' });
+    return () => Scene.detach(ref.current!);
+  }, []);
+  return <button ref={ref} aria-label="Open memo" />;
+}
+```
+
 ### Stage: a paper in your own canvas
 
 `Stage` draws the paper inside a canvas you already have, with no flight. It is useful for heroes, galleries and editors. The canvas needs a CSS size, because the stage draws at the size it has on screen.

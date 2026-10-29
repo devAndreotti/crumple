@@ -22,7 +22,18 @@ const WAIT = { timeout: 300000, polling: 300 };
       await p.evaluate(() => Crumple.Scene.close());
       await p.waitForFunction('!Crumple.Scene.isOpen', WAIT);
     };
-    await run('typed', async () => { await p.evaluate(() => Crumple.Scene.flip()); await sleep(2500); });
+    await run('typed', async () => {
+      // test swipe to flip gesture
+      await p.evaluate(async () => {
+        const cv = document.querySelector('canvas.crumple-scene');
+        cv.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 10, clientX: 350, clientY: 300, bubbles: true }));
+        await new Promise((r) => setTimeout(r, 40));
+        cv.dispatchEvent(new PointerEvent('pointermove', { pointerId: 10, clientX: 550, clientY: 300, bubbles: true }));
+        await new Promise((r) => setTimeout(r, 40));
+        cv.dispatchEvent(new PointerEvent('pointerup', { pointerId: 10, clientX: 550, clientY: 300, bubbles: true }));
+      });
+      await sleep(2500);
+    });
     await run('ticket', async () => { await p.evaluate(() => Crumple.Scene.tear()); await sleep(3000); });
     await run('envelope');
     await run('sticky');

@@ -37,8 +37,9 @@ void foldY(inout vec3 p, inout vec3 n, float y0, float s, float th, float bw){
   p.z = g * c.y + ca * z0;
   n = vec3(n.x, ca * n.y - s * sa * n.z, s * sa * n.y + ca * n.z);
 }
-vec3 place(vec2 xy, out float e, out float amp){
-  vec3 p = vec3(xy, 0.0), n = vec3(0.0, 0.0, 1.0);
+vec3 place(vec2 xy, out float e, out float amp, out vec3 n){
+  vec3 p = vec3(xy, 0.0);
+  n = vec3(0.0, 0.0, 1.0);
   if (uShape == 0) {
     // ball / flattened: the sheet wrapped on a sphere of curvature k (radial lengths preserved); the center opens first
     float s = length(xy), sn = s / length(uHalf);
@@ -51,8 +52,11 @@ vec3 place(vec2 xy, out float e, out float amp){
       n = vec3(st * dir, ct);
       p = vec3(st / k * dir, (ct - 1.0) / k);
     }
-    p.z *= mix(uSquash, 1.0, e);
-    p.xy *= mix(1.0 + (1.0 - uSquash) * 0.3, 1.0, e);
+    float sq = mix(uSquash, 1.0, e);
+    float expan = mix(1.0 + (1.0 - uSquash) * 0.3, 1.0, e);
+    p.z *= sq;
+    p.xy *= expan;
+    n = normalize(vec3(n.xy / expan, n.z / sq));
     amp = mix(uA0, uAres, pow(e, 2.2));
   } else if (uShape == 1) {
     // roll: unrolls from left to right; the rest stays rolled in a spiral
@@ -86,6 +90,7 @@ vec3 place(vec2 xy, out float e, out float amp){
       vec2 rv = (p.yz - ax) * sc;
       p.yz = ax + vec2(c * rv.x - sn * rv.y, sn * rv.x + c * rv.y);
       n.yz = vec2(c * n.y - sn * n.z, sn * n.y + c * n.z);
+      n = normalize(n);
     }
     p.y += uHalf.y * (1.0 - e);
     p.z += (1.0 / uK0) * (1.0 - e);
@@ -122,16 +127,16 @@ vec3 place(vec2 xy, out float e, out float amp){
     // torn stub: spins loose and falls
     vec3 piv = vec3(uStubX, 0.0, 0.0);
     p = rotY(rotZ(p - piv, -0.55 * uTear), 0.6 * uTear) + piv + vec3(0.08 * uTear, -1.1 * uTear * uTear, 0.12 * uTear);
+    n = rotY(rotZ(n, -0.55 * uTear), 0.6 * uTear);
   }
   p.z -= uCurl * p.x * p.x;
+  n = normalize(vec3(n.x + 2.0 * uCurl * p.x * n.z, n.y, n.z));
   return p;
 }
 void main(){
-  float e, ex, ey, amp, ax, ay;
-  vec3 p0 = place(aXY, e, amp);
-  vec3 px = place(aXY + vec2(0.005, 0.0), ex, ax);
-  vec3 py = place(aXY + vec2(0.0, 0.005), ey, ay);
-  vec3 nrm = normalize(cross(px - p0, py - p0));
+  float e, amp;
+  vec3 nrm;
+  vec3 p0 = place(aXY, e, amp, nrm);
   // thickness pass (card stock): the same sheet pushed away from the camera becomes the thick edge seen from the side
   if (uEdge > 0.5) p0 -= nrm * uThick * (nrm.z >= 0.0 ? 1.0 : -1.0);
   vec4 w = uModel * vec4(p0, 1.0);
