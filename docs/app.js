@@ -106,6 +106,7 @@
             snapshot: 'snaps/' + id + '.webp',
             snapshotOpened: 'snaps/' + id + '-opened.webp'
           });
+          if (Crumple.Sound) Crumple.Sound.play(`select-${cfg.type}`);
         });
       })
       .catch(function () { /* without the papers the galleries stay as plain labels */ });
@@ -249,15 +250,15 @@
 
   // flip, crumple and burn are allowed at any moment; burn returns a Promise (it resolves when the burn starts)
   var actions = {
-    crumple: function () { stage && stage.crumple(); },
-    uncrumple: function () { stage && stage.uncrumple(); },
-    flip: function () { stage && stage.flip(); },
-    tear: function () { stage && stage.tear(); },
+    crumple: function () { if (stage) { stage.crumple(); if (Crumple.Sound) Crumple.Sound.play('crumple', readConfig()); } },
+    uncrumple: function () { if (stage) { stage.uncrumple(); if (Crumple.Sound) Crumple.Sound.play('uncrumple', readConfig()); } },
+    flip: function () { if (stage) { stage.flip(); if (Crumple.Sound) Crumple.Sound.play('flip', readConfig()); } },
+    tear: function () { if (stage) { stage.tear(); if (Crumple.Sound) Crumple.Sound.play('tear', readConfig()); } },
     burn: function () {
       if (!stage) return;
-      Promise.resolve(stage.burn()).catch(function () { /* a failed burn leaves the paper as it is */ });
+      Promise.resolve(stage.burn()).then(function () { if (Crumple.Sound) Crumple.Sound.play('burn', readConfig()); }).catch(function () { /* a failed burn leaves the paper as it is */ });
     },
-    restore: function () { if (stage) { stage.restore(); stage.restoreStub(); } }
+    restore: function () { if (stage) { stage.restore(); stage.restoreStub(); if (Crumple.Sound) Crumple.Sound.play('restore', readConfig()); } }
   };
   $$('[data-act]').forEach(function (b) {
     b.addEventListener('click', function () {
