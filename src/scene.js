@@ -352,7 +352,7 @@ body.crumple-open{overflow:hidden;touch-action:none}
   }
   function tear() {
     if (!A || A.P.stubX === null || A.P.torn || A.tear > 0 || A.p < 0.95 || A.f > 0.01) return;
-    Sound.play('tear');
+    Sound.play('tear', 1, 0, { type: A.P.cfg.type, gsm: A.P.cfg.gsm });
     haptic([15, 20, 15, 20, 30]);
     emitEvent(A.ent.btn, 'tear', { id: A.P.cfg.id });
     bTear.hidden = true;

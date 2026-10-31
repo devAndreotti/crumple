@@ -1,7 +1,8 @@
 // Type definitions for @devandreotti/crumple
 
 export type PaperType = 'typed' | 'notebook' | 'form' | 'receipt' | 'ticket' | 'memo' | 'newspaper' | 'sticky' | 'polaroid' | 'envelope'
-  | 'blueprint' | 'postcard' | 'punchcard' | 'shipping' | 'kraft' | 'parchment' | 'ledger' | 'carbon';
+  | 'blueprint' | 'postcard' | 'punchcard' | 'shipping' | 'kraft' | 'parchment' | 'ledger' | 'carbon'
+  | 'fax' | 'cyanotype' | 'manuscript' | 'market';
 export type PaperShape = 'ball' | 'flat' | 'quarters' | 'half' | 'thirds' | 'roll' | 'twist' | 'accordion' | 'triangle';
 export type PaperState = 'torn' | 'burnt' | 'coffee' | 'water' | 'prints' | 'aged' | 'scribbled' | 'singed' | 'wine' | 'ink' | 'foxing' | 'tape' | 'stamp' | 'faded'
   | 'staple' | 'grease' | 'dogear' | 'damp' | 'creased' | 'clip';

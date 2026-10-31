@@ -17,7 +17,7 @@
   });
 
   // ---- galleries (every card is a trigger button; papers attach once papers.json is read)
-  var TYPE_IDS = ['typed', 'notebook', 'form', 'receipt', 'ticket', 'memo', 'newspaper', 'sticky', 'polaroid', 'envelope', 'blueprint', 'ledger', 'postcard', 'punchcard', 'shipping', 'parchment', 'carbon'];
+  var TYPE_IDS = ['typed', 'notebook', 'form', 'receipt', 'ticket', 'memo', 'newspaper', 'sticky', 'polaroid', 'envelope', 'blueprint', 'ledger', 'postcard', 'punchcard', 'shipping', 'parchment', 'carbon', 'fax', 'cyanotype', 'manuscript', 'market'];
   var SHAPE_IDS = ['ball', 'flat', 'quarters', 'half', 'thirds', 'roll', 'twist'];
   var STATE_IDS = [
     ['state-torn', 'state.torn'],
@@ -36,7 +36,8 @@
     ['state-foxing', 'state.foxing'],
     ['state-tape', 'state.tape'],
     ['state-stamp', 'state.stamp'],
-    ['state-faded', 'state.faded']
+    ['state-faded', 'state.faded'],
+    ['state-clip', 'state.clip']
   ];
   var BURN_IDS = ['corner', 'edge', 'center', 'spots'];
   // the paper states of the playground, grouped by what they do to the sheet (the 'burnt' fire is in the first group)
@@ -44,8 +45,32 @@
     { key: 'play.group.fire', states: ['burnt', 'singed'] },
     { key: 'play.group.stains', states: ['coffee', 'water', 'wine', 'ink'] },
     { key: 'play.group.wear', states: ['torn', 'aged', 'faded', 'foxing'] },
-    { key: 'play.group.marks', states: ['prints', 'scribbled', 'stamp', 'tape'] }
+    { key: 'play.group.marks', states: ['prints', 'scribbled', 'stamp', 'tape', 'clip'] }
   ];
+
+  var TYPE_SPECS = {
+    typed: { gsm: 80, finish: 'Bond', acoustic: 'Crisp snap' },
+    notebook: { gsm: 70, finish: 'Ruled', acoustic: 'Soft flutter' },
+    form: { gsm: 60, finish: 'Perforated', acoustic: 'Light crinkle' },
+    receipt: { gsm: 55, finish: 'Thermal', acoustic: 'Delicate rustle' },
+    ticket: { gsm: 180, finish: 'Cardstock', acoustic: 'Dense thud' },
+    memo: { gsm: 75, finish: 'Office', acoustic: 'Standard snap' },
+    newspaper: { gsm: 45, finish: 'Newsprint', acoustic: 'Whisper rustle' },
+    sticky: { gsm: 70, finish: 'Adhesive', acoustic: 'Muted flutter' },
+    polaroid: { gsm: 240, finish: 'Glossy', acoustic: 'Heavy snap' },
+    envelope: { gsm: 110, finish: 'Woven', acoustic: 'Stiff thud' },
+    blueprint: { gsm: 100, finish: 'Technical', acoustic: 'Firm rustle' },
+    ledger: { gsm: 90, finish: 'Rag ledger', acoustic: 'Subtle snap' },
+    postcard: { gsm: 280, finish: 'Bristol', acoustic: 'Resonant snap' },
+    punchcard: { gsm: 160, finish: 'Rigid card', acoustic: 'Sharp click' },
+    shipping: { gsm: 80, finish: 'Coated', acoustic: 'Dull pop' },
+    parchment: { gsm: 180, finish: 'Vellum', acoustic: 'Heavy rustle' },
+    carbon: { gsm: 45, finish: 'Carbon copy', acoustic: 'Feather crinkle' },
+    fax: { gsm: 50, finish: 'Thermal roll', acoustic: 'Thin crinkle' },
+    cyanotype: { gsm: 220, finish: 'Cold-pressed', acoustic: 'Deep flutter' },
+    manuscript: { gsm: 160, finish: 'Handmade rag', acoustic: 'Rich thud' },
+    market: { gsm: 48, finish: 'Thermal slip', acoustic: 'Crisp flutter' }
+  };
 
   function card(paperId, nameKey, descKey) {
     var art = el('article', 'card');
@@ -55,6 +80,18 @@
     btn.setAttribute('data-paper', paperId);
     btn.setAttribute('data-name', nameKey);
     stage.appendChild(btn);
+
+    var typeMatch = paperId.match(/^type-(.+)$/);
+    if (typeMatch && TYPE_SPECS[typeMatch[1]]) {
+      var spec = TYPE_SPECS[typeMatch[1]];
+      var tt = el('div', 'tech-tooltip');
+      tt.setAttribute('role', 'tooltip');
+      tt.innerHTML = '<strong>' + spec.gsm + ' GSM</strong><span class="spec-val">' + spec.finish + ' · ' + spec.acoustic + '</span>';
+      stage.appendChild(tt);
+      btn.setAttribute('aria-describedby', 'spec-' + paperId);
+      tt.id = 'spec-' + paperId;
+    }
+
     art.appendChild(stage);
     var h = el('h3');
     h.textContent = T.t(nameKey);
@@ -92,6 +129,28 @@
     Crumple.config.assets = 'assets/';
     Crumple.Scene.init({ labels: T.sceneLabels(), motion: 'auto', flashlight: true, remember: false });
 
+    function attachLivePreview(btn, cfg) {
+      function renderPreview() {
+        if (btn._hasLiveCanvas || !window.WebGL2RenderingContext) return;
+        btn._hasLiveCanvas = true;
+        var cv = el('canvas', 'preview-canvas');
+        cv.width = 118;
+        cv.height = 118;
+        btn.appendChild(cv);
+        try {
+          if (Crumple && Crumple.Stage) {
+            var mini = Crumple.Stage(cv, { fit: 0.85 });
+            mini.set(cfg, { progress: 0 });
+            cv.classList.add('ready');
+          }
+        } catch (err) {
+          if (cv) cv.remove();
+        }
+      }
+      btn.addEventListener('mouseenter', renderPreview, { once: true });
+      btn.addEventListener('focus', renderPreview, { once: true });
+    }
+
     fetch('papers.json', { cache: 'no-cache' })
       .then(function (r) { return r.json(); })
       .then(function (list) {
@@ -106,7 +165,7 @@
             snapshot: 'snaps/' + id + '.webp',
             snapshotOpened: 'snaps/' + id + '-opened.webp'
           });
-          if (Crumple.Sound) Crumple.Sound.play(`select-${cfg.type}`);
+          attachLivePreview(btn, cfg);
         });
       })
       .catch(function () { /* without the papers the galleries stay as plain labels */ });
@@ -125,6 +184,11 @@
     burn: $('#ctl-burn'),
     burnForm: $('#ctl-burn-form'),
     stamp: $('#ctl-stamp'),
+    color: $('#ctl-color'),
+    gsm: $('#ctl-gsm'),
+    watermark: $('#ctl-watermark'),
+    seal: $('#ctl-seal'),
+    wear: $('#ctl-wear'),
     random: $('#ctl-random')
   };
   var DEFAULT_STAMP = 'RECEIVED';
@@ -177,9 +241,45 @@
     ctl.burn.checked = false;
     ctl.burnForm.value = 'corner';
     ctl.stamp.value = '';
+    if (ctl.color) ctl.color.value = '#f8f5ee';
+    if (ctl.gsm) ctl.gsm.value = '';
+    if (ctl.watermark) ctl.watermark.value = '';
+    if (ctl.seal) ctl.seal.value = '';
+    if (ctl.wear) ctl.wear.value = '1.0';
     progress.value = '1';
   }
   setDefaults();
+
+  function loadFromHash() {
+    try {
+      if (!location.hash || location.hash.indexOf('#cfg=') !== 0) return;
+      var raw = decodeURIComponent(location.hash.slice(5));
+      var data = JSON.parse(raw);
+      if (data && typeof data === 'object') {
+        if (data.type && TYPE_IDS.indexOf(data.type) !== -1) ctl.type.value = data.type;
+        if (data.shape) ctl.shape.value = data.shape;
+        if (data.text !== undefined) ctl.text.value = data.text;
+        if (data.back !== undefined) ctl.back.value = data.back;
+        if (data.hiddenInk !== undefined) ctl.hidden.value = data.hiddenInk;
+        if (data.seed) ctl.seed.value = String(data.seed);
+        if (data.open) ctl.open.value = data.open;
+        if (data.burnAfterReading !== undefined) ctl.burn.checked = !!data.burnAfterReading;
+        if (data.burn) ctl.burnForm.value = data.burn;
+        if (data.stamp) ctl.stamp.value = typeof data.stamp === 'string' ? data.stamp : (data.stamp.text || '');
+        if (data.color && ctl.color) ctl.color.value = data.color;
+        if (data.gsm && ctl.gsm) ctl.gsm.value = String(data.gsm);
+        if (data.watermark && ctl.watermark) ctl.watermark.value = typeof data.watermark === 'string' ? data.watermark : (data.watermark.text || '');
+        if (data.seal && ctl.seal) ctl.seal.value = data.seal.symbol || '';
+        if (data.wearIntensity !== undefined && ctl.wear) ctl.wear.value = String(data.wearIntensity);
+        if (Array.isArray(data.states)) {
+          $$('#ctl-states input').forEach(function (b) {
+            b.checked = data.states.indexOf(b.value) !== -1;
+          });
+        }
+      }
+    } catch (e) { /* ignore invalid hash */ }
+  }
+  loadFromHash();
 
   var canvas = $('#stage');
   var stage = null;
@@ -204,6 +304,17 @@
     if (ctl.burnForm.value && ctl.burnForm.value !== 'corner') cfg.burn = ctl.burnForm.value;
     var word = ctl.stamp.value.trim();
     if (states.indexOf('stamp') !== -1 && word && word !== DEFAULT_STAMP) cfg.stamp = word;
+    if (ctl.color && ctl.color.value && ctl.color.value !== '#f8f5ee') cfg.color = ctl.color.value;
+    if (ctl.gsm && ctl.gsm.value) {
+      var g = parseInt(ctl.gsm.value, 10);
+      if (Number.isFinite(g) && g > 0) cfg.gsm = g;
+    }
+    if (ctl.watermark && ctl.watermark.value.trim()) cfg.watermark = ctl.watermark.value.trim();
+    if (ctl.seal && ctl.seal.value.trim()) cfg.seal = { symbol: ctl.seal.value.trim() };
+    if (ctl.wear && ctl.wear.value !== '1' && ctl.wear.value !== '1.0') {
+      var w = parseFloat(ctl.wear.value);
+      if (Number.isFinite(w)) cfg.wearIntensity = w;
+    }
     return cfg;
   }
 
@@ -228,7 +339,7 @@
   // controls that change the paper rebuild it (debounced); the type also decides whether shape is used
   function syncShapeEnabled() { ctl.shape.disabled = ctl.type.value === 'envelope' || !stage; }
   ctl.type.addEventListener('change', function () { syncShapeEnabled(); schedule(); });
-  [ctl.shape, ctl.open, ctl.burn, ctl.burnForm].forEach(function (n) { n.addEventListener('change', schedule); });
+  [ctl.shape, ctl.open, ctl.burn, ctl.burnForm, ctl.color, ctl.wear].forEach(function (n) { if (n) n.addEventListener('change', schedule); });
   // the stamp word is only usable while the stamp state is on
   function syncStampEnabled() {
     var on = $('#ctl-states input[value="stamp"]').checked;
@@ -237,7 +348,7 @@
   $$('#ctl-states input').forEach(function (b) {
     b.addEventListener('change', function () { syncStampEnabled(); schedule(); });
   });
-  [ctl.text, ctl.back, ctl.hidden, ctl.seed, ctl.stamp].forEach(function (n) { n.addEventListener('input', schedule); });
+  [ctl.text, ctl.back, ctl.hidden, ctl.seed, ctl.stamp, ctl.gsm, ctl.watermark, ctl.seal].forEach(function (n) { if (n) n.addEventListener('input', schedule); });
   ctl.random.addEventListener('click', function () {
     ctl.seed.value = String(1 + Math.floor(Math.random() * 99998));
     schedule();
@@ -277,6 +388,38 @@
     a.click();
     a.remove();
   });
+
+  var webpBtn = $('#webp');
+  if (webpBtn) {
+    webpBtn.addEventListener('click', function () {
+      if (!canvas) return;
+      try {
+        var url = canvas.toDataURL('image/webp', 0.95);
+        if (!url || url.indexOf('data:image/webp') !== 0) {
+          url = stage ? stage.png() : canvas.toDataURL('image/png');
+        }
+        var a = el('a');
+        a.href = url;
+        a.download = 'crumple-' + ctl.type.value + '.webp';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch (e) { /* canvas export fallback */ }
+    });
+  }
+
+  var shareBtn = $('#share');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', function () {
+      var cfg = readConfig();
+      var serialized = encodeURIComponent(JSON.stringify(cfg));
+      var shareUrl = location.origin + location.pathname + '#cfg=' + serialized;
+      history.replaceState(null, '', '#cfg=' + serialized);
+      copyText(shareUrl).then(function () {
+        flash(shareBtn, T.t('play.urlCopied'));
+      });
+    });
+  }
 
   paintJson();
   if (stage) timer = setTimeout(rebuild, 60);

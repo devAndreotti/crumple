@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- 4 new paper presets in core catalog: `fax` (thermal G3 paper with scan lines), `cyanotype` (Prussian blue solar print on heavy 220 gsm cotton), `manuscript` (medieval illuminated folio on 160 gsm rag paper), and `market` (thin thermal grocery receipt, 48 gsm).
+- Interactive Playground enhancements (`docs/`):
+  - On-demand live WebGL preview canvas on preset buttons with hover/focus interaction.
+  - Procedural customization panel: base paper tint (`#ctl-color`), GSM paper weight (`#ctl-gsm`), watermark text (`#ctl-watermark`), wax seal symbol (`#ctl-seal`), and wear intensity (`#ctl-wear-intensity`).
+  - Export tools: direct WebP image export (`#webp`) and shareable configuration URL with hash synchronization (`#share`, `#cfg=`).
+  - Technical tooltips (`.tech-tooltip`) with physical paper specs (GSM, fiber type, texture).
+  - WCAG 2.1 AA accessible focus outlines (`:focus-visible`) and button active feedback states.
+  - Dynamic acoustic resonance tuning for all 21 paper presets in `src/sound.js`.
+- Automated WebGL visual regression suite (`tests/visual-regression.cjs`, `npm run test:visual`).
+
 ## [1.2.0] - 2026-10-29
 
 ### Added

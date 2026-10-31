@@ -49,6 +49,10 @@ export const TEXTS = {
   parchment: 'In nomine veritatis,\n\nWe hereby affirm the ancient concord sealed across the waters. Let neither the turning of centuries nor the embers of flame erase what was pledged in this hall.\n\nAnno Domini 1492',
   ledger: '12 OCT   STEAMSHIP CARGO FREIGHT ....... 108   1,420.00          1,420.00\n15 OCT   HARBOR DOCKAGE DUES ........... 109             115.50  1,304.50\n18 OCT   BUNKER COAL REFUELING ......... 110             480.00    824.50\n24 OCT   WAREHOUSE STEVEDORING ......... 111             210.00    614.50\n29 OCT   BALANCE CARRIED FORWARD ....... 112                       614.50',
   carbon: '# DUPLICATE COPY · VOUCHER № 049182\n\nPAYEE: MARITIME LOGISTICS DEPT\nCHARGE CODE: ACCT-9042-ALPHA\nSUM: $ 1,420.00 (ONE THOUSAND FOUR HUNDRED TWENTY DOLLARS)\n\nVERIFIED BY AUDIT COMMITTEE · SECOND COPY RETAINED',
+  fax: '# INCOMING TRANSMISSION · TELEFAX G3\nFROM: TELECOM OPERATOR 09\nDATE: 30 OCT 2026  23:41:02 UTC\n\nDISPATCH ACKNOWLEDGED. ALL CIRCUITS CLEAR.',
+  cyanotype: '# HERBARIUM SPECIMEN № 408\nFERN (PTERIDOPHYTA)\n\nSOLAR CONTACT PRINT · PRUSSIAN BLUE\nEXPOSURE: 18 MIN MIDDAY SUN',
+  manuscript: 'Anno Domini MCCLIV\n\nIn hoc volumine continentur secreta antiquorum scriptorum.',
+  market: '# CENTRAL MARKET · SLIP 1094\n----------------------------\nSODA 2L ............ 4.50\nBREAD 500G ......... 3.20\nCOFFEE 250G ........ 8.90\n----------------------------\nTOTAL .............. 16.60\n\nCODE: 789100029481\nTHANK YOU FOR SHOPPING!',
 };
 export const ADDRESS = 'A. Reader\n12 Paper Lane\nFoldtown';
 // corrections written by hand when the "scribbled" state picks words to strike out

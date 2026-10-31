@@ -127,40 +127,42 @@
       </div>
 
       <div class="play-bar" role="toolbar" aria-label="Paper actions">
-        <button type="button" class="btn btn-small" data-act="crumple" data-i18n="play.crumple">Crumple</button>
-        <button type="button" class="btn btn-small" data-act="uncrumple" data-i18n="play.unfold">Unfold</button>
-        <button type="button" class="btn btn-small" data-act="flip" data-i18n="play.flip">Flip</button>
-        <button type="button" class="btn btn-small" data-act="tear" data-i18n="play.tearStub">Tear stub</button>
-        <button type="button" class="btn btn-small" data-act="burn" data-i18n="play.burnNow">Burn</button>
-        <button type="button" class="btn btn-small" data-act="restore" data-i18n="play.restore">Restore</button>
-        <label class="range">
+        <button type="button" class="btn btn-small" data-act="crumple" data-i18n="play.crumple" aria-controls="stage">Crumple</button>
+        <button type="button" class="btn btn-small" data-act="uncrumple" data-i18n="play.unfold" aria-controls="stage">Unfold</button>
+        <button type="button" class="btn btn-small" data-act="flip" data-i18n="play.flip" aria-controls="stage">Flip</button>
+        <button type="button" class="btn btn-small" data-act="tear" data-i18n="play.tearStub" aria-controls="stage">Tear stub</button>
+        <button type="button" class="btn btn-small" data-act="burn" data-i18n="play.burnNow" aria-controls="stage">Burn</button>
+        <button type="button" class="btn btn-small" data-act="restore" data-i18n="play.restore" aria-controls="stage">Restore</button>
+        <label class="range" for="progress">
           <span data-i18n="play.progress">Progress</span>
-          <input type="range" id="progress" min="0" max="1" step="0.01" value="1">
+          <input type="range" id="progress" min="0" max="1" step="0.01" value="1" aria-controls="stage" aria-label="Fold progress" aria-valuenow="1" aria-valuemin="0" aria-valuemax="1">
         </label>
-        <button type="button" class="btn btn-small" id="png" data-i18n="play.png">Download PNG</button>
+        <button type="button" class="btn btn-small" id="png" data-i18n="play.png" aria-controls="stage">Download PNG</button>
+        <button type="button" class="btn btn-small" id="webp" data-i18n="play.exportWebP" aria-controls="stage">Download WebP</button>
+        <button type="button" class="btn btn-small" id="share" data-i18n="play.shareUrl" aria-controls="stage json-out">Share URL</button>
       </div>
 
       <div class="controls">
-        <label class="field">
+        <label class="field" for="ctl-type">
           <span data-i18n="play.type">Type</span>
-          <select id="ctl-type"></select>
+          <select id="ctl-type" aria-controls="stage json-out"></select>
         </label>
-        <label class="field">
+        <label class="field" for="ctl-shape">
           <span data-i18n="play.shape">Shape</span>
-          <select id="ctl-shape"></select>
+          <select id="ctl-shape" aria-controls="stage json-out"></select>
         </label>
-        <label class="field">
+        <label class="field" for="ctl-burn-form">
           <span data-i18n="play.burnForm">Burn form</span>
-          <select id="ctl-burn-form">
+          <select id="ctl-burn-form" aria-controls="stage json-out">
             <option value="corner" data-i18n="burn.corner">Corner</option>
             <option value="edge" data-i18n="burn.edge">Edge</option>
             <option value="center" data-i18n="burn.center">Center hole</option>
             <option value="spots" data-i18n="burn.spots">Embers</option>
           </select>
         </label>
-        <label class="field">
+        <label class="field" for="ctl-open">
           <span data-i18n="play.open">Open mode</span>
-          <select id="ctl-open">
+          <select id="ctl-open" aria-controls="stage json-out">
             <option value="auto" data-i18n="play.openAuto">auto (unfolds by itself)</option>
             <option value="drag" data-i18n="play.openDrag">drag (reader opens it)</option>
           </select>
@@ -168,32 +170,54 @@
         <div class="field field-seed">
           <label for="ctl-seed" data-i18n="play.seed">Seed</label>
           <div class="seed-row">
-            <input type="number" id="ctl-seed" min="1" max="99999" step="1" value="7">
-            <button type="button" class="btn btn-small" id="ctl-random" data-i18n="play.random">random</button>
+            <input type="number" id="ctl-seed" min="1" max="99999" step="1" value="7" aria-controls="stage json-out" aria-describedby="seed-hint">
+            <button type="button" class="btn btn-small" id="ctl-random" data-i18n="play.random" aria-controls="ctl-seed stage json-out" aria-label="Randomize seed">random</button>
           </div>
+          <span id="seed-hint" class="sr-only" hidden>Numeric seed from 1 to 99999</span>
         </div>
         <fieldset class="field field-wide states-field">
           <legend data-i18n="play.states">States</legend>
-          <div class="state-groups" id="ctl-states"></div>
+          <div class="state-groups" id="ctl-states" role="group" aria-label="Paper states"></div>
         </fieldset>
-        <label class="field">
+        <label class="field" for="ctl-stamp">
           <span data-i18n="play.stampWord">Stamp word</span>
-          <input type="text" id="ctl-stamp" maxlength="16" placeholder="RECEIVED" spellcheck="false" autocomplete="off" disabled>
+          <input type="text" id="ctl-stamp" maxlength="16" placeholder="RECEIVED" spellcheck="false" autocomplete="off" disabled aria-controls="stage json-out" aria-describedby="stamp-hint">
+          <span id="stamp-hint" class="sr-only" hidden>Rubber stamp text, max 16 uppercase characters</span>
         </label>
-        <label class="field field-wide">
+        <label class="field" for="ctl-color">
+          <span data-i18n="play.color">Custom color tint</span>
+          <input type="color" id="ctl-color" value="#f8f5ee" aria-controls="stage json-out">
+        </label>
+        <label class="field" for="ctl-gsm">
+          <span data-i18n="play.gsm">Paper weight (GSM)</span>
+          <input type="number" id="ctl-gsm" min="30" max="450" step="5" placeholder="80" aria-controls="stage json-out">
+        </label>
+        <label class="field" for="ctl-watermark">
+          <span data-i18n="play.watermark">Watermark text</span>
+          <input type="text" id="ctl-watermark" maxlength="24" placeholder="ARCHIVE" spellcheck="false" autocomplete="off" aria-controls="stage json-out">
+        </label>
+        <label class="field" for="ctl-seal">
+          <span data-i18n="play.seal">Wax seal symbol</span>
+          <input type="text" id="ctl-seal" maxlength="4" placeholder="⚜" spellcheck="false" autocomplete="off" aria-controls="stage json-out">
+        </label>
+        <label class="field" for="ctl-wear">
+          <span data-i18n="play.wearIntensity">Wear intensity</span>
+          <input type="range" id="ctl-wear" min="0" max="2" step="0.1" value="1.0" aria-controls="stage json-out">
+        </label>
+        <label class="field field-wide" for="ctl-text">
           <span data-i18n="play.text">Front text</span>
-          <textarea id="ctl-text" rows="6" spellcheck="false"></textarea>
+          <textarea id="ctl-text" rows="6" spellcheck="false" aria-controls="stage json-out"></textarea>
         </label>
-        <label class="field field-wide">
+        <label class="field field-wide" for="ctl-back">
           <span data-i18n="play.back">Back text</span>
-          <textarea id="ctl-back" rows="2" spellcheck="false"></textarea>
+          <textarea id="ctl-back" rows="2" spellcheck="false" aria-controls="stage json-out"></textarea>
         </label>
-        <label class="field field-wide">
+        <label class="field field-wide" for="ctl-hidden">
           <span data-i18n="play.hiddenInk">Hidden ink</span>
-          <input type="text" id="ctl-hidden" spellcheck="false">
+          <input type="text" id="ctl-hidden" spellcheck="false" aria-controls="stage json-out">
         </label>
-        <label class="check field-wide">
-          <input type="checkbox" id="ctl-burn">
+        <label class="check field-wide" for="ctl-burn">
+          <input type="checkbox" id="ctl-burn" aria-controls="stage json-out">
           <span data-i18n="play.burn">Burn after reading (applies to triggers, kept in the JSON)</span>
         </label>
       </div>
@@ -201,7 +225,7 @@
       <div class="code json-box">
         <div class="code-head">
           <span data-i18n="play.json">Config (JSON)</span>
-          <button type="button" class="copy" data-copy-target="json-out" data-i18n="copy">Copy</button>
+          <button type="button" class="copy" data-copy-target="json-out" data-i18n="copy" aria-controls="json-out" aria-label="Copy JSON configuration">Copy</button>
         </div>
         <pre><code id="json-out" aria-live="polite"></code></pre>
       </div>
@@ -219,7 +243,7 @@
           <h3 data-i18n="install.a">Script tag (CDN)</h3>
           <p class="doc-note" data-i18n="install.a.note">Set the assets folder before the first paper is built. The CDN serves the textures and the demo photos.</p>
           <div class="code">
-            <div class="code-head"><span>HTML</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
+            <div class="code-head"><span>HTML</span><button type="button" class="copy" data-i18n="copy" aria-label="Copy snippet">Copy</button></div>
             <pre><code>&lt;script src="https://cdn.jsdelivr.net/gh/devAndreotti/crumple@1.0.0/dist/crumple.min.js"&gt;&lt;/script&gt;
 &lt;script&gt;
   Crumple.config.assets = 'https://cdn.jsdelivr.net/gh/devAndreotti/crumple@1.0.0/assets/';
@@ -231,11 +255,11 @@
           <h3 data-i18n="install.b">npm (ES modules)</h3>
           <p class="doc-note" data-i18n="install.b.note">Install from GitHub, then import what you need. Scene attaches to buttons, Stage draws into your own canvas.</p>
           <div class="code">
-            <div class="code-head"><span>shell</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
+            <div class="code-head"><span>shell</span><button type="button" class="copy" data-i18n="copy" aria-label="Copy snippet">Copy</button></div>
             <pre><code>npm i @devandreotti/crumple</code></pre>
           </div>
           <div class="code">
-            <div class="code-head"><span>JavaScript</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
+            <div class="code-head"><span>JavaScript</span><button type="button" class="copy" data-i18n="copy" aria-label="Copy snippet">Copy</button></div>
             <pre><code>import { Scene, config } from '@devandreotti/crumple';
 
 // serve the package's assets/ folder and point config.assets at it
@@ -243,7 +267,7 @@ config.assets = '/assets/';
 Scene.init({ motion: 'auto' });</code></pre>
           </div>
           <div class="code">
-            <div class="code-head"><span>CommonJS</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
+            <div class="code-head"><span>CommonJS</span><button type="button" class="copy" data-i18n="copy" aria-label="Copy snippet">Copy</button></div>
             <pre><code>const { Stage } = require('@devandreotti/crumple');</code></pre>
           </div>
         </article>
@@ -251,7 +275,7 @@ Scene.init({ motion: 'auto' });</code></pre>
         <article class="doc">
           <h3 data-i18n="install.c">Minimal HTML</h3>
           <div class="code">
-            <div class="code-head"><span>HTML</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
+            <div class="code-head"><span>HTML</span><button type="button" class="copy" data-i18n="copy" aria-label="Copy snippet">Copy</button></div>
             <pre><code>&lt;button id="note"&gt;Open the note&lt;/button&gt;
 
 &lt;script src="https://cdn.jsdelivr.net/gh/devAndreotti/crumple@1.0.0/dist/crumple.min.js"&gt;&lt;/script&gt;
@@ -269,14 +293,14 @@ Scene.init({ motion: 'auto' });</code></pre>
         <article class="doc">
           <h3 data-i18n="install.d">Stage example</h3>
           <div class="code">
-            <div class="code-head"><span>HTML</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
+            <div class="code-head"><span>HTML</span><button type="button" class="copy" data-i18n="copy" aria-label="Copy snippet">Copy</button></div>
             <pre><code>&lt;canvas id="sheet" style="width: 100%; height: 480px"&gt;&lt;/canvas&gt;
 &lt;button id="flip"&gt;Flip&lt;/button&gt;
 
 &lt;script src="https://cdn.jsdelivr.net/gh/devAndreotti/crumple@1.0.0/dist/crumple.min.js"&gt;&lt;/script&gt;
 &lt;script&gt;
   (async () =&gt; {
-    const stage = Crumple.Stage(document.getElementById('sheet'), { fit: 0.8 });
+    const stage = Crumple.Stage(document.getElementById('sheet'));
     if (!stage) return; // no WebGL2
     await stage.set({ type: 'notebook', seed: 12, text: '# A note on a canvas\n\nNo flight, just a sheet.' }, { progress: 0 });
     stage.uncrumple();
@@ -290,7 +314,7 @@ Scene.init({ motion: 'auto' });</code></pre>
           <h3 data-i18n="install.e">Events</h3>
           <p class="doc-note" data-i18n="install.e.note">Events bubble from the trigger, so one listener on document catches all of them.</p>
           <div class="code">
-            <div class="code-head"><span>JavaScript</span><button type="button" class="copy" data-i18n="copy">Copy</button></div>
+            <div class="code-head"><span>JavaScript</span><button type="button" class="copy" data-i18n="copy" aria-label="Copy snippet">Copy</button></div>
             <pre><code>document.addEventListener('crumple:open', (e) =&gt; {
   console.log('opened', e.detail.id);
 });

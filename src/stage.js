@@ -119,7 +119,7 @@ export function Stage(canvas, options = {}) {
     toggle() { if (A.p > 0.5) api.crumple(); else api.uncrumple(); },
     // any time, except once the paper burns away; the side it shows is kept through crumple and unfold
     flip() { if (!P || A.destroy !== undefined) return; Sound.play('flip', 1, 0, { type: P.cfg.type, gsm: P.cfg.gsm }); tween(A, 'f', A.f < 0.5 ? 1 : 0, 0.8, linear); kick(); },
-    tear() { if (!P || P.stubX === null || A.tear > 0 || A.p < 0.95) return; Sound.play('tear'); tween(A, 'tear', 1, 1.0, linear, 0, () => { P.torn = true; }); kick(); },
+    tear() { if (!P || P.stubX === null || A.tear > 0 || A.p < 0.95) return; Sound.play('tear', 1, 0, { type: P.cfg.type, gsm: P.cfg.gsm }); tween(A, 'tear', 1, 1.0, linear, 0, () => { P.torn = true; }); kick(); },
     restoreStub() { if (!P) return; A.tear = 0; P.torn = false; kick(); },
     // resolves once the paper has its burn field (built on demand for any paper); a second call meanwhile does nothing,
     // and a paper replaced by set() meanwhile is not burnt
@@ -130,9 +130,9 @@ export function Stage(canvas, options = {}) {
       try { await R.ensureBurn(Q0); } finally { if (busyBurn === Q0) busyBurn = null; }
       if (P !== Q0 || A.destroy !== undefined) return;
       const Q = Q0.letter || Q0;
-      Sound.play('fire', 2.6); A.destroy = Math.max(Q.front0 > -0.5 ? Q.front0 + Q.burned : -0.06, -0.06); tween(A, 'destroy', 1.6, 2.6, linear); kick();
+      Sound.play('fire', 2.6, 0, { type: P.cfg.type, gsm: P.cfg.gsm }); A.destroy = Math.max(Q.front0 > -0.5 ? Q.front0 + Q.burned : -0.06, -0.06); tween(A, 'destroy', 1.6, 2.6, linear); kick();
     },
-    restore() { delete A.destroy; parts.clear(); kick(); },
+    restore() { delete A.destroy; parts.clear(); if (P) Sound.play('uncrumple', 0.8, 0, { type: P.cfg.type, gsm: P.cfg.gsm }); kick(); },
     setProgress(v) { A.tw = []; A.p = clamp(v); kick(); },
     // PNG of the current frame (draws and reads at once, no preserved buffer needed)
     png() { if (!P) return ''; resize(); const { scene } = current(); R.draw(scene.items, scene.shadow, null); return canvas.toDataURL('image/png'); },

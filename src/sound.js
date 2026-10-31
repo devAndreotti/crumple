@@ -24,6 +24,10 @@ const TYPE_TUNING = {
   blueprint: { freq: 420, q: 2.4, gain: 3.5 },
   parchment: { freq: 410, q: 2.5, gain: 3.5 },
   ledger: { freq: 420, q: 2.4, gain: 3.5 },
+  fax: { freq: 610, q: 1.8, gain: 3.9 },
+  cyanotype: { freq: 300, q: 3.1, gain: 3.0 },
+  manuscript: { freq: 340, q: 2.8, gain: 3.2 },
+  market: { freq: 640, q: 1.8, gain: 3.9 },
 };
 
 // ponytail: piecewise linear resonance model covers 30-350 gsm. Upgrade to measured modal synthesis if physical multi-mode simulation needed.
@@ -63,10 +67,12 @@ function resolveTune(opts) {
   } else {
     base = { freq: 420, q: 2.4, gain: 3.5 };
   }
+  let gain = Number.isFinite(opts.gain) ? opts.gain : base.gain;
+  if (Number.isFinite(opts.volume)) gain = +(gain * opts.volume).toFixed(2);
   return {
     freq: Number.isFinite(opts.freq) ? opts.freq : base.freq,
     q: Number.isFinite(opts.q) ? opts.q : base.q,
-    gain: Number.isFinite(opts.gain) ? opts.gain : base.gain,
+    gain,
   };
 }
 

@@ -22,6 +22,10 @@
   {"id":"type-parchment","type":"parchment","seed":21,"text":"In nomine veritatis,\n\nWe here declare the ancient accord renewed.\n\nAnno Domini 1492"},
   {"id":"type-ledger","type":"ledger","seed":22,"text":"12 OCT   STEAMSHIP CARGO FREIGHT ....... 108   1,420.00          1,420.00\n15 OCT   HARBOR DOCKAGE DUES ........... 109             115.50  1,304.50\n18 OCT   BUNKER COAL REFUELING ......... 110             480.00    824.50\n24 OCT   WAREHOUSE STEVEDORING ......... 111             210.00    614.50\n29 OCT   BALANCE CARRIED FORWARD ....... 112                       614.50"},
   {"id":"type-carbon","type":"carbon","seed":23,"text":"# DUPLICATE COPY · VOUCHER № 049182\n\nPAYEE: MARITIME LOGISTICS DEPT\nCHARGE CODE: ACCT-9042-ALPHA\nSUM: $ 1,420.00 (ONE THOUSAND FOUR HUNDRED TWENTY DOLLARS)\n\nVERIFIED BY AUDIT COMMITTEE · SECOND COPY RETAINED"},
+  {"id":"type-fax","type":"fax","seed":24,"text":"# INCOMING TRANSMISSION · TELEFAX G3\nFROM: TELECOM OPERATOR 09\nDATE: 30 OCT 2026  23:41:02 UTC\n\nDISPATCH ACKNOWLEDGED. ALL CIRCUITS CLEAR."},
+  {"id":"type-cyanotype","type":"cyanotype","seed":25,"text":"# HERBARIUM SPECIMEN № 408\nFERN (PTERIDOPHYTA)\n\nSOLAR CONTACT PRINT · PRUSSIAN BLUE\nEXPOSURE: 18 MIN MIDDAY SUN"},
+  {"id":"type-manuscript","type":"manuscript","seed":26,"text":"Anno Domini MCCLIV\n\nIn hoc volumine continentur secreta antiquorum scriptorum."},
+  {"id":"type-market","type":"market","seed":27,"text":"# CENTRAL MARKET · SLIP 1094\n----------------------------\nSODA 2L ............ 4.50\nBREAD 500G ......... 3.20\nCOFFEE 250G ........ 8.90\n----------------------------\nTOTAL .............. 16.60\n\nCODE: 789100029481\nTHANK YOU FOR SHOPPING!"},
 
   {"id":"shape-ball","type":"typed","shape":"ball","seed":41,"text":"Same sheet, different folds.\n\nA shape is only how the paper was kept."},
   {"id":"shape-flat","type":"typed","shape":"flat","seed":42,"text":"Same sheet, different folds.\n\nA shape is only how the paper was kept."},
@@ -56,6 +60,7 @@
   {"id":"state-dogear","type":"typed","states":["dogear"],"seed":70,"text":"Corner folded over to mark the page.\n\nA habit that became permanent."},
   {"id":"state-damp","type":"typed","states":["damp"],"seed":75,"text":"Wetted by mist and dried in the breeze.\n\nThe surface kept its wave."},
   {"id":"state-creased","type":"typed","states":["creased"],"seed":76,"text":"Carried folded inside a pocket for months.\n\nA grid of micro-creases."},
+  {"id":"state-clip","type":"typed","states":["clip"],"seed":77,"text":"Fastened with a vintage wire paper clip.\n\nThe metal left an imprint on the top edge."},
 
   {"id":"burn-corner","type":"typed","states":["burnt"],"burn":"corner","seed":71,"text":"The fire started in one corner and climbed slowly.\n\nThe rest of the sheet is still readable."},
   {"id":"burn-edge","type":"typed","states":["burnt"],"burn":"edge","seed":72,"text":"The fire walked along the whole edge.\n\nThe middle of the text is still intact."},
