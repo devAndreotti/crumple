@@ -7,13 +7,18 @@ export function rng(seed) {
 
 // value noise with 4 octaves, in [0, 1]
 export function noise2(seed) {
-  const h = (x, y) => { let n = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(seed, 1442695041) | 0; n = Math.imul(n ^ (n >>> 13), 1274126177); return ((n ^ (n >>> 16)) >>> 0) / 4294967296; };
-  const vn = (x, y) => {
+  const sd = Math.imul(seed, 1442695041); // the seed term is the same for every corner: computed once
+  const h = (x, y) => { let n = Math.imul(x, 374761393) + Math.imul(y, 668265263) + sd | 0; n = Math.imul(n ^ (n >>> 13), 1274126177); return ((n ^ (n >>> 16)) >>> 0) / 4294967296; };
+  // per octave, the corner values of the last cell are kept: neighbouring samples almost always share a cell
+  const cache = [0, 1, 2, 3].map(() => ({ xi: NaN, yi: NaN, a: 0, b: 0, c: 0, d: 0 }));
+  const vn = (x, y, k) => {
     const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
-    const a = h(xi, yi), b = h(xi + 1, yi), c = h(xi, yi + 1), d = h(xi + 1, yi + 1);
+    const q = cache[k];
+    if (q.xi !== xi || q.yi !== yi) { q.xi = xi; q.yi = yi; q.a = h(xi, yi); q.b = h(xi + 1, yi); q.c = h(xi, yi + 1); q.d = h(xi + 1, yi + 1); }
+    const a = q.a, b = q.b, c = q.c, d = q.d;
     return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
   };
-  return (x, y) => (vn(x, y) * 0.5 + vn(x * 2, y * 2) * 0.25 + vn(x * 4, y * 4) * 0.125 + vn(x * 8, y * 8) * 0.0625) / 0.9375;
+  return (x, y) => (vn(x, y, 0) * 0.5 + vn(x * 2, y * 2, 1) * 0.25 + vn(x * 4, y * 4, 2) * 0.125 + vn(x * 8, y * 8, 3) * 0.0625) / 0.9375;
 }
 
 export const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));

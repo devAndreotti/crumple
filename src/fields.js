@@ -9,6 +9,8 @@ export function creaseField(o, W, H) {
   const hw = o.w / 2, hh = o.h / 2;
   const f = new Float32Array(W * H);
   const sx = W / o.w, sy = H / o.h;
+  // x range where |a*x + b| < w (the wide margin on the flat case keeps cells on the edge of the test)
+  const slab = (a, b, w) => (Math.abs(a) < 1e-12 ? (Math.abs(b) < w + 1e-9 ? [-Infinity, Infinity] : [Infinity, -Infinity]) : [Math.min((-w - b) / a, (w - b) / a), Math.max((-w - b) / a, (w - b) / a)]);
   const add = (half, wid, amp, cx, cy, a) => {
     if (a === undefined) a = r() * Math.PI;
     if (cx === undefined) { cx = (r() * 2 - 1) * hw; cy = (r() * 2 - 1) * hh; }
@@ -19,7 +21,11 @@ export function creaseField(o, W, H) {
     const taper = Math.min(0.08, half);
     for (let j = j0; j <= j1; j++) {
       const py = (j + 0.5) / sy - hh - cy;
-      for (let i = i0; i <= i1; i++) {
+      // per row only the cells inside the strip and the segment form one interval: the loop visits that interval (+1 cell each side)
+      const [l1, h1] = slab(-dy, py * dx, wid), [l2, h2] = slab(dx, py * dy, half);
+      const lo = Math.max(l1, l2), hi = Math.min(h1, h2);
+      const ia = Math.max(i0, Math.floor((lo + hw + cx) * sx - 1.5)), ib = Math.min(i1, Math.ceil((hi + hw + cx) * sx + 0.5));
+      for (let i = ia; i <= ib; i++) {
         const px = (i + 0.5) / sx - hw - cx;
         const d = Math.abs(-px * dy + py * dx);
         if (d >= wid) continue;
@@ -102,7 +108,7 @@ export function burnField(o, MW, MH) {
     }
     put((i, j) => {
       let m = Infinity;
-      pts.forEach((q) => { m = Math.min(m, Math.hypot(i - q[0], j - q[1])); });
+      for (let k = 0; k < pts.length; k++) m = Math.min(m, Math.hypot(i - pts[k][0], j - pts[k][1]));
       return m / (diag * 0.5) + (nz(i * 0.05, j * 0.05) - 0.5) * 0.1;
     });
   } else if (form === 'singed') {

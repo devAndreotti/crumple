@@ -219,7 +219,7 @@ body.crumple-open{overflow:hidden;touch-action:none}
     const n = store.get('opens.' + P.cfg.id, 0) + 1;
     store.set('opens.' + P.cfg.id, n);
     // redaction bars fade on every opening: redraw after the first frame
-    if (P.hasRedaction) requestAnimationFrame(() => R.refreshPrint(P).then(kick));
+    if (P.hasRedaction) requestAnimationFrame(() => { if (A && A.P === P) R.refreshPrint(P).then(kick); });
     const p0 = ent.opened ? openAmount(P) : 0;
     A = { P, ent, from: ent.btn.getBoundingClientRect(), tf: 0, p: p0, ext0: extentAt(P, p0), f: 0, tear: 0, tw: [], phase: 'opening', dragging: false, lampPos: null, lampGoal: null, lamp: 0, lampOn: 0, burnOpen: 0 };
     parts.clear();
@@ -331,7 +331,7 @@ body.crumple-open{overflow:hidden;touch-action:none}
     backdrop.classList.remove('on');
     document.body?.classList.remove('crumple-open');
     const hide = () => {
-      if (!A) { cv.style.display = 'none'; cv.style.opacity = ''; }
+      if (!A && cv) { cv.style.display = 'none'; cv.style.opacity = ''; } // the timer may fire after destroy()
       if (destroyed) { ent.btn.hidden = true; ent.btn.classList.remove('active'); }
       else if (!A || A.ent !== ent) ent.btn.classList.remove('active');
     };

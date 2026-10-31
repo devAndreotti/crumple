@@ -1505,10 +1505,14 @@ export async function drawEffects(cfg, T, kind = null) {
       fc.beginPath(); pts.forEach((p, i) => (i ? fc.lineTo(p[0], p[1]) : fc.moveTo(p[0], p[1]))); fc.stroke();
     });
     fc.lineWidth = 1.0;
+    // each strand is blurred in a small tile and pasted on: a blur filter on the whole sheet costs ~10 ms per stroke
+    const tc = makeCanvas(32, 32), tx = tc.getContext('2d');
+    tx.strokeStyle = '#fff'; tx.lineWidth = 1; tx.filter = 'blur(0.8px)';
     const strand = (x, y, dx, dy, len) => {
-      fc.beginPath(); fc.moveTo(x, y);
-      fc.lineTo(x + dx * len + (r() - 0.5) * 2, y + dy * len + (r() - 0.5) * 2);
-      fc.stroke();
+      const x1 = x + dx * len + (r() - 0.5) * 2, y1 = y + dy * len + (r() - 0.5) * 2;
+      const ox = Math.floor(Math.min(x, x1)) - 8, oy = Math.floor(Math.min(y, y1)) - 8;
+      tx.clearRect(0, 0, 32, 32); tx.beginPath(); tx.moveTo(x - ox, y - oy); tx.lineTo(x1 - ox, y1 - oy); tx.stroke();
+      fc.save(); fc.filter = 'none'; fc.drawImage(tc, ox, oy); fc.restore();
     };
     for (let x = 2; x < MW - 2; x += 3 + r() * 4) {
       strand(x, 2, (r() - 0.5) * 0.6, 1, 2 + r() * 4);
