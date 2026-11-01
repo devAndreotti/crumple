@@ -365,7 +365,7 @@ function vt(e, n, t) {
     L === void 0 && (L = f() * Math.PI), k === void 0 && (k = (f() * 2 - 1) * r, I = (f() * 2 - 1) * a);
     let R = Math.cos(L), U = Math.sin(L), z = Math.abs(R) * b + l, A = Math.abs(U) * b + l, D = Math.max(0, Math.floor((k - z + r) * u)), X = Math.min(n - 1, Math.ceil((k + z + r) * u)), J = Math.max(0, Math.floor((I - A + a) * s)), W = Math.min(t - 1, Math.ceil((I + A + a) * s)), Se = Math.min(0.08, b);
     for (let ye = J; ye <= W; ye++) {
-      let ce = (ye + 0.5) / s - a - I, [ue, le] = p(-U, ce * R, l), [Le, ze] = p(R, ce * U, b), Ue = Math.max(ue, Le), E = Math.min(le, ze), v = Math.max(D, Math.floor((Ue + r + k) * u - 1.5)), C = Math.min(X, Math.ceil((E + r + k) * u + 0.5));
+      let ce = (ye + 0.5) / s - a - I, [le, fe] = p(-U, ce * R, l), [Le, ze] = p(R, ce * U, b), Ue = Math.max(le, Le), E = Math.min(fe, ze), v = Math.max(D, Math.floor((Ue + r + k) * u - 1.5)), C = Math.min(X, Math.ceil((E + r + k) * u + 0.5));
       for (let Y = v; Y <= C; Y++) {
         let O = (Y + 0.5) / u - r - k, K = Math.abs(-O * U + ce * R);
         if (K >= l) continue;
@@ -1676,7 +1676,7 @@ function Qe(e, n = {}) {
   let c = (E) => {
     E.preventDefault(), p = !0;
   }, y = () => {
-    p = !1, g(), b = null, l = null, R = null, U = null, le = null, n.onRestore && n.onRestore();
+    p = !1, g(), b = null, l = null, R = null, U = null, fe = null, n.onRestore && n.onRestore();
   };
   e.addEventListener("webglcontextlost", c), e.addEventListener("webglcontextrestored", y);
   function w(E, v, C, Y, O, K, _) {
@@ -1684,19 +1684,19 @@ function Qe(e, n = {}) {
     for (let H = 0; H <= Y; H++) x.push(E + (v - E) * H / Y);
     K.forEach((H) => {
       H > E + 1e-6 && H < v - 1e-6 && x.push(H);
-    }), x.sort((H, fe) => H - fe);
+    }), x.sort((H, ue) => H - ue);
     let G = [];
     for (let H = 0; H <= O; H++) G.push(-C + 2 * C * H / O);
     _.forEach((H) => {
-      H > -C + 1e-6 && H < C - 1e-6 && !G.some((fe) => Math.abs(fe - H) < 1e-6) && G.push(H);
-    }), G.sort((H, fe) => H - fe);
+      H > -C + 1e-6 && H < C - 1e-6 && !G.some((ue) => Math.abs(ue - H) < 1e-6) && G.push(H);
+    }), G.sort((H, ue) => H - ue);
     let j = x.length, Z = G.length, Q = new Float32Array(j * Z * 2), te = 0;
-    for (let H = 0; H < Z; H++) for (let fe = 0; fe < j; fe++)
-      Q[te++] = x[fe], Q[te++] = G[H];
+    for (let H = 0; H < Z; H++) for (let ue = 0; ue < j; ue++)
+      Q[te++] = x[ue], Q[te++] = G[H];
     let ee = new Uint16Array((j - 1) * (Z - 1) * 6);
     te = 0;
-    for (let H = 0; H < Z - 1; H++) for (let fe = 0; fe < j - 1; fe++) {
-      let Ae = H * j + fe, We = Ae + 1, h = Ae + j, T = h + 1;
+    for (let H = 0; H < Z - 1; H++) for (let ue = 0; ue < j - 1; ue++) {
+      let Ae = H * j + ue, We = Ae + 1, h = Ae + j, T = h + 1;
       ee[te++] = Ae, ee[te++] = We, ee[te++] = T, ee[te++] = Ae, ee[te++] = T, ee[te++] = h;
     }
     let oe = t.createVertexArray();
@@ -1753,11 +1753,11 @@ function Qe(e, n = {}) {
       if (Q === null) return [w(-O, O, K, ge, be, Te, Oe)];
       let Xe = Math.min(ge - 1, Math.max(1, Math.round(ge * (Q + O) / C.w)));
       return [w(-O, Q, K, Xe, be, Te, Oe), w(Q, O, K, ge - Xe, be, Te, Oe)];
-    }), H = !(v.back || v.type === "notebook" || v.type === "form" || v.type === "envelope" || v.type === "newspaper" || v.type === "postcard" || v.type === "blueprint" || ["coffee", "water", "prints", "aged", "wine", "ink", "foxing", "faded", "staple", "grease", "dogear", "damp", "clip"].some((q) => v.states.includes(q))), fe = bo(v), Ae = !(v.type === "notebook" || v.type === "form" || v.type === "envelope" || v.type === "punchcard" || v.type === "parchment" || v.type === "postcard" || v.states.includes("aged") || v.states.includes("torn") || fe), [We, h, T, P] = await Promise.all([
+    }), H = !(v.back || v.type === "notebook" || v.type === "form" || v.type === "envelope" || v.type === "newspaper" || v.type === "postcard" || v.type === "blueprint" || ["coffee", "water", "prints", "aged", "wine", "ink", "foxing", "faded", "staple", "grease", "dogear", "damp", "clip"].some((q) => v.states.includes(q))), ue = bo(v), Ae = !(v.type === "notebook" || v.type === "form" || v.type === "envelope" || v.type === "punchcard" || v.type === "parchment" || v.type === "postcard" || v.states.includes("aged") || v.states.includes("torn") || ue), [We, h, T, P] = await Promise.all([
       Et.run("creases", [{ seed: v.seed, shape: v.shape, w: C.w, h: C.h, card: !!C.card, foldY: te, states: v.states }, x, G]),
       rt(v, C, "front", j),
       H ? null : rt(v, C, "back", j),
-      Ae ? null : zt(v, C, fe)
+      Ae ? null : zt(v, C, ue)
     ]), F = rn(v, x, G), B = new Float32Array(x * G * 2);
     for (let q = 0; q < x * G; q++)
       B[q * 2] = We[q], B[q * 2 + 1] = F ? F[q] : 0;
@@ -1779,7 +1779,7 @@ function Qe(e, n = {}) {
       tFx: Ae ? I() : M(P.canvas, {}),
       burnPts: Ae ? null : P.burnPts,
       // which burn field the effects hold: 'burn' (sparks, can burn away), 'singed' (rim only) or 'none' (ensureBurn adds one)
-      fxBurn: fe || "none",
+      fxBurn: ue || "none",
       backEmpty: H,
       // estimated texture memory (front and back with mipmaps, effects, creases in RG16F)
       bytes: Math.round(h.width * h.height * 4 * 1.33 * (H ? 1 : 2) + (Ae ? 0 : P.canvas.width * P.canvas.height * 4) + x * G * 4),
@@ -1787,7 +1787,7 @@ function Qe(e, n = {}) {
       pose: _.shape >= 3 ? [-0.22 + Z() * 0.18, -0.2 + Z() * 0.4, -0.45 + Z() * 0.9] : N ? [-0.15 + Z() * 0.15, -0.15 + Z() * 0.3, -0.6 + Z() * 1.2] : [-0.3 + Z() * 0.25, -0.35 + Z() * 0.7, Z() * 6.28],
       seedA: Z() * 6.28,
       // a singed rim holds its front just under the lowest value of its field: only the scorch band shows
-      front0: v.states.includes("burnt") ? mn[v.burn][0] + mn[v.burn][1] * Z() : fe === "singed" ? P.lo - 0.012 : -1,
+      front0: v.states.includes("burnt") ? mn[v.burn][0] + mn[v.burn][1] * Z() : ue === "singed" ? P.lo - 0.012 : -1,
       burned: ve.get("burned." + v.id, 0),
       redactKey: Math.min(j, 3),
       age: v.states.includes("aged") ? 1 : 0,
@@ -1846,7 +1846,7 @@ function Qe(e, n = {}) {
     let Y = he($(v.p)), O = [E.F.ext[0] / 2 * v.sc, E.F.ext[1] / 2 * v.sc], K = [O[0] + (E.half[0] * v.sc - O[0]) * Y, O[1] + (E.half[1] * v.sc - O[1]) * Y], _ = Math.min(Math.min(O[0], O[1]) * (1 - Y) + 0.012 * v.sc * Y, K[0], K[1]), x = (0.04 + 0.08 * v.lift + 0.04 * (1 - Y)) * v.sc, G = v.L || Ze, j = Math.hypot(G[0], G[1]) || 1, Z = (0.05 + 0.1 * v.lift) * v.sc * Math.min(1.6, j / Math.max(0.25, G[2]));
     t.uniform3f(o.u.uC, v.cx - G[0] / j * Z, v.cy - G[1] / j * Z, -0.25 * v.sc), t.uniform2f(o.u.uHS, K[0], K[1]), t.uniform1f(o.u.uR, _), t.uniform1f(o.u.uSoft, x), t.uniform1f(o.u.uA, (0.62 - 0.2 * v.lift) * (v.alpha ?? 1)), t.uniformMatrix4fv(o.u.uProj, !1, C), t.activeTexture(t.TEXTURE0), t.bindTexture(t.TEXTURE_2D, E.tFx), t.uniform1i(o.u.uFx, 0), t.uniform1f(o.u.uOpen, $((v.p - 0.85) / 0.15)), t.uniform1f(o.u.uFront, v.front ?? -1), t.uniform1f(o.u.uFlip, (v.f || 0) > 0.5 ? 1 : 0), t.bindVertexArray(a), t.drawArrays(t.TRIANGLE_STRIP, 0, 4);
   }
-  function ue(E, v, C, Y = e.width, O = e.height, K = !1) {
+  function le(E, v, C, Y = e.width, O = e.height, K = !1) {
     if (d || p) return;
     t.viewport(0, 0, Y, O), t.clearColor(0, 0, 0, 0), t.clear(t.COLOR_BUFFER_BIT | t.DEPTH_BUFFER_BIT);
     let _ = we.mul(we.persp(Ce, Y / O, 0.1, 100), we.T(0, 0, -_e));
@@ -1857,28 +1857,28 @@ function Qe(e, n = {}) {
       t.useProgram(r.p), t.disable(t.DEPTH_TEST), t.enable(t.BLEND), t.blendFunc(t.ONE, t.ONE_MINUS_SRC_ALPHA), t.uniformMatrix4fv(r.u.uProj, !1, _), t.uniform1f(r.u.uPx, O / (2 * Math.tan(Ce / 2))), t.bindVertexArray(u), t.bindBuffer(t.ARRAY_BUFFER, s), t.bufferSubData(t.ARRAY_BUFFER, 0, G), t.drawArrays(t.POINTS, 0, G.length / 8);
     }
   }
-  let le = null;
+  let fe = null;
   function Le() {
-    t.deleteFramebuffer(le.fb), t.deleteRenderbuffer(le.rb), t.deleteTexture(le.t), le = null;
+    t.deleteFramebuffer(fe.fb), t.deleteRenderbuffer(fe.rb), t.deleteTexture(fe.t), fe = null;
   }
   function ze(E, v = !1, C = "image/png", Y = 256) {
     if (d || p) return "";
     let O = Y;
-    if (!le || le.S !== O) {
-      le && Le();
+    if (!fe || fe.S !== O) {
+      fe && Le();
       let te = t.createTexture();
       t.bindTexture(t.TEXTURE_2D, te), t.texImage2D(t.TEXTURE_2D, 0, t.RGBA8, O, O, 0, t.RGBA, t.UNSIGNED_BYTE, null), t.texParameteri(t.TEXTURE_2D, t.TEXTURE_MIN_FILTER, t.LINEAR);
       let ee = t.createRenderbuffer();
       t.bindRenderbuffer(t.RENDERBUFFER, ee), t.renderbufferStorage(t.RENDERBUFFER, t.DEPTH_COMPONENT16, O, O);
       let oe = t.createFramebuffer();
-      t.bindFramebuffer(t.FRAMEBUFFER, oe), t.framebufferTexture2D(t.FRAMEBUFFER, t.COLOR_ATTACHMENT0, t.TEXTURE_2D, te, 0), t.framebufferRenderbuffer(t.FRAMEBUFFER, t.DEPTH_ATTACHMENT, t.RENDERBUFFER, ee), le = { fb: oe, t: te, rb: ee, S: O, c: Ee(O, O) };
+      t.bindFramebuffer(t.FRAMEBUFFER, oe), t.framebufferTexture2D(t.FRAMEBUFFER, t.COLOR_ATTACHMENT0, t.TEXTURE_2D, te, 0), t.framebufferRenderbuffer(t.FRAMEBUFFER, t.DEPTH_ATTACHMENT, t.RENDERBUFFER, ee), fe = { fb: oe, t: te, rb: ee, S: O, c: Ee(O, O) };
     }
-    t.bindFramebuffer(t.FRAMEBUFFER, le.fb);
+    t.bindFramebuffer(t.FRAMEBUFFER, fe.fb);
     let K = O / (2 * _e * Math.tan(Ce / 2)), _ = v ? at(E) : 0, x = 0.9 * O / (xe(E, _) * K), { items: G } = Je(E, { p: _, f: 0, tear: 0, burnOpen: 0 }, { cx: 0, cy: 0, sc: x, scLetter: x, rot: hn(E, _), lift: 0, vhU: 1 });
-    ue(G, null, null, O, O, !0);
+    le(G, null, null, O, O, !0);
     let j = new Uint8Array(O * O * 4);
     t.readPixels(0, 0, O, O, t.RGBA, t.UNSIGNED_BYTE, j), t.bindFramebuffer(t.FRAMEBUFFER, null);
-    let Z = le.c.getContext("2d"), Q = Z.createImageData(O, O);
+    let Z = fe.c.getContext("2d"), Q = Z.createImageData(O, O);
     for (let te = 0; te < O; te++) {
       let ee = (O - 1 - te) * O * 4, oe = te * O * 4;
       for (let re = 0; re < O * 4; re += 4) {
@@ -1886,17 +1886,17 @@ function Qe(e, n = {}) {
         Q.data[oe + re] = Math.min(255, j[ee + re] * Pe), Q.data[oe + re + 1] = Math.min(255, j[ee + re + 1] * Pe), Q.data[oe + re + 2] = Math.min(255, j[ee + re + 2] * Pe), Q.data[oe + re + 3] = me;
       }
     }
-    return Z.putImageData(Q, 0, 0), le.c.toDataURL(C, 0.9);
+    return Z.putImageData(Q, 0, 0), fe.c.toDataURL(C, 0.9);
   }
   function Ue() {
     if (d) return;
     d = !0, e.removeEventListener("webglcontextlost", c), e.removeEventListener("webglcontextrestored", y), [f, o, r].forEach((v) => t.deleteProgram(v.p)), t.deleteVertexArray(a), t.deleteBuffer(i), t.deleteVertexArray(u), t.deleteBuffer(s), [b, l, R].forEach((v) => {
       v && t.deleteTexture(v);
-    }), le && Le();
+    }), fe && Le();
     let E = t.getExtension("WEBGL_lose_context");
     E && E.loseContext();
   }
-  return { gl: t, build: A, refreshPrint: D, release: W, draw: ue, snapshot: ze, ensureBurn: J, isLost: () => p, destroy: Ue };
+  return { gl: t, build: A, refreshPrint: D, release: W, draw: le, snapshot: ze, ensureBurn: J, isLost: () => p, destroy: Ue };
 }
 
 // .build/particles.js
@@ -1952,21 +1952,21 @@ var gn = {
     r = document.createElement("div"), r.className = "crumple-backdrop", o = document.createElement("canvas"), o.className = "crumple-scene", o.setAttribute("aria-hidden", "true"), d = document.createElement("div"), d.className = "crumple-sr", d.id = "crumple-content", d.setAttribute("aria-live", "polite"), a = document.createElement("div"), a.className = "crumple-bar", a.setAttribute("role", "dialog"), a.setAttribute("aria-modal", "true"), a.setAttribute("aria-describedby", "crumple-content"), a.tabIndex = -1, i = document.createElement("button"), i.type = "button", i.textContent = T.flip, u = document.createElement("button"), u.type = "button", u.textContent = T.tear, u.hidden = !0, s = document.createElement("button"), s.type = "button", s.textContent = T.close, a.append(d, u, i, s), p = document.createElement("div"), p.className = "crumple-hint", p.textContent = T.hint, m = document.createElement("div"), m.className = "crumple-fallback", m.setAttribute("role", "dialog"), m.setAttribute("aria-modal", "true"), document.body.append(r, o, a, p, m), ae(M, s, "click", () => Ue()), ae(M, i, "click", () => C()), ae(M, u, "click", () => Y()), ae(M, window, "keydown", (P) => {
       if (!(P.ctrlKey || P.metaKey || P.altKey || Ae(P.target))) {
         if (m.classList.contains("on")) {
-          P.key === "Escape" ? H() : P.key === "Tab" && fe(P, m);
+          P.key === "Escape" ? H() : P.key === "Tab" && ue(P, m);
           return;
         }
-        l && (P.key === "Tab" ? fe(P, a) : P.key === "Escape" ? Ue() : (P.key === "f" || P.key === "F") && C());
+        l && (P.key === "Tab" ? ue(P, a) : P.key === "Escape" ? Ue() : (P.key === "f" || P.key === "F") && C());
       }
     }), ae(M, window, "resize", () => {
-      l && (X(), ue());
+      l && (X(), le());
     }), ae(M, window, "pointermove", (P) => {
       if (!e.flashlight || !l || l.phase !== "open" || l.dragging || P.pointerType === "touch") return;
       let F = l.boxCache || Se(), B = !!F && P.clientX > F.x0 - 30 && P.clientX < F.x1 + 30 && P.clientY > F.y0 - 30 && P.clientY < F.y1 + 30;
-      st(l, P.clientX, P.clientY, o.clientWidth, o.clientHeight, o.clientHeight / (2 * _e * Math.tan(Ce / 2)), B), ue();
+      st(l, P.clientX, P.clientY, o.clientWidth, o.clientHeight, o.clientHeight / (2 * _e * Math.tan(Ce / 2)), B), le();
     }), ae(M, document, "mouseout", (P) => {
-      l && !P.relatedTarget && (l.lampOn = 0, ue());
+      l && !P.relatedTarget && (l.lampOn = 0, le());
     }), ae(M, document, "visibilitychange", () => {
-      document.hidden || ue();
+      document.hidden || le();
     }), ae(M, o, "dblclick", () => C()), c = nt(), c && ae(M, c, "change", () => {
       n = Ge(e.motion);
     }), M.push(Rt(o, {
@@ -1978,7 +1978,7 @@ var gn = {
         let F = ye();
         return F && P.clientX > F.x0 && P.clientX < F.x1 && P.clientY > F.y0 && P.clientY < F.y1 ? (Y(), !0) : !1;
       },
-      redraw: () => ue()
+      redraw: () => le()
     }));
   }
   function D() {
@@ -2044,17 +2044,17 @@ var gn = {
     }
     (P || l.dragging || F || b.n > 0 || V || l.ashes) && (S = requestAnimationFrame(ce));
   }
-  function ue() {
+  function le() {
     !S && l && (l.resume = !0, S = requestAnimationFrame(ce));
   }
-  let le = (h) => e.remember && !!ve.get("opened." + h, !1);
+  let fe = (h) => e.remember && !!ve.get("opened." + h, !1);
   function Le(h) {
     if (l || !h.P) return;
     let T = h.P;
     X();
     let P = ve.get("opens." + T.cfg.id, 0) + 1;
     ve.set("opens." + T.cfg.id, P), (T.hasRedaction || T.letter && T.letter.hasRedaction) && requestAnimationFrame(() => {
-      l && l.P === T && Promise.all([T.hasRedaction && t.refreshPrint(T), T.letter && T.letter.hasRedaction && t.refreshPrint(T.letter)]).then(ue);
+      l && l.P === T && Promise.all([T.hasRedaction && t.refreshPrint(T), T.letter && T.letter.hasRedaction && t.refreshPrint(T.letter)]).then(le, le);
     });
     let F = h.opened ? at(T) : 0;
     l = { P: T, ent: h, from: h.btn.getBoundingClientRect(), tf: 0, p: F, ext0: xe(T, F), f: 0, tear: 0, tw: [], phase: "opening", dragging: !1, lampPos: null, lampGoal: null, lamp: 0, lampOn: 0, burnOpen: 0 }, b.clear(), h.btn.classList.add("active"), document.body.classList.add("crumple-open"), o.style.display = "block", o.style.pointerEvents = "auto", r.classList.add("on"), a.classList.add("on"), a.setAttribute("aria-label", Re[T.cfg.type].name), s.focus({ preventScroll: !0 }), u.hidden = T.stubX === null || T.torn, d.replaceChildren(), me(T.cfg.text, d), T.cfg.back && (d.append(`
@@ -2073,12 +2073,12 @@ var gn = {
       let de = I * 0.55, ge = N ? U * 1.85 : U;
       if (pe(l, "pre", 1, I, Me), pe(l, "tf", 1, L, xt, de, V), !B) {
         let be = () => {
-          l && l.phase !== "closing" && (l.settle = 0, pe(l, "settle", 1, 0.9, Me), ue());
+          l && l.phase !== "closing" && (l.settle = 0, pe(l, "settle", 1, 0.9, Me), le());
         };
         pe(l, "p", 1, ge, N ? Ve : ct(T), de + R, be), se.play(N ? "seal" : "uncrumple", ge, de + R, { type: T.cfg.type, gsm: T.cfg.gsm });
       }
     }
-    T.front0 > -0.5 && se.play("fire", 2.5, 0.6), e.remember && ve.set("opened." + T.cfg.id, !0), qe(h.btn, "open", { id: T.cfg.id, openings: P }), ue();
+    T.front0 > -0.5 && se.play("fire", 2.5, 0.6), e.remember && ve.set("opened." + T.cfg.id, !0), qe(h.btn, "open", { id: T.cfg.id, openings: P }), le();
     let { scene: q } = W();
     t.draw(q.items, q.shadow, b);
   }
@@ -2092,7 +2092,7 @@ var gn = {
       return;
     }
     ze(), l.phase = "closing", l.dragging = !1, l.lampOn = 0, l.from = l.ent.btn.getBoundingClientRect(), r.classList.remove("on"), a.classList.remove("on"), p.classList.remove("on"), o.style.pointerEvents = "none", l.tw = l.tw.filter((B) => B.key !== "settle"), l.settle = 1;
-    let h = l.P.cfg.type === "envelope", T = le(l.P.cfg.id) ? at(l.P) : 0;
+    let h = l.P.cfg.type === "envelope", T = fe(l.P.cfg.id) ? at(l.P) : 0;
     l.tf > 0.999 && (l.ext0 = xe(l.P, T));
     let P = n ? 0.6 : h ? 1.9 : 0.85, F = P * Math.max(0.35, l.p - T);
     if (l.f > 0 && pe(l, "f", 0, 0.45, Be), l.p > T + 0.02 && se.play("crumple", F, 0, { type: l.P.cfg.type, gsm: l.P.cfg.gsm }), pe(l, "p", T, F, h ? Ve : mt(l.P)), n) pe(l, "tf", 1, P, Me, 0, v);
@@ -2103,7 +2103,7 @@ var gn = {
       };
       pe(l, "tf", 0, 0.78, Jt, F * (h ? 0.8 : 0.5), B);
     }
-    qe(l.ent.btn, "close", { id: l.P.cfg.id }), ue();
+    qe(l.ent.btn, "close", { id: l.P.cfg.id }), le();
   }
   function E() {
     ze(), l.phase = "closing", l.dragging = !1, a.classList.remove("on"), p.classList.remove("on"), o.style.pointerEvents = "none", l.f > 0 && pe(l, "f", 0, 0.4, Be);
@@ -2113,7 +2113,7 @@ var gn = {
       l.ashes = !0, l.ashesEnd = performance.now() + 3e3, r.classList.remove("on");
       let T = l.ent;
       ve.set("destroyed." + T.cfg.id, !0), T.destroyed = !0, qe(T.btn, "burn", { id: T.cfg.id });
-    }), ue();
+    }), le();
   }
   function v() {
     if (!l) return;
@@ -2125,12 +2125,12 @@ var gn = {
     n ? (o.style.opacity = "0", setTimeout(P, 300)) : P(), d.textContent = "", T || h.btn.focus({ preventScroll: !0 }), oe(h);
   }
   function C() {
-    !l || l.phase === "closing" || l.destroy !== void 0 || (se.play("flip", 1, 0, { type: l.P.cfg.type, gsm: l.P.cfg.gsm }), $e(10), pe(l, "f", l.f < 0.5 ? 1 : 0, 0.8, Me), qe(l.ent.btn, "flip", { id: l.P.cfg.id, back: l.f < 0.5 }), ue());
+    !l || l.phase === "closing" || l.destroy !== void 0 || (se.play("flip", 1, 0, { type: l.P.cfg.type, gsm: l.P.cfg.gsm }), $e(10), pe(l, "f", l.f < 0.5 ? 1 : 0, 0.8, Me), qe(l.ent.btn, "flip", { id: l.P.cfg.id, back: l.f < 0.5 }), le());
   }
   function Y() {
     !l || l.P.stubX === null || l.P.torn || l.tear > 0 || l.p < 0.95 || l.f > 0.01 || (se.play("tear", 1, 0, { type: l.P.cfg.type, gsm: l.P.cfg.gsm }), $e([15, 20, 15, 20, 30]), qe(l.ent.btn, "tear", { id: l.P.cfg.id }), u.hidden = !0, pe(l, "tear", 1, n ? 0.3 : 1, Me, 0, () => {
       l && (l.P.torn = !0);
-    }), ue());
+    }), le());
   }
   function O(h, T, P = {}) {
     let F = { btn: h, cfg: je(T), P: null, building: null, opts: P, opened: !1, off: [], io: null, gone: !1, madeImg: !1, madeLabel: !1 };
@@ -2142,7 +2142,7 @@ var gn = {
     let B = w.get(T);
     B && _(B);
     let N = y.find((q) => q.cfg.id === P.id);
-    N && (console.warn(`crumple: id "${P.id}" is already attached, the previous paper is detached`), _(N)), y.push(h), w.set(T, h), T.classList.add("crumple-trigger"), T.getAttribute("aria-label") || (T.setAttribute("aria-label", e.labels.open), h.madeLabel = !0), ve.get("destroyed." + P.id, !1) && (T.hidden = !0, h.destroyed = !0), h.opened = le(P.id), ae(h.off, T, "click", async () => {
+    N && (console.warn(`crumple: id "${P.id}" is already attached, the previous paper is detached`), _(N)), y.push(h), w.set(T, h), T.classList.add("crumple-trigger"), T.getAttribute("aria-label") || (T.setAttribute("aria-label", e.labels.open), h.madeLabel = !0), ve.get("destroyed." + P.id, !1) && (T.hidden = !0, h.destroyed = !0), h.opened = fe(P.id), ae(h.off, T, "click", async () => {
       await Q(h) ? Le(h) : Pe(h);
     });
     let V = T.querySelector("img");
@@ -2211,13 +2211,13 @@ var gn = {
     }), h.forEach((T) => Q(T).then(() => oe(T))), l) {
       let T = l.ent;
       l.rebuilding = !0, Q(T).then((P) => {
-        !l || l.ent !== T || (P ? (l.P = P, l.rebuilding = !1, ue()) : (l.ashes = !1, v()));
+        !l || l.ent !== T || (P ? (l.P = P, l.rebuilding = !1, le()) : (l.ashes = !1, v()));
       });
     }
   }
   function oe(h) {
     if (h.destroyed || h.gone) return;
-    h.opened = le(h.cfg.id);
+    h.opened = fe(h.cfg.id);
     let T = h.btn.querySelector("img");
     if (T || (T = document.createElement("img"), T.alt = "", h.btn.appendChild(T), h.madeImg = !0), h.opts.snapshot) {
       T.src = h.opened && h.opts.snapshotOpened ? h.opts.snapshotOpened : h.opts.snapshot;
@@ -2276,7 +2276,7 @@ var gn = {
   function H() {
     m.classList.remove("on"), document.body?.classList.remove("crumple-open"), m._ent && m._ent.btn.focus({ preventScroll: !0 });
   }
-  function fe(h, T) {
+  function ue(h, T) {
     let P = [...T.querySelectorAll("button")].filter((V) => !V.hidden);
     if (!P.length) return;
     h.preventDefault();
@@ -2352,8 +2352,8 @@ function yn(e, n = {}) {
     (e.width !== D || e.height !== X) && (e.width = D, e.height = X);
   }
   function M(A) {
-    let D = e.clientWidth, X = e.clientHeight, J = X / (2 * _e * Math.tan(Ce / 2)), W = i.cfg.type === "envelope", Se = W ? Math.min(t.fit * 0.69 * X / (i.T.body * J), 0.7 * D / (i.w * J)) : Math.min(t.fit * X / (i.h * J), (t.fit + 0.06) * D / (i.w * J)), ye = i.letter ? Math.min(t.fit * X / (i.letter.h * J), (t.fit + 0.06) * D / (i.letter.w * J)) : Se, ce = he($(W ? y.p * 2 : y.p)), ue = [0, 0, -0.02];
-    return { cx: 0, cy: 0, sc: Se, scLetter: ye, rot: i.pose.map((le, Le) => le * (1 - ce) + ue[Le] * ce), lift: 0, time: A / 1e3, ppu: J, vw: D, vh: X, vhU: X / J, L: Ze, lampPos: y.lampPos, lamp: y.lamp || 0, lampR: 0.3 * X / J };
+    let D = e.clientWidth, X = e.clientHeight, J = X / (2 * _e * Math.tan(Ce / 2)), W = i.cfg.type === "envelope", Se = W ? Math.min(t.fit * 0.69 * X / (i.T.body * J), 0.7 * D / (i.w * J)) : Math.min(t.fit * X / (i.h * J), (t.fit + 0.06) * D / (i.w * J)), ye = i.letter ? Math.min(t.fit * X / (i.letter.h * J), (t.fit + 0.06) * D / (i.letter.w * J)) : Se, ce = he($(W ? y.p * 2 : y.p)), le = [0, 0, -0.02];
+    return { cx: 0, cy: 0, sc: Se, scLetter: ye, rot: i.pose.map((fe, Le) => fe * (1 - ce) + le[Le] * ce), lift: 0, time: A / 1e3, ppu: J, vw: D, vh: X, vhU: X / J, L: Ze, lampPos: y.lampPos, lamp: y.lamp || 0, lampR: 0.3 * X / J };
   }
   let b = (A = performance.now()) => {
     let D = M(A);
