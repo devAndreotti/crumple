@@ -332,7 +332,8 @@ button.btn-small:active { transform: translateY(1px); }
 /* hover: the paper gives a small tremor (no WebGL work, no swap of the image) */
 .paper-btn { display: inline-block; }
 .paper-btn.crumple-trigger:hover img,
-.paper-btn.crumple-trigger:focus-visible img { animation: paper-tremor 0.42s ease-in-out; }
+.paper-btn.crumple-trigger:focus-visible img,
+.paper-btn.crumple-trigger.is-tremor img { animation: paper-tremor 0.42s ease-in-out; }
 @keyframes paper-tremor {
   0%, 100% { transform: translate(0, 0) rotate(0); }
   20% { transform: translate(-1.5px, 0.5px) rotate(-0.6deg); }
