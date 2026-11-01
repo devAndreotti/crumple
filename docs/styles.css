@@ -68,6 +68,8 @@ p { margin: 0; }
 .skip:focus { left: 12px; }
 
 /* top bar */
+html { scroll-padding-top: 84px; }
+.section, .hero { scroll-margin-top: 84px; }
 .topbar {
   position: sticky;
   top: 0;
