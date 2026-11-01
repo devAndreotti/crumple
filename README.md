@@ -139,7 +139,7 @@ Or directly in the HTML, from jsDelivr (pinned to 1.0.0):
 <script src="https://cdn.jsdelivr.net/gh/devAndreotti/crumple@1.0.0/dist/crumple.min.js"></script>
 ```
 
-The global build defines `window.Crumple`. It finds `assets/` next to the script on its own. When you serve the files from another path (for example, after copying them from npm), set the folder yourself:
+The global build (`<script>`) defines `window.Crumple` and finds `assets/` next to the script on its own. With ES modules that lookup does not work, so when you use modules, or serve the files from another path (for example, after copying them from npm), set the folder yourself:
 
 ```js
 config.assets = '/vendor/crumple/assets/'; // with the global build: Crumple.config.assets = ...
@@ -418,6 +418,10 @@ Sound is off by default. The choice is saved in `localStorage`.
 | `version` | `'1.0.0'`. |
 
 The types are in [`crumple.d.ts`](./crumple.d.ts).
+
+### Registering paper types and wear states
+
+`registerPaperType(id, def)` adds a paper type, and `registerWearState(id, def)` adds a wear state. Both are typed in `crumple.d.ts`, and the new id can be used in `PaperConfig` right after registration.
 
 ### Events
 

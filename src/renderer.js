@@ -6,6 +6,14 @@ import { Jobs } from './worker.js';
 import { VS, FS, SVS, SFS, PVS, PFS } from './shaders.js';
 import { openAmount, extentAt, poseAt, compose } from './motion.js';
 
+// LOD thresholds in px (largest side); a level changes only 10 % past a threshold, so a paper does not flicker
+export const LOD_PX = [260, 130];
+export function nextLod(k, s) {
+  while (k < 2 && s < LOD_PX[k] * 0.9) k++;
+  while (k > 0 && s > LOD_PX[k - 1] * 1.1) k--;
+  return k;
+}
+
 // column-major 4x4 matrices
 const M4 = {
   persp(fy, asp, n, f) { const t = 1 / Math.tan(fy / 2), nf = 1 / (n - f); return [t / asp, 0, 0, 0, 0, t, 0, 0, 0, 0, (f + n) * nf, -1, 0, 0, 2 * f * n * nf, 0]; },
@@ -228,6 +236,7 @@ export function Renderer(canvas, options = {}) {
       // a singed rim holds its front just under the lowest value of its field: only the scorch band shows
       front0: cfg.states.includes('burnt') ? BURN_FRONT[cfg.burn][0] + BURN_FRONT[cfg.burn][1] * r() : kind === 'singed' ? fx.lo - 0.012 : -1,
       burned: store.get('burned.' + cfg.id, 0),
+      redactKey: Math.min(openings, 3),
       age: cfg.states.includes('aged') ? 1 : 0,
       torn: false,
     };
@@ -239,11 +248,17 @@ export function Renderer(canvas, options = {}) {
   }
 
   // redaction bars fade on every opening: redraw just the print
+  // the redaction alpha is clamp(1 - openings * 0.34) (print.js writeText): zero from the 3rd opening on, so the print
+  // is the same for every later opening. The back is only redrawn when its own text has redaction bars.
   async function refreshPrint(P) {
     P.openings = store.get('opens.' + P.cfg.id, 0);
-    const [f, v] = await Promise.all([drawPrint(P.cfg, P.T, 'front', P.openings), P.backEmpty ? null : drawPrint(P.cfg, P.T, 'back', P.openings)]);
-    drop(P.tPF); drop(P.tPB);
-    P.tPF = texture(f, { mip: true }); P.tPB = v ? texture(v, { mip: true }) : empty();
+    const key = Math.min(P.openings, 3);
+    if (key === P.redactKey) return;
+    const redoBack = !P.backEmpty && /\[\[/.test(P.cfg.back || '');
+    const [f, v] = await Promise.all([drawPrint(P.cfg, P.T, 'front', P.openings), redoBack ? drawPrint(P.cfg, P.T, 'back', P.openings) : null]);
+    drop(P.tPF); P.tPF = texture(f, { mip: true });
+    if (redoBack) { drop(P.tPB); P.tPB = v ? texture(v, { mip: true }) : empty(); }
+    P.redactKey = key;
   }
 
   // a paper built without a burn field (Stage.burn on any paper, or a singed rim) gets one on demand: the effects
@@ -274,13 +289,8 @@ export function Renderer(canvas, options = {}) {
   }
 
   // LOD 0 full, 1 half, 2 quarter: coarser when the largest side (px) drops below LOD_PX, finer again 10 % above it
-  const LOD_PX = [260, 130];
   function lodOf(P, st, ppu) {
-    const s = extentAt(P, st.p) * st.sc * ppu;
-    let k = P.lod;
-    while (k < 2 && s < LOD_PX[k] * 0.9) k++;
-    while (k > 0 && s > LOD_PX[k - 1] * 1.1) k--;
-    return (P.lod = k);
+    return (P.lod = nextLod(P.lod, extentAt(P, st.p) * st.sc * ppu));
   }
 
   function drawPaper(P, st, proj, lod) {

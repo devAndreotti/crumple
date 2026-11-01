@@ -18,6 +18,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   - Dynamic acoustic resonance tuning for all 21 paper presets in `src/sound.js`.
 - Automated WebGL visual regression suite (`tests/visual-regression.cjs`, `npm run test:visual`).
 
+### Changed
+
+- Papers under ~260 px on screen draw a coarser mesh (levels 1/2 and 1/4, with hysteresis). Papers at normal sizes and snapshots are unchanged.
+- Deckle strands on parchment, postcard and aged papers are blurred in small tiles: the effects pass is much faster with near-identical output.
+- Faster `creaseField` (visits only the cells a fold can touch) and `noise2` (reuses corner values); output is bit-identical.
+- Print texture: one fewer fetch per pixel when `thru` is 0.
+- Delayed sound retunes are scheduled at their start instead of applied immediately.
+
+### Fixed
+
+- `normalize(null)` returns the default config instead of throwing.
+- `<crumple-paper>` no longer stacks a click listener on the button each time it is moved.
+- The reduced-motion close timer and the redaction redraw no longer run after `destroy()`.
+- Redaction bars on the envelope letter now fade on opening, like the envelope's own.
+- Redaction is redrawn only when it can change (from the 3rd opening on, it does not).
+- A failed image load is retried later instead of staying missing for the whole page.
+- Immediate sound retunes cancel stale scheduled automation.
+- A browser that refuses `AudioContext` no longer breaks the open or flip animation.
+- Docs: `config.assets` is not detected for ES modules; set it yourself there.
+
 ## [1.2.0] - 2026-10-29
 
 ### Added

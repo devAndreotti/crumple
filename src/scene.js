@@ -219,7 +219,7 @@ body.crumple-open{overflow:hidden;touch-action:none}
     const n = store.get('opens.' + P.cfg.id, 0) + 1;
     store.set('opens.' + P.cfg.id, n);
     // redaction bars fade on every opening: redraw after the first frame
-    if (P.hasRedaction) requestAnimationFrame(() => { if (A && A.P === P) R.refreshPrint(P).then(kick); });
+    if (P.hasRedaction || (P.letter && P.letter.hasRedaction)) requestAnimationFrame(() => { if (A && A.P === P) Promise.all([P.hasRedaction && R.refreshPrint(P), P.letter && P.letter.hasRedaction && R.refreshPrint(P.letter)]).then(kick); });
     const p0 = ent.opened ? openAmount(P) : 0;
     A = { P, ent, from: ent.btn.getBoundingClientRect(), tf: 0, p: p0, ext0: extentAt(P, p0), f: 0, tear: 0, tw: [], phase: 'opening', dragging: false, lampPos: null, lampGoal: null, lamp: 0, lampOn: 0, burnOpen: 0 };
     parts.clear();
