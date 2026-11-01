@@ -329,24 +329,19 @@ button.btn-small:active { transform: translateY(1px); }
 .tech-tooltip .spec-row { display: flex; gap: 8px; justify-content: space-between; }
 .tech-tooltip .spec-val { color: var(--muted); }
 
-/* Live button canvas preview */
-.paper-btn canvas.preview-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 6px;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s ease;
+/* hover: the paper gives a small tremor (no WebGL work, no swap of the image) */
+.paper-btn { display: inline-block; }
+.paper-btn.crumple-trigger:hover img,
+.paper-btn.crumple-trigger:focus-visible img { animation: paper-tremor 0.42s ease-in-out; }
+@keyframes paper-tremor {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  20% { transform: translate(-1.5px, 0.5px) rotate(-0.6deg); }
+  40% { transform: translate(1.5px, -0.5px) rotate(0.5deg); }
+  60% { transform: translate(-1px, -0.5px) rotate(-0.3deg); }
+  80% { transform: translate(1px, 0.5px) rotate(0.2deg); }
 }
-.paper-btn canvas.preview-canvas.ready { opacity: 1; }
-.paper-btn > img { transition: opacity 0.3s ease; }
-.paper-btn.has-live > img { opacity: 0; }
-.paper-btn { transition: transform 0.25s ease; }
-.paper-btn:hover { transform: translateY(-3px); }
-.paper-btn:active { transform: scale(0.97); }
-@media (prefers-reduced-motion: reduce) { .paper-btn, .paper-btn > img { transition: none; } .paper-btn:hover { transform: none; } }
+.paper-btn:active img { transform: scale(0.98); transition: transform 0.12s ease; }
+@media (prefers-reduced-motion: reduce) { .paper-btn.crumple-trigger:hover img, .paper-btn.crumple-trigger:focus-visible img { animation: none; } }
 .card h3 { font: 600 16px/1.3 var(--font-body); color: var(--ink); }
 .card p { color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 30ch; }
 .grid-small .card h3 { font-size: 15px; font-weight: 500; }
