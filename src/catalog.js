@@ -75,6 +75,7 @@ export function registerWearState(id, def) {
 const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
 export function normalize(c = {}) {
+  if (!c || typeof c !== 'object') c = {}; // null (or a bare value) is an empty config, as undefined already is
   const type = has(TYPES, c.type) ? c.type : 'typed';
   const T = TYPES[type];
   const stampVal = typeof c.stamp === 'string' && c.stamp.trim()

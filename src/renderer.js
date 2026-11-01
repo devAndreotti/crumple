@@ -188,12 +188,14 @@ export function Renderer(canvas, options = {}) {
     const nx = Math.max(16, Math.round(Math.sqrt(15000 * T.w / T.h))), ny = Math.max(16, Math.round(nx * T.h / T.w));
     const exX = [0], exY = [0, -T.h / 6 * 1.08, T.h / 6, foldY];
     if (cfg.shape === 'accordion') exX.push(-T.w / 6, T.w / 6);
-    const meshes = [];
-    if (stubX !== null) {
-      const nMain = Math.round(nx * (stubX + hw) / T.w);
-      meshes.push(mesh(-hw, stubX, hh, nMain, ny, exX, exY));
-      meshes.push(mesh(stubX, hw, hh, nx - nMain, ny, exX, exY));
-    } else meshes.push(mesh(-hw, hw, hh, nx, ny, exX, exY));
+    // levels of detail: full, 1/2 and 1/4 grids. Coarse grids keep the fold lines and add two lines beside each (bends are 0.03 wide)
+    const lods = [1, 2, 4].map((div) => {
+      const side = (ex) => (div > 1 ? ex.flatMap((v) => [v - 0.03, v, v + 0.03]) : ex);
+      const gx = Math.max(4, Math.round(nx / div)), gy = Math.max(4, Math.round(ny / div)), ax = side(exX), ay = side(exY);
+      if (stubX === null) return [mesh(-hw, hw, hh, gx, gy, ax, ay)];
+      const nMain = Math.min(gx - 1, Math.max(1, Math.round(gx * (stubX + hw) / T.w)));
+      return [mesh(-hw, stubX, hh, nMain, gy, ax, ay), mesh(stubX, hw, hh, gx - nMain, gy, ax, ay)];
+    });
     // an empty back and a paper without cut-outs use the shared 1x1 textures (saves ~6 MB of texture per paper)
     const backEmpty = !(cfg.back || cfg.type === 'notebook' || cfg.type === 'form' || cfg.type === 'envelope' || cfg.type === 'newspaper' || cfg.type === 'postcard' || cfg.type === 'blueprint' || ['coffee', 'water', 'prints', 'aged', 'wine', 'ink', 'foxing', 'faded', 'staple', 'grease', 'dogear', 'damp', 'clip'].some((e) => cfg.states.includes(e)));
     const kind = burnKind(cfg);
@@ -209,7 +211,7 @@ export function Renderer(canvas, options = {}) {
     for (let i = 0; i < W * H; i++) { rg[i * 2] = creases[i]; rg[i * 2 + 1] = ink ? ink[i] : 0; }
     const long = F.shape === 1 || F.shape === 2;
     const P = {
-      cfg, T, w: T.w, h: T.h, half: [hw, hh], F, stubX, foldY, meshes, openings,
+      cfg, T, w: T.w, h: T.h, half: [hw, hh], F, stubX, foldY, lods, lod: 0, openings,
       tH: texture(rg, { float: true, w: W, h: H }),
       tPF: texture(printF, { mip: true }),
       tPB: backEmpty ? empty() : texture(printB, { mip: true }),
@@ -267,11 +269,21 @@ export function Renderer(canvas, options = {}) {
   function release(P) {
     P.released = true;
     [P.tH, P.tPF, P.tPB, P.tFx].forEach(drop);
-    P.meshes.forEach((m) => { gl.deleteVertexArray(m.vao); m.bufs.forEach((b) => gl.deleteBuffer(b)); });
+    P.lods.flat().forEach((m) => { gl.deleteVertexArray(m.vao); m.bufs.forEach((b) => gl.deleteBuffer(b)); });
     if (P.letter) release(P.letter);
   }
 
-  function drawPaper(P, st, proj) {
+  // LOD 0 full, 1 half, 2 quarter: coarser when the largest side (px) drops below LOD_PX, finer again 10 % above it
+  const LOD_PX = [260, 130];
+  function lodOf(P, st, ppu) {
+    const s = extentAt(P, st.p) * st.sc * ppu;
+    let k = P.lod;
+    while (k < 2 && s < LOD_PX[k] * 0.9) k++;
+    while (k > 0 && s > LOD_PX[k - 1] * 1.1) k--;
+    return (P.lod = k);
+  }
+
+  function drawPaper(P, st, proj, lod) {
     const f = st.f || 0;
     let model = M4.mul(M4.T(st.cx, st.cy, (st.zoff || 0) * st.sc + 0.12 * st.sc * Math.sin(Math.PI * f)), M4.S(st.sc));
     model = M4.mul(model, M4.RZ(st.rot[2]));
@@ -327,7 +339,7 @@ export function Renderer(canvas, options = {}) {
     const passes = P.T.card ? [1, 0] : [0];
     passes.forEach((edge) => {
       gl.uniform1f(u.uEdge, edge);
-      P.meshes.forEach((m, i) => {
+      P.lods[lod].forEach((m, i) => {
         const stub = i === 1;
         if (stub && (P.torn || (st.tear || 0) >= 1)) return;
         gl.uniform1f(u.uIsStub, stub ? 1 : 0);
@@ -360,7 +372,8 @@ export function Renderer(canvas, options = {}) {
   }
 
   // a scene: a list of papers (the envelope and its letter), the shadow of one of them and the particles
-  function draw(items, shadow, parts, w = canvas.width, h = canvas.height) {
+  // exact = always the full grid (the snapshots)
+  function draw(items, shadow, parts, w = canvas.width, h = canvas.height, exact = false) {
     if (dead || lost) return;
     gl.viewport(0, 0, w, h);
     gl.clearColor(0, 0, 0, 0);
@@ -368,7 +381,8 @@ export function Renderer(canvas, options = {}) {
     const proj = M4.mul(M4.persp(FOV, w / h, 0.1, 100), M4.T(0, 0, -D));
     if (shadow && (shadow.st.alpha ?? 1) > 0.01) drawShadow(shadow.P, shadow.st, proj);
     gl.disable(gl.BLEND); gl.enable(gl.DEPTH_TEST);
-    items.forEach((it) => drawPaper(it.P, it.st, proj));
+    const ppu = h / (2 * D * Math.tan(FOV / 2));
+    items.forEach((it) => drawPaper(it.P, it.st, proj, exact ? 0 : lodOf(it.P, it.st, ppu)));
     if (parts && parts.n) {
       const data = parts.buffer();
       gl.useProgram(qp.p);
@@ -408,7 +422,7 @@ export function Renderer(canvas, options = {}) {
     const ppu = S / (2 * D * Math.tan(FOV / 2));
     const pl = opened ? openAmount(P) : 0, sc = 0.9 * S / (extentAt(P, pl) * ppu);
     const { items } = compose(P, { p: pl, f: 0, tear: 0, burnOpen: 0 }, { cx: 0, cy: 0, sc, scLetter: sc, rot: poseAt(P, pl), lift: 0, vhU: 1 });
-    draw(items, null, null, S, S);
+    draw(items, null, null, S, S, true);
     const px = new Uint8Array(S * S * 4);
     gl.readPixels(0, 0, S, S, gl.RGBA, gl.UNSIGNED_BYTE, px);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);

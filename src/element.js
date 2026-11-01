@@ -34,7 +34,9 @@ export class CrumplePaper extends (typeof HTMLElement !== 'undefined' ? HTMLElem
       this.entry = Scene.attach(btn, cfg, opts);
     };
 
+    // kept so disconnect removes it: a moved element must not stack one click listener per connection
     btn.addEventListener('click', mount, { once: true, capture: true });
+    this._click = [btn, mount];
 
     if (typeof IntersectionObserver !== 'undefined') {
       this._io = new IntersectionObserver((es) => {
@@ -51,6 +53,7 @@ export class CrumplePaper extends (typeof HTMLElement !== 'undefined' ? HTMLElem
       this._io.disconnect();
       this._io = null;
     }
+    if (this._click) { this._click[0].removeEventListener('click', this._click[1], { capture: true }); this._click = null; }
     if (this.btn) Scene.detach(this.btn);
     if (this._madeBtn && this.btn.parentNode) this.btn.remove();
     this.entry = null;

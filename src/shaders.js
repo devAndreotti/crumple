@@ -263,14 +263,18 @@ void main(){
   alb = mix(alb, max(alb, bleachCol), whitening);
 
   // front reads normally; the back is mirrored in u; backlight reveals ink silhouette from opposite face
-  vec2 uvB = vec2(1.0 - vUv.x, vUv.y);
-  vec4 tF = texture(uPrintF, vUv), tB = texture(uPrintB, uvB);
-  vec4 pr = front ? tF : tB;
-  vec4 th = front ? tB : tF;
+  // only the visible side is sampled; the other side only when uThru != 0 (its terms vanish otherwise)
+  // textureGrad with du/dv: implicit derivatives are undefined inside the non-uniform front branch
+  vec2 uvB = vec2(1.0 - vUv.x, vUv.y), duB = vec2(-du.x, du.y), dvB = vec2(-dv.x, dv.y);
+  vec4 pr, th = vec4(0.0);
+  if (front) pr = textureGrad(uPrintF, vUv, du, dv); else pr = textureGrad(uPrintB, uvB, duB, dvB);
   float thruFactor = clamp(uThru * (1.0 + 3.2 * backlight), 0.0, 0.92);
-  vec3 inkSilhouette = mix(th.rgb, th.rgb * 0.3 + vec3(0.02), clamp(backlight * 1.5, 0.0, 0.8));
-  alb = mix(alb, inkSilhouette, th.a * thruFactor);
-  alb += col0 * (uThru * (backL * 0.4 + backLp * 0.7)) * (1.0 - th.a * 0.85);
+  if (uThru != 0.0) {
+    if (front) th = textureGrad(uPrintB, uvB, duB, dvB); else th = textureGrad(uPrintF, vUv, du, dv);
+    vec3 inkSilhouette = mix(th.rgb, th.rgb * 0.3 + vec3(0.02), clamp(backlight * 1.5, 0.0, 0.8));
+    alb = mix(alb, inkSilhouette, th.a * thruFactor);
+    alb += col0 * (uThru * (backL * 0.4 + backLp * 0.7)) * (1.0 - th.a * 0.85);
+  }
   alb = mix(alb, pr.rgb, pr.a);
   alb = mix(alb, vec3(0.45, 0.29, 0.13), smoothstep(0.12, 0.55, sc) * 0.85);
   alb = mix(alb, vec3(0.06, 0.045, 0.04), smoothstep(0.55, 0.9, sc));
