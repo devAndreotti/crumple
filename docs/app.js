@@ -135,7 +135,7 @@
       var mini = null, cv = null, release = null;
       function start() {
         clearTimeout(release);
-        if (mini || liveCount >= LIVE_MAX || !window.WebGL2RenderingContext || !(Crumple && Crumple.Stage)) return;
+        if (mini || liveCount >= LIVE_MAX || !window.WebGL2RenderingContext || !Crumple?.Stage) return;
         cv = el('canvas', 'preview-canvas');
         cv.width = 118;
         cv.height = 118;
@@ -148,7 +148,8 @@
           cv.classList.add('ready');
           btn.classList.add('has-live');
         } catch (err) {
-          if (mini && mini.destroy) mini.destroy();
+          // a failed WebGL2 start leaves the static image in place; the canvas is removed
+          mini?.destroy?.();
           mini = null;
           cv.remove();
         }
