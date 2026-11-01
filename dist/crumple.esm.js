@@ -95,7 +95,7 @@ var Sn = { "Special Elite": "Special+Elite", "Courier Prime": "Courier+Prime:wgh
 function Kt(e) {
   return document.fonts ? Promise.all(e.map((n) => {
     if (!Lt[n]) {
-      let t = Sn[n], f = t && t.split(":")[0].replace(/\+/g, " "), r = (i) => {
+      let t = Sn[n], f = t?.split(":")[0].replaceAll("+", " "), r = (i) => {
         try {
           return new URL(i.href).searchParams.getAll("family").some((u) => u.split(":")[0] === f);
         } catch {
@@ -1388,9 +1388,9 @@ var ue = /* @__PURE__ */ (() => {
     },
     // optional real recordings: { crumple, sheet, tear } (URLs)
     useSamples(M) {
-      i = { ...M };
-      for (let g of Object.keys(u)) g in i || delete u[g];
-      r = null, a && e && m();
+      i = { ...M }, Object.keys(u).filter((g) => !(g in i)).forEach((g) => {
+        delete u[g];
+      }), r = null, a && e && m();
     },
     tune(M) {
       return p(M);
