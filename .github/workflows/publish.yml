@@ -32,4 +32,9 @@ jobs:
       - run: npm run test:node
       - name: committed builds are up to date
         run: git diff --exit-code -- dist docs/lib
-      - run: npm publish --provenance --access public
+      # uses the NPM_TOKEN repository secret when it is set, otherwise trusted publishing (id-token above)
+      # setting it: gh secret set NPM_TOKEN
+      - name: publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
