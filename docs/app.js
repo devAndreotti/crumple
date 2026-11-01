@@ -135,6 +135,14 @@
         var byId = {};
         list.forEach(function (p) { byId[p.id] = p; });
         $$('[data-paper]').forEach(function (btn) {
+          // touch has no hover: a tap runs the same short tremor (the class is removed when it ends)
+          // the class is removed by a timer, not animationend: a tap that opens the paper hides the button, and hidden elements never fire it
+          var tremorEnd = null;
+          btn.addEventListener('pointerdown', function () {
+            btn.classList.add('is-tremor');
+            clearTimeout(tremorEnd);
+            tremorEnd = setTimeout(function () { btn.classList.remove('is-tremor'); }, 500);
+          });
           var id = btn.getAttribute('data-paper');
           var base = byId[id];
           if (!base) return;
@@ -143,6 +151,9 @@
             snapshot: 'snaps/' + id + '.webp',
             snapshotOpened: 'snaps/' + id + '-opened.webp'
           });
+          // the gallery is long: its snapshots load as the reader scrolls to them
+          var shot = btn.querySelector('img');
+          if (shot) { shot.loading = 'lazy'; shot.decoding = 'async'; }
         });
       })
       .catch(function () { /* without the papers the galleries stay as plain labels */ });

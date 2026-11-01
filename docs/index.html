@@ -418,6 +418,19 @@ document.addEventListener('crumple:burn', (e) =&gt; {
           </tbody>
         </table>
 
+        <h3 data-i18n="api.example.title">Minimal example</h3>
+        <div class="code">
+          <div class="code-head"><span>JS</span><button type="button" class="copy" data-i18n="copy" aria-label="Copy snippet">Copy</button></div>
+          <pre><code>Crumple.config.assets = 'assets/';
+Crumple.Scene.init({ motion: 'auto' });
+// any button becomes a paper: click to open, drag to crumple
+// 'note' is any <button id="note"> on your page
+Crumple.Scene.attach(document.getElementById('note'), {
+  type: 'typed',
+  text: 'Dear reader, write your note here.',
+});</code></pre>
+        </div>
+
         <h3 data-i18n="api.stage.title">Stage (inline canvas)</h3>
         <p class="api-note" data-i18n="api.stage.desc">A paper rendered in place in your own canvas, with no flight.</p>
         <table>
