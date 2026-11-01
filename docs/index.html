@@ -121,113 +121,156 @@
         <p data-i18n="play.lede">Build a paper, then crumple, unfold, flip at any moment, tear it, or burn it four ways. The JSON box shows exactly what you are using.</p>
       </header>
 
-      <div class="stage-wrap">
-        <canvas id="stage" role="img" aria-label="Live crumpled paper"></canvas>
-        <p class="nogl" id="nogl" hidden data-i18n="play.webgl">This browser has no WebGL2.</p>
-      </div>
+      <div class="play-layout" id="play-layout">
+        <div class="play-head">
+          <button type="button" class="btn btn-small play-toggle" id="menu-toggle" aria-expanded="false" aria-controls="play-menu">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span data-i18n="play.menu">Paper settings</span>
+            <svg class="chev" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
 
-      <div class="play-bar" role="toolbar" aria-label="Paper actions">
-        <button type="button" class="btn btn-small" data-act="crumple" data-i18n="play.crumple" aria-controls="stage">Crumple</button>
-        <button type="button" class="btn btn-small" data-act="uncrumple" data-i18n="play.unfold" aria-controls="stage">Unfold</button>
-        <button type="button" class="btn btn-small" data-act="flip" data-i18n="play.flip" aria-controls="stage">Flip</button>
-        <button type="button" class="btn btn-small" data-act="tear" data-i18n="play.tearStub" aria-controls="stage">Tear stub</button>
-        <button type="button" class="btn btn-small" data-act="burn" data-i18n="play.burnNow" aria-controls="stage">Burn</button>
-        <button type="button" class="btn btn-small" data-act="restore" data-i18n="play.restore" aria-controls="stage">Restore</button>
-        <label class="range" for="progress">
-          <span data-i18n="play.progress">Progress</span>
-          <input type="range" id="progress" min="0" max="1" step="0.01" value="1" aria-controls="stage" aria-label="Fold progress" aria-valuenow="1" aria-valuemin="0" aria-valuemax="1">
-        </label>
-        <button type="button" class="btn btn-small" id="png" data-i18n="play.png" aria-controls="stage">Download PNG</button>
-        <button type="button" class="btn btn-small" id="webp" data-i18n="play.exportWebP" aria-controls="stage">Download WebP</button>
-        <button type="button" class="btn btn-small" id="share" data-i18n="play.shareUrl" aria-controls="stage json-out">Share URL</button>
-      </div>
+        <!-- the menu: pushes the sheet on desktop, slides up over it on phones -->
+        <div class="play-menu" id="play-menu" role="region" aria-labelledby="play-menu-title">
+          <div class="play-menu-body">
+            <div class="play-menu-head">
+              <h3 id="play-menu-title" data-i18n="play.menu">Paper settings</h3>
+              <button type="button" class="btn btn-small menu-close" id="menu-close" data-i18n="play.menuClose">Close</button>
+            </div>
 
-      <div class="controls">
-        <label class="field" for="ctl-type">
-          <span data-i18n="play.type">Type</span>
-          <select id="ctl-type" aria-controls="stage json-out"></select>
-        </label>
-        <label class="field" for="ctl-shape">
-          <span data-i18n="play.shape">Shape</span>
-          <select id="ctl-shape" aria-controls="stage json-out"></select>
-        </label>
-        <label class="field" for="ctl-burn-form">
-          <span data-i18n="play.burnForm">Burn form</span>
-          <select id="ctl-burn-form" aria-controls="stage json-out">
-            <option value="corner" data-i18n="burn.corner">Corner</option>
-            <option value="edge" data-i18n="burn.edge">Edge</option>
-            <option value="center" data-i18n="burn.center">Center hole</option>
-            <option value="spots" data-i18n="burn.spots">Embers</option>
-          </select>
-        </label>
-        <label class="field" for="ctl-open">
-          <span data-i18n="play.open">Open mode</span>
-          <select id="ctl-open" aria-controls="stage json-out">
-            <option value="auto" data-i18n="play.openAuto">auto (unfolds by itself)</option>
-            <option value="drag" data-i18n="play.openDrag">drag (reader opens it)</option>
-          </select>
-        </label>
-        <div class="field field-seed">
-          <label for="ctl-seed" data-i18n="play.seed">Seed</label>
-          <div class="seed-row">
-            <input type="number" id="ctl-seed" min="1" max="99999" step="1" value="7" aria-controls="stage json-out" aria-describedby="seed-hint">
-            <button type="button" class="btn btn-small" id="ctl-random" data-i18n="play.random" aria-controls="ctl-seed stage json-out" aria-label="Randomize seed">random</button>
+            <section class="menu-group" aria-labelledby="menu-h-paper">
+              <h4 class="menu-title" id="menu-h-paper" data-i18n="play.menu.paper">Paper</h4>
+              <div class="controls">
+                <label class="field" for="ctl-type">
+                  <span data-i18n="play.type">Type</span>
+                  <select id="ctl-type" aria-controls="stage json-out"></select>
+                </label>
+                <label class="field" for="ctl-shape">
+                  <span data-i18n="play.shape">Shape</span>
+                  <select id="ctl-shape" aria-controls="stage json-out"></select>
+                </label>
+                <label class="field" for="ctl-open">
+                  <span data-i18n="play.open">Open mode</span>
+                  <select id="ctl-open" aria-controls="stage json-out">
+                    <option value="auto" data-i18n="play.openAuto">auto (unfolds by itself)</option>
+                    <option value="drag" data-i18n="play.openDrag">drag (reader opens it)</option>
+                  </select>
+                </label>
+                <div class="field field-seed">
+                  <label for="ctl-seed" data-i18n="play.seed">Seed</label>
+                  <div class="seed-row">
+                    <input type="number" id="ctl-seed" min="1" max="99999" step="1" value="7" aria-controls="stage json-out" aria-describedby="seed-hint">
+                    <button type="button" class="btn btn-small" id="ctl-random" data-i18n="play.random" aria-controls="ctl-seed stage json-out" aria-label="Randomize seed">random</button>
+                  </div>
+                  <span id="seed-hint" class="sr-only" hidden>Numeric seed from 1 to 99999</span>
+                </div>
+                <label class="field" for="ctl-burn-form">
+                  <span data-i18n="play.burnForm">Burn form</span>
+                  <select id="ctl-burn-form" aria-controls="stage json-out">
+                    <option value="corner" data-i18n="burn.corner">Corner</option>
+                    <option value="edge" data-i18n="burn.edge">Edge</option>
+                    <option value="center" data-i18n="burn.center">Center hole</option>
+                    <option value="spots" data-i18n="burn.spots">Embers</option>
+                  </select>
+                </label>
+                <label class="check field-wide" for="ctl-burn">
+                  <input type="checkbox" id="ctl-burn" aria-controls="stage json-out">
+                  <span data-i18n="play.burn">Burn after reading (applies to triggers, kept in the JSON)</span>
+                </label>
+                <fieldset class="field field-wide states-field">
+                  <legend data-i18n="play.states">States</legend>
+                  <div class="state-groups" id="ctl-states" role="group" aria-label="Paper states"></div>
+                </fieldset>
+                <label class="field" for="ctl-stamp">
+                  <span data-i18n="play.stampWord">Stamp word</span>
+                  <input type="text" id="ctl-stamp" maxlength="16" placeholder="RECEIVED" spellcheck="false" autocomplete="off" disabled aria-controls="stage json-out" aria-describedby="stamp-hint">
+                  <span id="stamp-hint" class="sr-only" hidden>Rubber stamp text, max 16 uppercase characters</span>
+                </label>
+              </div>
+            </section>
+
+            <section class="menu-group" aria-labelledby="menu-h-look">
+              <h4 class="menu-title" id="menu-h-look" data-i18n="play.menu.look">Look</h4>
+              <div class="controls">
+                <label class="field" for="ctl-color">
+                  <span data-i18n="play.color">Custom color tint</span>
+                  <input type="color" id="ctl-color" value="#f8f5ee" aria-controls="stage json-out">
+                </label>
+                <label class="field" for="ctl-gsm">
+                  <span data-i18n="play.gsm">Paper weight (GSM)</span>
+                  <input type="number" id="ctl-gsm" min="30" max="450" step="5" placeholder="80" aria-controls="stage json-out">
+                </label>
+                <label class="field" for="ctl-wear">
+                  <span data-i18n="play.wearIntensity">Wear intensity</span>
+                  <input type="range" id="ctl-wear" min="0" max="2" step="0.1" value="1.0" aria-controls="stage json-out">
+                </label>
+                <label class="field" for="ctl-watermark">
+                  <span data-i18n="play.watermark">Watermark text</span>
+                  <input type="text" id="ctl-watermark" maxlength="24" placeholder="ARCHIVE" spellcheck="false" autocomplete="off" aria-controls="stage json-out">
+                </label>
+                <label class="field" for="ctl-seal">
+                  <span data-i18n="play.seal">Wax seal symbol</span>
+                  <input type="text" id="ctl-seal" maxlength="4" placeholder="⚜" spellcheck="false" autocomplete="off" aria-controls="stage json-out">
+                </label>
+              </div>
+            </section>
+
+            <section class="menu-group" aria-labelledby="menu-h-text">
+              <h4 class="menu-title" id="menu-h-text" data-i18n="play.menu.text">Text</h4>
+              <div class="controls">
+                <label class="field field-wide" for="ctl-text">
+                  <span data-i18n="play.text">Front text</span>
+                  <textarea id="ctl-text" rows="6" spellcheck="false" aria-controls="stage json-out"></textarea>
+                </label>
+                <label class="field field-wide" for="ctl-back">
+                  <span data-i18n="play.back">Back text</span>
+                  <textarea id="ctl-back" rows="2" spellcheck="false" aria-controls="stage json-out"></textarea>
+                </label>
+                <label class="field field-wide" for="ctl-hidden">
+                  <span data-i18n="play.hiddenInk">Hidden ink</span>
+                  <input type="text" id="ctl-hidden" spellcheck="false" aria-controls="stage json-out">
+                </label>
+              </div>
+            </section>
+
+            <section class="menu-group" aria-labelledby="menu-h-export">
+              <h4 class="menu-title" id="menu-h-export" data-i18n="play.menu.export">Export and share</h4>
+              <div class="menu-actions">
+                <button type="button" class="btn btn-small" id="png" data-i18n="play.png" aria-controls="stage">Download PNG</button>
+                <button type="button" class="btn btn-small" id="webp" data-i18n="play.exportWebP" aria-controls="stage">Download WebP</button>
+                <button type="button" class="btn btn-small" id="share" data-i18n="play.shareUrl" aria-controls="stage json-out">Share URL</button>
+              </div>
+            </section>
           </div>
-          <span id="seed-hint" class="sr-only" hidden>Numeric seed from 1 to 99999</span>
         </div>
-        <fieldset class="field field-wide states-field">
-          <legend data-i18n="play.states">States</legend>
-          <div class="state-groups" id="ctl-states" role="group" aria-label="Paper states"></div>
-        </fieldset>
-        <label class="field" for="ctl-stamp">
-          <span data-i18n="play.stampWord">Stamp word</span>
-          <input type="text" id="ctl-stamp" maxlength="16" placeholder="RECEIVED" spellcheck="false" autocomplete="off" disabled aria-controls="stage json-out" aria-describedby="stamp-hint">
-          <span id="stamp-hint" class="sr-only" hidden>Rubber stamp text, max 16 uppercase characters</span>
-        </label>
-        <label class="field" for="ctl-color">
-          <span data-i18n="play.color">Custom color tint</span>
-          <input type="color" id="ctl-color" value="#f8f5ee" aria-controls="stage json-out">
-        </label>
-        <label class="field" for="ctl-gsm">
-          <span data-i18n="play.gsm">Paper weight (GSM)</span>
-          <input type="number" id="ctl-gsm" min="30" max="450" step="5" placeholder="80" aria-controls="stage json-out">
-        </label>
-        <label class="field" for="ctl-watermark">
-          <span data-i18n="play.watermark">Watermark text</span>
-          <input type="text" id="ctl-watermark" maxlength="24" placeholder="ARCHIVE" spellcheck="false" autocomplete="off" aria-controls="stage json-out">
-        </label>
-        <label class="field" for="ctl-seal">
-          <span data-i18n="play.seal">Wax seal symbol</span>
-          <input type="text" id="ctl-seal" maxlength="4" placeholder="⚜" spellcheck="false" autocomplete="off" aria-controls="stage json-out">
-        </label>
-        <label class="field" for="ctl-wear">
-          <span data-i18n="play.wearIntensity">Wear intensity</span>
-          <input type="range" id="ctl-wear" min="0" max="2" step="0.1" value="1.0" aria-controls="stage json-out">
-        </label>
-        <label class="field field-wide" for="ctl-text">
-          <span data-i18n="play.text">Front text</span>
-          <textarea id="ctl-text" rows="6" spellcheck="false" aria-controls="stage json-out"></textarea>
-        </label>
-        <label class="field field-wide" for="ctl-back">
-          <span data-i18n="play.back">Back text</span>
-          <textarea id="ctl-back" rows="2" spellcheck="false" aria-controls="stage json-out"></textarea>
-        </label>
-        <label class="field field-wide" for="ctl-hidden">
-          <span data-i18n="play.hiddenInk">Hidden ink</span>
-          <input type="text" id="ctl-hidden" spellcheck="false" aria-controls="stage json-out">
-        </label>
-        <label class="check field-wide" for="ctl-burn">
-          <input type="checkbox" id="ctl-burn" aria-controls="stage json-out">
-          <span data-i18n="play.burn">Burn after reading (applies to triggers, kept in the JSON)</span>
-        </label>
-      </div>
 
-      <div class="code json-box">
-        <div class="code-head">
-          <span data-i18n="play.json">Config (JSON)</span>
-          <button type="button" class="copy" data-copy-target="json-out" data-i18n="copy" aria-controls="json-out" aria-label="Copy JSON configuration">Copy</button>
+        <div class="play-sheet">
+          <div class="stage-wrap" id="stage-wrap">
+            <canvas id="stage" role="img" aria-label="Live crumpled paper"></canvas>
+            <p class="nogl" id="nogl" hidden data-i18n="play.webgl">This browser has no WebGL2.</p>
+          </div>
+
+          <div class="play-bar" role="toolbar" aria-label="Paper actions">
+            <button type="button" class="btn btn-small" data-act="crumple" data-i18n="play.crumple" aria-controls="stage">Crumple</button>
+            <button type="button" class="btn btn-small" data-act="uncrumple" data-i18n="play.unfold" aria-controls="stage">Unfold</button>
+            <button type="button" class="btn btn-small" data-act="flip" data-i18n="play.flip" aria-controls="stage">Flip</button>
+            <button type="button" class="btn btn-small" data-act="tear" data-i18n="play.tearStub" aria-controls="stage">Tear stub</button>
+            <button type="button" class="btn btn-small" data-act="burn" data-i18n="play.burnNow" aria-controls="stage">Burn</button>
+            <button type="button" class="btn btn-small" data-act="restore" data-i18n="play.restore" aria-controls="stage">Restore</button>
+            <label class="range" for="progress">
+              <span data-i18n="play.progress">Progress</span>
+              <input type="range" id="progress" min="0" max="1" step="0.01" value="1" aria-controls="stage" aria-label="Fold progress" aria-valuenow="1" aria-valuemin="0" aria-valuemax="1">
+            </label>
+          </div>
+
+          <div class="code json-box">
+            <div class="code-head">
+              <span data-i18n="play.json">Config (JSON)</span>
+              <button type="button" class="copy" data-copy-target="json-out" data-i18n="copy" aria-controls="json-out" aria-label="Copy JSON configuration">Copy</button>
+            </div>
+            <pre><code id="json-out" aria-live="polite"></code></pre>
+          </div>
         </div>
-        <pre><code id="json-out" aria-live="polite"></code></pre>
       </div>
     </section>
 
