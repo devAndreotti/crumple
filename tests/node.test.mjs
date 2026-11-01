@@ -269,3 +269,46 @@ test('procedural customization options normalize correctly (color, stamp, waterm
   assert.equal(normalize({ wearIntensity: -0.5 }).wearIntensity, 0);
   assert.equal(normalize({ wearIntensity: 'high' }).wearIntensity, undefined);
 });
+
+// LOD hysteresis: coarser below 90 % of a threshold, finer again only above 110 %
+test('nextLod: thresholds and hysteresis band', async () => {
+  const { nextLod } = await import('../src/renderer.js');
+  assert.equal(nextLod(0, 300), 0);
+  assert.equal(nextLod(0, 230), 1);
+  assert.equal(nextLod(1, 200), 1);
+  assert.equal(nextLod(1, 290), 0);
+  assert.equal(nextLod(0, 100), 2);
+  assert.equal(nextLod(2, 100), 2);
+});
+
+test('normalize(null) falls back to the default config', () => {
+  assert.equal(normalize(null).type, normalize().type);
+});
+
+// an immediate retune cancels scheduled automation from its write point, so the newest tune wins
+test('sound: immediate retune cancels stale scheduled automation', () => {
+  const { Sound } = src;
+  const param = () => ({ value: 0, log: [], setValueAtTime(v, t) { this.log.push(['set', v, t]); }, cancelScheduledValues(t) { this.log.push(['cancel', t]); } });
+  const filters = [];
+  const prev = globalThis.window;
+  globalThis.window = { AudioContext: class {
+    constructor() { this.currentTime = 0; this.destination = {}; }
+    createGain() { return { gain: param(), connect() {} }; }
+    createBiquadFilter() { const f = { type: '', frequency: param(), Q: param(), gain: param(), connect() {} }; filters.push(f); return f; }
+    createBufferSource() { return { buffer: null, playbackRate: param(), connect() {}, disconnect() {}, start() {}, stop() {}, onended: null }; }
+    createBuffer() { return { getChannelData: () => new Float32Array(1) }; }
+    createDynamicsCompressor() { return { connect() {} }; }
+    createOscillator() { return { frequency: param(), connect() {}, start() {}, stop() {} }; }
+  } };
+  try {
+    Sound.set(true);
+    Sound.tune({ type: 'carbon' });
+    Sound.tune({ type: 'postcard' });
+    const f = filters[0];
+    assert.ok(f, 'filter created');
+    assert.ok(f.frequency.log.some((e) => e[0] === 'cancel'), 'frequency automation cancelled before the new tune');
+    assert.equal(Sound.tuning.freq, 290);
+  } finally {
+    if (prev === undefined) delete globalThis.window; else globalThis.window = prev;
+  }
+});

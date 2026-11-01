@@ -128,7 +128,7 @@ export function loadImage(src) {
       const i = new Image();
       i.crossOrigin = 'anonymous';
       i.onload = () => (i.decode ? i.decode().then(() => res(i), () => res(i)) : res(i));
-      i.onerror = () => res(null);
+      i.onerror = () => { delete images[src]; res(null); };
       i.src = src;
     });
   }

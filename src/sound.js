@@ -87,6 +87,8 @@ export const Sound = /* @__PURE__ */ (() => {
     currentTune = { ...t };
     if (res && ac) {
       const time = atTime !== undefined ? atTime : ac.currentTime;
+      const from = Math.max(time, ac.currentTime);
+      for (const p of [res.frequency, res.Q, res.gain]) p.cancelScheduledValues(from);
       if (time > ac.currentTime) {
         res.frequency.setValueAtTime(currentTune.freq, time);
         res.Q.setValueAtTime(currentTune.q, time);
@@ -111,7 +113,7 @@ export const Sound = /* @__PURE__ */ (() => {
     if (!ac) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
-      ac = new AC();
+      try { ac = new AC(); } catch (e) { return null; }
       master = ac.createGain(); master.gain.value = 0.6;
       res = ac.createBiquadFilter();
       res.type = 'peaking';

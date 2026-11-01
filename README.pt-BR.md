@@ -139,7 +139,7 @@ Ou direto no HTML, pelo jsDelivr (fixado na 1.0.0):
 <script src="https://cdn.jsdelivr.net/gh/devAndreotti/crumple@1.0.0/dist/crumple.min.js"></script>
 ```
 
-O build global define `window.Crumple`. Ele encontra a pasta `assets/` ao lado do script sozinho. Quando você serve os arquivos de outro caminho (por exemplo, depois de copiá-los do npm), defina a pasta:
+O build global (`<script>`) define `window.Crumple` e encontra a pasta `assets/` ao lado do script sozinho. Com módulos ES essa busca não funciona, então, ao usar módulos ou servir os arquivos de outro caminho (por exemplo, depois de copiá-los do npm), defina a pasta:
 
 ```js
 config.assets = '/vendor/crumple/assets/'; // no build global: Crumple.config.assets = ...
@@ -418,6 +418,10 @@ O som vem desligado por padrão. A escolha fica salva no `localStorage`.
 | `version` | `'1.0.0'`. |
 
 Os tipos estão em [`crumple.d.ts`](./crumple.d.ts).
+
+### Registrar tipos de papel e estados de desgaste
+
+`registerPaperType(id, def)` adiciona um tipo de papel, e `registerWearState(id, def)` adiciona um estado de desgaste. Ambos estão tipados em `crumple.d.ts`, e o novo id pode ser usado em `PaperConfig` logo após o registro.
 
 ### Eventos
 
