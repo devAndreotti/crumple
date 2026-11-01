@@ -193,11 +193,11 @@ export const Sound = /* @__PURE__ */ (() => {
       else if (typeof delay === 'string') { opts = { type: delay }; delay = 0; }
       if (typeof opts === 'string') opts = { type: opts };
       else if (typeof opts === 'number') opts = { gsm: opts };
-      if (opts) tune(opts);
+      // a delayed retune is scheduled for its start, not applied now (it would change what is still sounding)
+      if (opts) tune(opts, delay > 0 && ac ? ac.currentTime + delay : undefined);
       if (!enabled || !ctx()) return;
       load();
       const t = ac.currentTime + delay;
-      if (opts && delay > 0) tune(opts, t);
       const has = (n) => !!samples[n];
       if (name === 'crumple') {
         if (has('crumple')) { const n = Math.max(2, Math.round(dur * 4)); for (let i = 0; i < n; i++) sample('crumple', t + (i / n) * dur * 0.85, { gain: 0.6 + Math.random() * 0.35, rate: 0.85 + Math.random() * 0.35 }); crackles(t, dur, 25, 1, 0.1, true); }
