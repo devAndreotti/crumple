@@ -62,7 +62,7 @@
     "test": "npm run test:node && npm run test:browser",
     "test:node": "node --test tests/node.test.mjs",
     "test:visual": "node tests/visual-regression.cjs",
-    "test:browser": "node tests/smoke.cjs && node tests/flow.cjs && node tests/robust.cjs && node tests/burnflip.cjs && node tests/states.cjs && node tests/shapes.cjs && node tests/visual-regression.cjs"
+    "test:browser": "node tests/smoke.cjs && node tests/flow.cjs && node tests/robust.cjs && node tests/lifecycle.cjs && node tests/burnflip.cjs && node tests/states.cjs && node tests/shapes.cjs && node tests/visual-regression.cjs"
   },
   "devDependencies": {
     "esbuild": "0.28.2",
