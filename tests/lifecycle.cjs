@@ -49,15 +49,14 @@ const sleep = (t) => new Promise((r) => setTimeout(r, t));
     check('Scene.destroy after reduced-motion close: no page errors', destroyErrs.length === 0, destroyErrs.join(' | '));
 
     // 3. a redaction paper opened six times (and its envelope letter) raises no page errors
-    const redacted = await p.evaluate(() => {
+    await p.evaluate(() => {
       Crumple.Scene.init({ motion: 'reduce' });
       const b = document.createElement('button'); b.textContent = 'redacted';
       document.body.append(b);
       Crumple.Scene.attach(b, { type: 'envelope', text: 'secret [[name]] line', back: 'back [[x]]' });
-      return true;
     });
     const beforeR = errs.length;
-    for (let i = 0; i < 6 && redacted; i++) {
+    for (let i = 0; i < 6; i++) {
       const btn = await p.$('body > button:last-of-type');
       await btn.click();
       await p.waitForFunction('document.body.classList.contains("crumple-open")', { timeout: 60000 });

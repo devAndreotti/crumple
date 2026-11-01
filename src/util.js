@@ -106,7 +106,7 @@ export function ensureFonts(list) {
   return Promise.all(list.map((f) => {
     if (!fontsRequested[f]) {
       const spec = FONTS[f];
-      const name = spec && spec.split(':')[0].replace(/\+/g, ' ');
+      const name = spec?.split(':')[0].replaceAll('+', ' ');
       const loaded = (l) => { try { return new URL(l.href).searchParams.getAll('family').some((v) => v.split(':')[0] === name); } catch (e) { return false; } };
       const has = !spec || !config.googleFonts || [...document.querySelectorAll('link[rel=stylesheet]')].some(loaded);
       const css = has ? Promise.resolve() : new Promise((res) => {
