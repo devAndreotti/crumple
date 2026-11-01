@@ -129,27 +129,46 @@
     Crumple.config.assets = 'assets/';
     Crumple.Scene.init({ labels: T.sceneLabels(), motion: 'auto', flashlight: true, remember: false });
 
+    // one live WebGL context per hovered paper, at most LIVE_MAX at a time, released shortly after the pointer leaves
+    var LIVE_MAX = 3, liveCount = 0;
     function attachLivePreview(btn, cfg) {
-      function renderPreview() {
-        if (btn._hasLiveCanvas || !window.WebGL2RenderingContext) return;
-        btn._hasLiveCanvas = true;
-        var cv = el('canvas', 'preview-canvas');
+      var mini = null, cv = null, release = null;
+      function start() {
+        clearTimeout(release);
+        if (mini || liveCount >= LIVE_MAX || !window.WebGL2RenderingContext || !Crumple?.Stage) return;
+        cv = el('canvas', 'preview-canvas');
         cv.width = 118;
         cv.height = 118;
         btn.appendChild(cv);
         try {
-          if (Crumple && Crumple.Stage) {
-            var mini = Crumple.Stage(cv, { fit: 0.85 });
-            mini.set(cfg, { progress: 0 });
-            cv.classList.add('ready');
-            btn.classList.add('has-live');
-          }
+          mini = Crumple.Stage(cv, { fit: 0.85 });
+          if (!mini) throw new Error('no WebGL2');
+          mini.set(cfg, { progress: 0 });
+          liveCount++;
+          cv.classList.add('ready');
+          btn.classList.add('has-live');
         } catch (err) {
-          if (cv) cv.remove();
+          // a failed WebGL2 start leaves the static image in place; the canvas is removed
+          mini?.destroy?.();
+          mini = null;
+          cv.remove();
         }
       }
-      btn.addEventListener('mouseenter', renderPreview, { once: true });
-      btn.addEventListener('focus', renderPreview, { once: true });
+      function stop() {
+        clearTimeout(release);
+        release = setTimeout(function () {
+          if (!mini) return;
+          mini.destroy();
+          mini = null;
+          liveCount--;
+          cv.remove();
+          btn.classList.remove('has-live');
+        }, 400);
+      }
+      btn.addEventListener('mouseenter', start);
+      btn.addEventListener('focus', start);
+      btn.addEventListener('mouseleave', stop);
+      btn.addEventListener('blur', stop);
     }
 
     fetch('papers.json', { cache: 'no-cache' })
