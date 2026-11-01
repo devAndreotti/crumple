@@ -142,6 +142,7 @@
             var mini = Crumple.Stage(cv, { fit: 0.85 });
             mini.set(cfg, { progress: 0 });
             cv.classList.add('ready');
+            btn.classList.add('has-live');
           }
         } catch (err) {
           if (cv) cv.remove();
