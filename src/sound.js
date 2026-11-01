@@ -185,7 +185,7 @@ export const Sound = /* @__PURE__ */ (() => {
     get tuning() { return { ...currentTune }; },
     set(v) { enabled = !!v; store.set('sound', enabled); if (enabled && ctx()) load(); },
     // optional real recordings: { crumple, sheet, tear } (URLs)
-    useSamples(map) { urls = { ...map }; loading = null; if (enabled && ac) load(); },
+    useSamples(map) { urls = { ...map }; Object.keys(samples).filter((k) => !(k in urls)).forEach((k) => { delete samples[k]; }); loading = null; if (enabled && ac) load(); },
     tune(opts) { return tune(opts); },
     // names: crumple, uncrumple, flip, tear, seal, fire, grain
     play(name, dur = 1, delay = 0, opts) {

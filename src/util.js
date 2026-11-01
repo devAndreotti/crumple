@@ -45,6 +45,8 @@ export const config = {
       const src = document.currentScript && document.currentScript.src;
       if (src && /\/dist\/[^/]+$/.test(src)) return src.replace(/dist\/[^/]+$/, 'assets/');
     } catch (e) { /* no DOM */ }
+    // ES modules: dist/ sits one folder below the package root, where assets/ lives (undefined in the other builds)
+    try { if (import.meta.url) return new URL('../assets/', import.meta.url).href; } catch (e) { /* no import.meta */ }
     return 'assets/';
   })(),
   // prefix for localStorage keys (sound preference, opening counts, burnt papers)
@@ -104,8 +106,9 @@ export function ensureFonts(list) {
   return Promise.all(list.map((f) => {
     if (!fontsRequested[f]) {
       const spec = FONTS[f];
-      const fam = spec ? 'family=' + spec.split(':')[0] : null;
-      const has = !spec || !config.googleFonts || [...document.querySelectorAll('link[rel=stylesheet]')].some((l) => l.href.includes(fam));
+      const name = spec?.split(':')[0].replaceAll('+', ' ');
+      const loaded = (l) => { try { return new URL(l.href).searchParams.getAll('family').some((v) => v.split(':')[0] === name); } catch (e) { return false; } };
+      const has = !spec || !config.googleFonts || [...document.querySelectorAll('link[rel=stylesheet]')].some(loaded);
       const css = has ? Promise.resolve() : new Promise((res) => {
         const l = document.createElement('link');
         l.rel = 'stylesheet';

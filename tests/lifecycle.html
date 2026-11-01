@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>crumple lifecycle test</title>
+<style>body{margin:0;background:#16130f;color:#ebe5d6;font:14px monospace}</style></head>
+<body>
+<script>
+  // counts click listeners on buttons, so a test can see listeners that stack up or leak
+  window.__clickAdds = new Map();
+  const add = EventTarget.prototype.addEventListener, rem = EventTarget.prototype.removeEventListener;
+  EventTarget.prototype.addEventListener = function (t, f, o) { if (t === 'click' && this instanceof HTMLButtonElement) { const n = window.__clickAdds.get(this) || new Set(); n.add(f); window.__clickAdds.set(this, n); } return add.call(this, t, f, o); };
+  EventTarget.prototype.removeEventListener = function (t, f, o) { if (t === 'click' && this instanceof HTMLButtonElement) { const n = window.__clickAdds.get(this); if (n) n.delete(f); } return rem.call(this, t, f, o); };
+</script>
+<script src="../dist/crumple.min.js"></script>
+<script>
+  Crumple.config.assets = '../assets/';
+  Crumple.config.googleFonts = false;
+  Crumple.Scene.init({ motion: 'reduce' });
+  window.liveClicks = (btn) => (window.__clickAdds.get(btn) || new Set()).size;
+  window.__ready = true;
+</script>
+</body></html>
