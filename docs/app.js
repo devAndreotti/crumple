@@ -286,7 +286,7 @@
   try { stage = Crumple.Stage ? Crumple.Stage(canvas, { fit: 0.8 }) : null; } catch (e) { stage = null; }
   if (!stage) {
     $('#nogl').hidden = false;
-    $$('.play-bar button, #progress, .controls input, .controls select, .controls textarea').forEach(function (n) { n.disabled = true; });
+    $$('.play-bar button, #progress, .controls input, .controls select, .controls textarea, .menu-actions button').forEach(function (n) { n.disabled = true; });
   }
 
   function readConfig() {
@@ -449,6 +449,32 @@
     var onLayout = function () { if (!smallScreen.matches) setMenu(false, false); };
     if (smallScreen.addEventListener) smallScreen.addEventListener('change', onLayout);
     else if (smallScreen.addListener) smallScreen.addListener(onLayout);
+  }
+
+  // ---- playground settings menu: closed by default. Desktop: it is a column that pushes the sheet to the right.
+  // Phones (700 px and below): a bottom drawer over the stage. Escape or the close button closes it and gives
+  // the focus back to the toggle.
+  var playLayout = $('#play-layout');
+  var playToggle = $('#menu-toggle');
+  var playClose = $('#menu-close');
+  var playSmall = window.matchMedia ? window.matchMedia('(max-width: 700px)') : null;
+  function setPlayMenu(open, returnFocus) {
+    playLayout.classList.toggle('open', open);
+    playToggle.setAttribute('aria-expanded', String(open));
+    if (open && playSmall && playSmall.matches) playClose.focus({ preventScroll: true });
+    if (!open && returnFocus) playToggle.focus();
+  }
+  function playMenuOpen() { return playLayout.classList.contains('open'); }
+  playToggle.addEventListener('click', function () { setPlayMenu(!playMenuOpen(), false); });
+  playClose.addEventListener('click', function () { setPlayMenu(false, true); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && playMenuOpen()) setPlayMenu(false, true);
+  });
+  // the stage sizes its canvas from the element size and redraws on window 'resize'. A layout change (the menu
+  // opening or closing) does not fire that event, so the stage wrap is watched and the same event is sent.
+  var stageWrap = $('#stage-wrap');
+  if (window.ResizeObserver && stageWrap) {
+    new ResizeObserver(function () { window.dispatchEvent(new Event('resize')); }).observe(stageWrap);
   }
 
   // ---- sound
